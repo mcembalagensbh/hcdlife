@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=yes">
+    <title>Home Life - Gestor Doméstico</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}:root{--primary:#3498db;--danger:#e74c3c;--warning:#f39c12;--dark:#2c3e50;--light:#ecf0f1;--gray:#95a5a6;--success:#2ecc71;--border:#dfe6e9;--love:#e84393;--star:#ffd700;--heart:#e84393;--event-yellow:#e67e22;--gasto:#9b59b6;--report:#1abc9c;--calendar:#e74c3c;--purple:#9b59b6;--purple-light:#d7bde2;--purple-dark:#8e44ad;--bg-vencida:#ffe6e6;--bg-pendente:#e8f5e8;--bg-evento:#fff9e6;--bg-amor:#ffe6f2;--bg-gasto:#f2e6ff;--rotina:#3498db;--medico:#2c3e50;--bg-pago:#f0f0f0;--text-pago:#7f8c8d;--semanal:#16a085;--anual:#d35400;--bg-success-light:#d4edda;--text-success:#155724;--bg-danger-light:#f8d7da;--text-danger:#721c24;--bg-warning-light:#fff3cd;--text-warning:#856404}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,sans-serif;background:#f8f9fa;color:var(--dark);line-height:1.4;font-size:14px;overflow-x:hidden}
+        #authContainer{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;z-index:1000}
+        .auth-box{background:#fff;padding:30px;border-radius:12px;box-shadow:0 8px 25px rgba(0,0,0,.15);width:90%;max-width:350px}
+        .auth-title{text-align:center;margin-bottom:25px;color:var(--purple-dark);font-size:1.5em;display:flex;align-items:center;justify-content:center;gap:8px}
+        .form-group{margin-bottom:16px}
+        .form-label{display:block;margin-bottom:6px;font-weight:600;color:var(--dark);display:flex;align-items:center;gap:6px;font-size:13px}
+        .form-input,.form-select,.form-textarea{width:100%;padding:10px;border:1px solid var(--border);border-radius:6px;font-size:14px;transition:border-color .2s;background:#fff}
+        .form-input[type="number"]{-moz-appearance:textfield}
+        .form-input[type="number"]::-webkit-inner-spin-button,.form-input[type="number"]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+        .form-input:focus,.form-select:focus,.form-textarea:focus{outline:0;border-color:var(--purple);box-shadow:0 0 0 3px rgba(155,89,182,.1)}
+        .form-textarea{resize:vertical;min-height:60px}
+        .btn{padding:10px 16px;border:0;border-radius:6px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;font-size:14px;min-height:44px}
+        .btn:hover{opacity:.9;transform:translateY(-1px);box-shadow:0 4px 8px rgba(0,0,0,.1)}
+        .btn-primary{background:linear-gradient(135deg,var(--purple),var(--purple-dark));color:#fff}
+        .btn-success{background:linear-gradient(135deg,var(--success),#27ae60);color:#fff}
+        .btn-warning{background:linear-gradient(135deg,var(--warning),#e67e22);color:#fff}
+        .btn-danger{background:linear-gradient(135deg,var(--danger),#c0392b);color:#fff}
+        .btn-love{background:linear-gradient(135deg,var(--love),#fd79a8);color:#fff}
+        .btn-rotina{background:linear-gradient(135deg,var(--rotina),#2980b9);color:#fff}
+        .btn-medico{background:linear-gradient(135deg,var(--medico),#34495e);color:#fff}
+        .btn-gasto{background:linear-gradient(135deg,var(--gasto),var(--purple-dark));color:#fff}
+        .btn-report{background:linear-gradient(135deg,var(--report),#16a085);color:#fff}
+        .btn-sm{padding:6px 12px;font-size:12px;min-height:36px}
+        .btn-group{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+        .auth-toggle{text-align:center;margin-top:16px;color:var(--gray);font-size:13px}
+        .auth-link{color:var(--purple);text-decoration:none;font-weight:600;cursor:pointer}
+        #mainContainer{display:none}
+        .header{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:0 8px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.1);height:56px}
+        .header-content{display:flex;justify-content:space-between;align-items:center;height:100%;max-width:1200px;margin:0 auto;gap:4px}
+        .header h1{font-size:clamp(0.9rem, 4vw, 1.1rem);display:flex;align-items:center;gap:4px;font-weight:600;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px}
+        .header-center{display:flex;align-items:center;gap:4px;flex-shrink:1;min-width:0}
+        .header-today-btn{background:rgba(255,255,255,.2);color:#fff;border:0;border-radius:16px;padding:4px 8px;font-size:clamp(0.7rem, 3vw, 0.9rem);cursor:pointer;white-space:nowrap}
+        .saldo-header{background:rgba(255,255,255,.15);color:#fff;border:0;border-radius:20px;padding:4px 8px;font-size:clamp(0.7rem, 3vw, 0.9rem);font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;white-space:nowrap}
+        .header-actions{display:flex;align-items:center;gap:4px;flex-shrink:0}
+        .header-btn{background:rgba(255,255,255,.15);color:#fff;border:0;border-radius:50%;width:34px;height:34px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+        .undo-btn{background:rgba(255,255,255,.15);color:#fff;border:0;border-radius:50%;width:34px;height:34px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;margin-right:2px;flex-shrink:0}
+        .calendar-section{background:#fff;padding:10px;margin:6px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.08);max-width:1200px;margin-left:auto;margin-right:auto}
+        .calendar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+        .calendar-title{font-weight:600;font-size:1em;background:linear-gradient(135deg,var(--purple),var(--purple-dark));color:#fff;padding:4px 12px;border-radius:16px;cursor:pointer}
+        .calendar-nav button{background:0 0;border:0;color:var(--purple);font-size:1.1em;cursor:pointer;padding:2px 6px}
+        .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;min-height:280px}
+        .calendar-day-header{text-align:center;font-weight:600;padding:3px 2px;color:var(--gray);font-size:.8em;background:#f8f9fa;border-radius:3px}
+        .calendar-day{padding:3px 2px;border:1px solid #f0f0f0;border-radius:4px;cursor:pointer;position:relative;min-height:38px;display:flex;flex-direction:column;background:#fff;font-size:11px}
+        .calendar-day:hover{background:#f8f9fa}
+        .calendar-day.today{background:linear-gradient(135deg,var(--purple-light),var(--purple))!important;color:#fff!important}
+        .calendar-day.today .day-number{color:#fff!important}
+        .calendar-day.selected{border:2px solid var(--warning)}
+        .day-number{font-weight:600;text-align:left;margin-bottom:2px;font-size:11px;padding-left:2px}
+        .calendar-events-container{display:flex;flex-direction:column;gap:2px;margin-top:auto;width:100%}
+        .contas-badges-line{display:flex;flex-wrap:wrap;gap:2px;justify-content:flex-end;align-items:center;position:absolute;top:2px;right:2px}
+        .eventos-emojis-line{display:flex;flex-wrap:wrap;gap:3px;justify-content:center;align-items:center;font-size:1.1em;line-height:1;margin-top:12px}
+        .event-emoji-calendar{font-size:1.1em;margin:0 1px}
+        .event-emoji-calendar i.fa-star{color:var(--star)}
+        .event-emoji-calendar i.fa-heart{color:var(--love)}
+        .event-emoji-calendar i.fa-redo{color:var(--rotina)}
+        .event-emoji-calendar i.fa-user-md{color:var(--warning)}
+        .day-badge{width:18px;height:18px;border-radius:50%;font-size:.7em;font-weight:700;display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+        .badge-conta{background:var(--success)}
+        .badge-conta-vencida{background:var(--danger)}
+        .badge-evento{background:var(--warning)}
+        .badge-amor{background:var(--love)}
+        .badge-rotina{background:var(--rotina)}
+        .badge-medico{background:var(--medico)}
+        .filters{background:#fff;padding:10px;margin:6px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.08);max-width:1200px;margin-left:auto;margin-right:auto}
+        .filter-buttons{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+        @media(min-width:768px){.filter-buttons{grid-template-columns:repeat(6,1fr)}}
+        .filter-btn{padding:8px 4px;border:1px solid #e8e8e8;background:#fafafa;border-radius:8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;font-weight:600;font-size:11px;min-height:60px}
+        .filter-btn.active{background:linear-gradient(135deg,var(--purple),var(--purple-dark));color:#fff}
+        .filter-badge{position:relative;margin-top:2px;padding:2px 6px;border-radius:10px;font-size:.65em;font-weight:700;color:#fff;min-width:18px}
+        .filter-badge.contas{background:var(--purple)}.filter-badge.eventos{background:var(--warning)}
+        .filter-badge.gastos{background:var(--gasto)}.filter-badge.lista{background:var(--success)}
+        .filter-badge.empty{display:none!important}
+        .content-area{padding:6px;max-width:1200px;margin:0 auto}
+        .filter-info{margin-bottom:10px;color:var(--purple);font-weight:600;font-size:13px;padding:6px 12px;background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+        .items-list{background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden}
+        .item-card{padding:10px;border-bottom:1px solid #f0f0f0;display:flex;justify-content:space-between;align-items:center;cursor:pointer;border-left:3px solid var(--purple);min-height:52px}
+        .item-card.vencida{border-left-color:var(--danger);background-color:var(--bg-vencida)}
+        .item-card.pendente{border-left-color:var(--success);background-color:var(--bg-pendente)}
+        .item-card.paga{border-left-color:var(--gray);background-color:var(--bg-pago);color:var(--text-pago);opacity:.7}
+        .item-card.paga .item-title{text-decoration:line-through}
+        .item-card.gasto{border-left-color:var(--gasto);background-color:var(--bg-gasto)}
+        .item-card.evento{border-left-color:var(--warning);background-color:var(--bg-evento)}
+        .item-card.amor{border-left-color:var(--love);background-color:var(--bg-amor)}
+        .item-card.rotina{border-left-color:var(--rotina);background-color:#e6f2ff}
+        .item-card.medico{border-left-color:var(--medico);background-color:#e8f0fe}
+        .item-info{flex:1;min-width:0}
+        .item-title{font-weight:600;margin-bottom:2px;display:flex;align-items:center;gap:5px;font-size:13px;color:var(--purple);flex-wrap:wrap}
+        .item-details{font-size:.8em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--gray)}
+        .item-value{font-weight:600;font-size:1.1em;margin-left:6px;white-space:nowrap;color:var(--purple)}
+        .item-actions{display:flex;gap:5px;margin-left:6px;flex-shrink:0}
+        .action-btn{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:0;color:#fff;font-size:.8em}
+        .action-btn.edit{background:var(--purple)}.action-btn.delete{background:var(--danger)}.action-btn.pay{background:var(--success)}
+        .item-badge{padding:2px 8px;border-radius:12px;font-size:.7em;font-weight:700;background:#e8e0f5;color:var(--purple);white-space:nowrap}
+        .badge-recorrente{background:var(--purple-light);color:var(--purple-dark)}
+        .section-divider{background:#f8f9fa;padding:8px 12px;margin:12px 0 6px;font-weight:600;color:var(--gray);border-bottom:1px solid #eee;font-size:.85em}
+        .loading-spinner{text-align:center;padding:30px;color:var(--gray)}
+        .empty-state{text-align:center;padding:30px;color:var(--gray);background:#fff;border-radius:8px}
+        .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+        .modal-content{background:#fff;padding:0;border-radius:12px;width:95%;max-width:500px;max-height:85vh;overflow-y:auto;box-shadow:0 8px 25px rgba(0,0,0,.15)}
+        .modal-header{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid #eee;background:#fff;position:sticky;top:0;z-index:10}
+        .modal-title{font-size:1.1em;font-weight:700;display:flex;align-items:center;gap:8px;color:var(--purple)}
+        .close-modal{background:0 0;border:0;font-size:1.6em;cursor:pointer;color:var(--gray);width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%}
+        .close-modal:hover{background:#f0f0f0;color:var(--danger)}
+        .modal-body{padding:20px}
+        .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--dark);color:#fff;padding:12px 24px;border-radius:30px;box-shadow:0 4px 12px rgba(0,0,0,.2);z-index:2000;max-width:90%;text-align:center}
+        .toast.success{background:var(--success)}.toast.error{background:var(--danger)}
+        .frequency-btn{flex:1;padding:8px;background:#f8f9fa;border:1px solid #ddd;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600}
+        .frequency-btn.active{background:var(--purple);color:#fff}
+        .event-type-btn{flex:1;padding:8px;background:#f8f9fa;border:1px solid #ddd;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px}
+        .event-type-btn.active{background:var(--purple);color:#fff}
+        .event-type-btn.normal.active{background:var(--warning)}
+        .event-type-btn.amor.active{background:var(--love)}
+        .event-type-btn.rotina.active{background:var(--rotina)}
+        .event-type-btn.medico.active{background:var(--medico)}
+        .event-type-btn i.fa-star{color:var(--star)}
+        .event-type-btn i.fa-heart{color:var(--love)}
+        .event-type-btn i.fa-redo{color:var(--rotina)}
+        .event-type-btn i.fa-user-md{color:var(--warning)}
+        .menu-item{padding:12px;border-bottom:1px solid #eee;cursor:pointer;display:flex;align-items:center;gap:12px}
+        .menu-item i{color:var(--purple);font-size:1.1em;width:24px}
+        
+        /* BOTÃO FLUTUANTE */
+        .fab-container {
+            position: fixed;
+            bottom: 180px;
+            right: 20px;
+            z-index: 999;
+            cursor: move;
+            user-select: none;
+            transition: none;
+            will-change: left, top, right, bottom;
+            touch-action: none;
+        }
+        
+        .fab-main {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--purple), var(--purple-dark));
+            color: #fff;
+            border: 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,.3);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        
+        .fab-options {
+            position: absolute;
+            bottom: 64px;
+            right: 0;
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .fab-container.open .fab-options {
+            display: flex;
+        }
+        
+        .fab-option {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            background: #fff;
+            color: var(--purple);
+            border: 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,.2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        
+        .fab-option.contas{color:var(--purple)}.fab-option.eventos{color:var(--warning)}
+        .fab-option.gastos{color:var(--gasto)}.fab-option.lista{color:var(--success)}
+        
+        /* MENU LATERAL */
+        .side-menu {
+            position: fixed;
+            top: 0;
+            left: -280px;
+            width: 280px;
+            height: 100%;
+            background: #fff;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            z-index: 1001;
+            transition: left 0.3s ease;
+            overflow-y: auto;
+        }
+        
+        .side-menu.open {
+            left: 0;
+        }
+        
+        .side-menu-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            padding: 20px;
+            font-size: 1.2em;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .side-menu-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: background 0.2s;
+        }
+        
+        .side-menu-item:hover {
+            background: #f5f5f5;
+        }
+        
+        .side-menu-item i {
+            color: var(--purple);
+            width: 24px;
+            font-size: 1.2em;
+        }
+        
+        .side-menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            display: none;
+        }
+        
+        .side-menu-overlay.open {
+            display: block;
+        }
+        
+        .delete-option{padding:15px;margin:5px 0;border:1px solid #eee;border-radius:8px;cursor:pointer}
+        .delete-option.selected{background:var(--purple-light)}.delete-option.warning{background:var(--bg-danger-light)}
+        .text-success{color:var(--success)}.text-danger{color:var(--danger)}
+        .fab-position-selector{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:15px 0}
+        .fab-pos-option{padding:15px;border:2px solid #eee;border-radius:8px;cursor:pointer;text-align:center}
+        .fab-pos-option.selected{background:var(--purple-light)}
+        .historico-item{padding:10px;border-bottom:1px solid #eee;font-size:13px}
+        .event-emoji{font-size:1.1em;margin-right:2px}
+        .event-emoji i.fa-star{color:var(--star)}
+        .event-emoji i.fa-heart{color:var(--love)}
+        .event-emoji i.fa-redo{color:var(--rotina)}
+        .event-emoji i.fa-user-md{color:var(--warning)}
+        .manual-section{margin-bottom:20px}
+        .manual-section h3{color:var(--purple);margin-bottom:10px;font-size:1.1em}
+        .manual-section ul{padding-left:20px}
+        .manual-section li{margin-bottom:5px}
+        .manual-section p{margin-bottom:8px}
+        .date-range{display:flex;gap:8px;align-items:center}
+        .date-range .form-group{flex:1}
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div id="authContainer">
+    <div class="auth-box">
+        <h2 class="auth-title"><i class="fas fa-home"></i> Home Life</h2>
+        <div id="loginForm">
+            <div class="form-group"><label class="form-label"><i class="fas fa-envelope"></i> Email</label><input type="email" id="loginEmail" class="form-input" placeholder="seu@email.com"></div>
+            <div class="form-group"><label class="form-label"><i class="fas fa-lock"></i> Senha</label><input type="password" id="loginPassword" class="form-input" placeholder="Sua senha"></div>
+            <button class="btn btn-primary" id="btnLogin" style="width:100%"><i class="fas fa-sign-in-alt"></i> Entrar</button>
+            <div class="auth-toggle">Não tem conta? <a class="auth-link" id="linkRegister">Registrar</a></div>
+        </div>
+        <div id="registerForm" style="display:none">
+            <div class="form-group"><label class="form-label"><i class="fas fa-user"></i> Nome</label><input type="text" id="registerName" class="form-input" placeholder="Seu nome"></div>
+            <div class="form-group"><label class="form-label"><i class="fas fa-envelope"></i> Email</label><input type="email" id="registerEmail" class="form-input" placeholder="seu@email.com"></div>
+            <div class="form-group"><label class="form-label"><i class="fas fa-lock"></i> Senha</label><input type="password" id="registerPassword" class="form-input" placeholder="Mínimo 6 caracteres"></div>
+            <button class="btn btn-success" id="btnRegister" style="width:100%"><i class="fas fa-user-plus"></i> Criar Conta</button>
+            <div class="auth-toggle">Já tem conta? <a class="auth-link" id="linkLogin">Entrar</a></div>
+        </div>
+    </div>
+</div>
+<div id="mainContainer">
+    <!-- Menu Lateral -->
+    <div class="side-menu-overlay" id="sideMenuOverlay"></div>
+    <div class="side-menu" id="sideMenu">
+        <div class="side-menu-header">
+            <i class="fas fa-home"></i> Home Life
+        </div>
+        <div class="side-menu-item" onclick="abrirMenuRelatorio();fecharSideMenu()">
+            <i class="fas fa-chart-line"></i> Relatório
+        </div>
+        <div class="side-menu-item" onclick="abrirMenuPosicaoFab();fecharSideMenu()">
+            <i class="fas fa-arrows-alt"></i> Posição Botão
+        </div>
+        <div class="side-menu-item" onclick="abrirMenuSeguranca();fecharSideMenu()">
+            <i class="fas fa-lock"></i> Segurança
+        </div>
+        <div class="side-menu-item" onclick="abrirManual();fecharSideMenu()">
+            <i class="fas fa-book"></i> Manual de Instruções
+        </div>
+    </div>
+    
+    <div class="header">
+        <div class="header-content">
+            <h1 id="btnMenu"><i class="fas fa-bars"></i> Home Life</h1>
+            <div class="header-center">
+                <button class="header-today-btn" id="btnToday"><i class="fas fa-calendar-day"></i> Hoje</button>
+                <div class="saldo-header" id="btnSaldoHeader" title="Clique para ver saldos"><i class="fas fa-wallet"></i><span id="saldoHeaderValue">R$ 0,00</span></div>
+            </div>
+            <div class="header-actions">
+                <button class="undo-btn" id="btnHistorico" title="Últimas ações"><i class="fas fa-history"></i></button>
+                <button class="header-btn" id="btnLogout" title="Sair"><i class="fas fa-sign-out-alt"></i></button>
+            </div>
+        </div>
+    </div>
+    <div class="calendar-section">
+        <div class="calendar-header">
+            <div class="calendar-title" id="calendarTitle">Carregando...</div>
+            <div class="calendar-nav"><button id="btnPrevMonth"><i class="fas fa-chevron-left"></i></button><button id="btnNextMonth"><i class="fas fa-chevron-right"></i></button></div>
+        </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+    </div>
+    <div class="filters">
+        <div class="filter-buttons">
+            <button class="filter-btn active" data-filter="all"><i class="fas fa-th-large"></i><span>Tudo</span></button>
+            <button class="filter-btn" data-filter="contas"><i class="fas fa-file-invoice-dollar"></i><span>Contas</span><span class="filter-badge contas empty" id="badgeContas">0</span></button>
+            <button class="filter-btn" data-filter="eventos"><i class="fas fa-calendar-alt"></i><span>Eventos</span><span class="filter-badge eventos empty" id="badgeEventos">0</span></button>
+            <button class="filter-btn" data-filter="gastos"><i class="fas fa-shopping-bag"></i><span>Gastos</span><span class="filter-badge gastos empty" id="badgeGastos">0</span></button>
+            <button class="filter-btn" data-filter="lista"><i class="fas fa-shopping-cart"></i><span>Lista</span><span class="filter-badge lista empty" id="badgeLista">0</span></button>
+            <button class="filter-btn" data-filter="saldos"><i class="fas fa-wallet"></i><span>Saldos</span></button>
+        </div>
+    </div>
+    <div class="content-area">
+        <div class="filter-info" id="filterInfo"></div>
+        <div class="loading-spinner" id="loadingState" style="display:none"><i class="fas fa-spinner fa-spin"></i><div>Carregando...</div></div>
+        <div id="contentArea"><div id="dynamicContent"></div></div>
+    </div>
+    <div class="fab-container" id="fabContainer">
+        <button class="fab-main" id="fabMain"><i class="fas fa-plus"></i></button>
+        <div class="fab-options">
+            <button class="fab-option contas" onclick="abrirNovaConta()" title="Nova Conta"><i class="fas fa-file-invoice-dollar"></i></button>
+            <button class="fab-option eventos" onclick="abrirNovoEventoUnificado()" title="Novo Evento"><i class="fas fa-calendar-plus"></i></button>
+            <button class="fab-option gastos" onclick="abrirNovoGasto()" title="Novo Gasto"><i class="fas fa-shopping-bag"></i></button>
+            <button class="fab-option lista" onclick="abrirNovoItemLista()" title="Novo Item na Lista"><i class="fas fa-shopping-cart"></i></button>
+        </div>
+    </div>
+</div>
+<div class="modal-overlay" id="modalOverlay"><div class="modal-content" id="modalContent"></div></div>
+<div id="toast" class="toast" style="display:none"></div>
+<script>
+    const CONFIG={supabase:{url:'https://zngojwlfsdjmsxhgpize.supabase.co',anonKey:'sb_publishable_2PMpz6EaV9nmzlxMDdkyBQ_N_QdjIT_'},meses:['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'],diasSemana:['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'],categoriasGastos:[{id:'mercado',nome:'Mercado',icon:'fa-shopping-cart'},{id:'lazer',nome:'Lazer',icon:'fa-film'},{id:'fastfood',nome:'Fastfood',icon:'fa-hamburger'},{id:'medicos',nome:'Médicos',icon:'fa-user-md'},{id:'emergencias',nome:'Emergências',icon:'fa-ambulance'},{id:'outros',nome:'Outros (especifique)',icon:'fa-ellipsis-h'}],posicoesFab:[{nome:'Canto Inferior Direito',pos:{bottom:'20px',right:'20px'},icon:'fa-arrow-right'},{nome:'Canto Inferior Esquerdo',pos:{bottom:'20px',left:'20px'},icon:'fa-arrow-left'},{nome:'Canto Superior Direito',pos:{top:'80px',right:'20px'},icon:'fa-arrow-up'},{nome:'Canto Superior Esquerdo',pos:{top:'80px',left:'20px'},icon:'fa-arrow-up'},{nome:'Meio Direita',pos:{top:'50%',right:'20px',transform:'translateY(-50%)'},icon:'fa-arrow-right'},{nome:'Meio Esquerda',pos:{top:'50%',left:'20px',transform:'translateY(-50%)'},icon:'fa-arrow-left'},{nome:'Centro',pos:{top:'50%',left:'50%',transform:'translate(-50%,-50%)'},icon:'fa-circle'},{nome:'Inferior Centralizado',pos:{bottom:'20px',left:'50%',transform:'translateX(-50%)'},icon:'fa-arrow-down'},{nome:'Superior Centralizado',pos:{top:'80px',left:'50%',transform:'translateX(-50%)'},icon:'fa-arrow-up'},{nome:'Padrão',pos:{bottom:'180px',right:'20px'},icon:'fa-home'}]};
+    
+    const App={supabase:null,currentUser:null,currentMonthOffset:0,currentFilter:'all',selectedDay:null,selectedMonth:new Date().getMonth()+1,selectedYear:new Date().getFullYear(),saldoSenha:'1234',saldoAutenticado:false,modalHasChanges:false,pendingDelete:null,saldoCentral:{id:null,valor:0},historicoAcoes:[],dataCache:{contas:[],eventos:[],gastos:[],lista:[],saldos:[],regrasContas:[],regrasEventos:[],historico:[],excecoesRecorrencia:[],eventosIndividuais:[]}};
+    
+    function showToast(message,type='info'){const t=document.getElementById('toast');t.textContent=message;t.className=`toast ${type}`;t.style.display='block';setTimeout(()=>t.style.display='none',3000);}
+    function formatCurrency(v){return'R$ '+(v||0).toFixed(2).replace('.',',');}
+    function parseCurrency(v){if(!v)return 0;return parseFloat(v.toString().replace(/[^\d,.-]/g,'').replace(',','.'))||0;}
+    function getDiasNoMes(ano,mes){return new Date(ano,mes,0).getDate();}
+    function getNomeMes(num){return CONFIG.meses[num-1]||'';}
+    function getMesAnoAtual(){const h=new Date(),d=new Date(h.getFullYear(),h.getMonth()+App.currentMonthOffset,1);return{mes:d.getMonth()+1,ano:d.getFullYear()};}
+    function atualizarSaldoHeader(){document.getElementById('saldoHeaderValue').textContent=formatCurrency(App.saldoCentral.valor);}
+    
+    async function registrarHistorico(tipo,descricao,detalhes){if(!App.currentUser)return;try{await App.supabase.from('historico_acoes').insert({user_id:App.currentUser.id,tipo,descricao,detalhes:JSON.stringify(detalhes),data:new Date().toISOString()});}catch(e){}}
+    
+    async function carregarDados(forceRefresh){if(!App.currentUser)return;try{let {data:contas}=await App.supabase.from('contas').select('*').eq('user_id',App.currentUser.id);let {data:regrasContas}=await App.supabase.from('regras_contas').select('*').eq('user_id',App.currentUser.id).eq('ativo',true);let {data:eventos}=await App.supabase.from('eventos').select('*').eq('user_id',App.currentUser.id);let {data:eventosIndividuais}=await App.supabase.from('eventos_individuais').select('*').eq('user_id',App.currentUser.id);let {data:regrasEventos}=await App.supabase.from('regras_eventos').select('*').eq('user_id',App.currentUser.id).eq('ativo',true);let {data:gastos}=await App.supabase.from('gastos').select('*').eq('user_id',App.currentUser.id);let {data:lista}=await App.supabase.from('lista_compras').select('*').eq('user_id',App.currentUser.id);let {data:saldos}=await App.supabase.from('saldos').select('*').eq('user_id',App.currentUser.id);let {data:historico}=await App.supabase.from('historico_pagamentos').select('*').eq('user_id',App.currentUser.id);let {data:configs}=await App.supabase.from('configuracoes').select('*').eq('user_id',App.currentUser.id);let {data:historicoAcoes}=await App.supabase.from('historico_acoes').select('*').eq('user_id',App.currentUser.id).order('data',{ascending:false}).limit(500);if(historicoAcoes)App.historicoAcoes=historicoAcoes.map(h=>({...h,detalhes:JSON.parse(h.detalhes||'{}')}));let excecoesRecorrencia=[];try{let {data:ex}=await App.supabase.from('excecoes_recorrencia').select('*').eq('user_id',App.currentUser.id);if(ex)excecoesRecorrencia=ex;}catch(e){}if(configs)configs.forEach(c=>{if(c.chave==='saldo_senha')App.saldoSenha=c.valor;});if(saldos&&saldos.length>0){let central=saldos.find(s=>s.is_central)||saldos[0];App.saldoCentral.id=central.id;App.saldoCentral.valor=central.valor;}
+        App.dataCache={contas:contas||[],regrasContas:regrasContas||[],eventos:eventos||[],eventosIndividuais:eventosIndividuais||[],regrasEventos:regrasEventos||[],gastos:gastos||[],lista:lista||[],saldos:saldos||[],historico:historico||[],excecoesRecorrencia:excecoesRecorrencia};atualizarBadges();atualizarSaldoHeader();}catch(error){console.error('Erro ao carregar dados:',error);showToast('Erro ao carregar dados','error');}}
+    
+    function atualizarBadges(){let {mes,ano}=getMesAnoAtual();let todasContas=combinarContasDoMes(mes,ano);let contasPendentes=todasContas.filter(c=>c.valor_pago===0&&c.status!=='paga');let eventosFixos=App.dataCache.eventos.filter(e=>e.mes===mes&&e.ano===ano);let eventosInd=App.dataCache.eventosIndividuais.filter(e=>e.mes===mes&&e.ano===ano);let eventosRec=[];App.dataCache.regrasEventos.forEach(r=>eventosRec.push(...calcularOcorrenciasEvento(r,mes,ano)));let totalEventos=eventosFixos.length+eventosInd.length+eventosRec.length;let totalGastos=App.dataCache.gastos.filter(g=>g.mes===mes&&g.ano===ano).length;let totalLista=App.dataCache.lista.filter(i=>!i.comprado).length;let bc=document.getElementById('badgeContas'),be=document.getElementById('badgeEventos'),bg=document.getElementById('badgeGastos'),bl=document.getElementById('badgeLista');bc.textContent=contasPendentes.length;bc.classList.toggle('empty',contasPendentes.length===0);be.textContent=totalEventos;be.classList.toggle('empty',totalEventos===0);bg.textContent=totalGastos;bg.classList.toggle('empty',totalGastos===0);bl.textContent=totalLista;bl.classList.toggle('empty',totalLista===0);}
+    
+    function calcularOcorrenciasConta(regra,mesAlvo,anoAlvo){let ocorrencias=[];if(!regra||!regra.data_inicio||!regra.ativo)return ocorrencias;let dataInicio=new Date(regra.data_inicio+'T12:00:00');if(dataInicio.getFullYear()>anoAlvo||(dataInicio.getFullYear()===anoAlvo&&dataInicio.getMonth()+1>mesAlvo))return ocorrencias;let dataFim=regra.data_fim?new Date(regra.data_fim+'T12:00:00'):null;if(dataFim&&(dataFim.getFullYear()<anoAlvo||(dataFim.getFullYear()===anoAlvo&&dataFim.getMonth()+1<mesAlvo)))return ocorrencias;let dataAtual=new Date(dataInicio);while(dataAtual.getFullYear()<anoAlvo||(dataAtual.getFullYear()===anoAlvo&&dataAtual.getMonth()+1<mesAlvo)){if(regra.frequencia==='semanal')dataAtual.setDate(dataAtual.getDate()+7);else if(regra.frequencia==='mensal'){dataAtual.setMonth(dataAtual.getMonth()+1);let ultimoDia=getDiasNoMes(dataAtual.getFullYear(),dataAtual.getMonth()+1);dataAtual.setDate(Math.min(regra.dia_vencimento,ultimoDia));}else if(regra.frequencia==='anual')dataAtual.setFullYear(dataAtual.getFullYear()+1);}
+        let contador=0;while(dataAtual.getFullYear()===anoAlvo&&dataAtual.getMonth()+1===mesAlvo&&contador<100){if(!dataFim||dataAtual<=dataFim){let excecao=App.dataCache.excecoesRecorrencia?.find(e=>e.regra_id===regra.id&&e.data_excecao===`${anoAlvo}-${String(mesAlvo).padStart(2,'0')}-${String(dataAtual.getDate()).padStart(2,'0')}`);if(!excecao||excecao.acao!=='excluir'){ocorrencias.push({id:`regra_${regra.id}_${dataAtual.getTime()}`,regra_id:regra.id,descricao:`${regra.descricao_base} (${regra.frequencia})`,dia:dataAtual.getDate(),mes:mesAlvo,ano:anoAlvo,valor_original:regra.valor||0,valor_pago:0,status:'pendente',frequencia:regra.frequencia,isRecorrente:true,data_original:dataAtual.toISOString()});}}
+            if(regra.frequencia==='semanal')dataAtual.setDate(dataAtual.getDate()+7);else if(regra.frequencia==='mensal'){dataAtual.setMonth(dataAtual.getMonth()+1);let ultimoDia=getDiasNoMes(dataAtual.getFullYear(),dataAtual.getMonth()+1);dataAtual.setDate(Math.min(regra.dia_vencimento,ultimoDia));}else if(regra.frequencia==='anual')dataAtual.setFullYear(dataAtual.getFullYear()+1);contador++;}return ocorrencias;}
+    
+    function calcularOcorrenciasEvento(regra,mesAlvo,anoAlvo){let ocorrencias=[];if(!regra||!regra.data_inicio||!regra.ativo)return ocorrencias;let dataInicio=new Date(regra.data_inicio+'T12:00:00');if(dataInicio.getFullYear()>anoAlvo||(dataInicio.getFullYear()===anoAlvo&&dataInicio.getMonth()+1>mesAlvo))return ocorrencias;let dataFim=regra.data_fim?new Date(regra.data_fim+'T12:00:00'):null;if(dataFim&&(dataFim.getFullYear()<anoAlvo||(dataFim.getFullYear()===anoAlvo&&dataFim.getMonth()+1<mesAlvo)))return ocorrencias;let dataAtual=new Date(dataInicio);while(dataAtual.getFullYear()<anoAlvo||(dataAtual.getFullYear()===anoAlvo&&dataAtual.getMonth()+1<mesAlvo)){if(regra.frequencia==='semanal')dataAtual.setDate(dataAtual.getDate()+7);else if(regra.frequencia==='mensal'){dataAtual.setMonth(dataAtual.getMonth()+1);let ultimoDia=getDiasNoMes(dataAtual.getFullYear(),dataAtual.getMonth()+1);dataAtual.setDate(Math.min(regra.dia,ultimoDia));}else if(regra.frequencia==='anual')dataAtual.setFullYear(dataAtual.getFullYear()+1);}
+        let contador=0;while(dataAtual.getFullYear()===anoAlvo&&dataAtual.getMonth()+1===mesAlvo&&contador<100){if(!dataFim||dataAtual<=dataFim){let excecao=App.dataCache.excecoesRecorrencia?.find(e=>e.regra_id===regra.id&&e.data_excecao===`${anoAlvo}-${String(mesAlvo).padStart(2,'0')}-${String(dataAtual.getDate()).padStart(2,'0')}`);if(!excecao||excecao.acao!=='excluir'){let eventoIndividual=App.dataCache.eventosIndividuais?.find(e=>e.regra_id===regra.id&&e.data_original===dataAtual.toISOString().split('T')[0]);if(eventoIndividual){ocorrencias.push({id:`evento_individual_${eventoIndividual.id}`,regra_id:regra.id,titulo:eventoIndividual.titulo||regra.titulo_base,descricao:eventoIndividual.descricao||regra.descricao||'',dia:dataAtual.getDate(),mes:mesAlvo,ano:anoAlvo,hora:eventoIndividual.hora||regra.hora||'',local:eventoIndividual.local||regra.local||'',tipo:eventoIndividual.tipo||regra.tipo||'normal',frequencia:regra.frequencia,isRecorrente:false,isIndividual:true,individual_id:eventoIndividual.id,data_original:dataAtual.toISOString()});}else{ocorrencias.push({id:`regra_evento_${regra.id}_${dataAtual.getTime()}`,regra_id:regra.id,titulo:`${regra.titulo_base} (${regra.frequencia})`,descricao:regra.descricao||'',dia:dataAtual.getDate(),mes:mesAlvo,ano:anoAlvo,hora:regra.hora||'',local:regra.local||'',tipo:regra.tipo||'normal',frequencia:regra.frequencia,isRecorrente:true,data_original:dataAtual.toISOString()});}}}
+            if(regra.frequencia==='semanal')dataAtual.setDate(dataAtual.getDate()+7);else if(regra.frequencia==='mensal'){dataAtual.setMonth(dataAtual.getMonth()+1);let ultimoDia=getDiasNoMes(dataAtual.getFullYear(),dataAtual.getMonth()+1);dataAtual.setDate(Math.min(regra.dia,ultimoDia));}else if(regra.frequencia==='anual')dataAtual.setFullYear(dataAtual.getFullYear()+1);contador++;}return ocorrencias;}
+    
+    function combinarContasDoMes(mes,ano){let contasFixas=App.dataCache.contas.filter(c=>c.mes===mes&&c.ano===ano);let contasRecorrentes=[];App.dataCache.regrasContas.forEach(r=>contasRecorrentes.push(...calcularOcorrenciasConta(r,mes,ano)));let todas=[...contasFixas,...contasRecorrentes];todas=todas.filter(c=>{if(!c.id.toString().startsWith('regra_')&&!c.regra_id)return true;let regraId=c.regra_id||(c.id.toString().startsWith('regra_')?c.id.split('_')[1]:null);if(!regraId)return true;let dataExcecao=`${ano}-${String(mes).padStart(2,'0')}-${String(c.dia).padStart(2,'0')}`;let excecao=App.dataCache.excecoesRecorrencia?.find(e=>e.regra_id===regraId&&e.data_excecao===dataExcecao);if(excecao&&excecao.acao==='pagar')return false;return true;});return todas;}
+    
+    async function atualizarCalendario(){let {mes,ano}=getMesAnoAtual();App.selectedMonth=mes;App.selectedYear=ano;document.getElementById('calendarTitle').textContent=`${getNomeMes(mes)} ${ano}`;let grid=document.getElementById('calendarGrid');grid.innerHTML='';CONFIG.diasSemana.forEach(dia=>{let h=document.createElement('div');h.className='calendar-day-header';h.textContent=dia;grid.appendChild(h);});let primeiroDia=new Date(ano,mes-1,1).getDay();let diasNoMes=getDiasNoMes(ano,mes);for(let i=0;i<primeiroDia;i++){let e=document.createElement('div');e.className='calendar-day empty';grid.appendChild(e);}
+        let todasContas=combinarContasDoMes(mes,ano);let eventosFixos=App.dataCache.eventos.filter(e=>e.mes===mes&&e.ano===ano);let eventosInd=App.dataCache.eventosIndividuais.filter(e=>e.mes===mes&&e.ano===ano);let eventosRec=[];App.dataCache.regrasEventos.forEach(r=>eventosRec.push(...calcularOcorrenciasEvento(r,mes,ano)));let todosEventos=[...eventosFixos,...eventosInd,...eventosRec];let hoje=new Date();hoje.setHours(0,0,0,0);for(let dia=1;dia<=diasNoMes;dia++){let isToday=dia===hoje.getDate()&&mes===hoje.getMonth()+1&&ano===hoje.getFullYear()&&App.currentMonthOffset===0;let contasHoje=todasContas.filter(c=>c.dia===dia);let eventosHoje=todosEventos.filter(e=>e.dia===dia);let contasPendentes=contasHoje.filter(c=>c.valor_pago===0&&c.status!=='paga');let contasVencidas=contasPendentes.filter(c=>{let d=criarData(ano,mes,c.dia);return d<hoje;});let contasNormais=contasPendentes.filter(c=>{let d=criarData(ano,mes,c.dia);return d>=hoje;});let cell=document.createElement('div');cell.className=`calendar-day ${isToday?'today':''} ${App.selectedDay===dia?'selected':''}`;cell.onclick=(e)=>{e.stopPropagation();selecionarDia(dia);};
+            let contasBadgesHtml='<div class="contas-badges-line">';if(contasVencidas.length>0)contasBadgesHtml+=`<span class="day-badge badge-conta-vencida" title="${contasVencidas.length} conta(s) vencida(s)">${contasVencidas.length}</span>`;if(contasNormais.length>0)contasBadgesHtml+=`<span class="day-badge badge-conta" title="${contasNormais.length} conta(s) a pagar">${contasNormais.length}</span>`;contasBadgesHtml+='</div>';
+            let eventosEmojisHtml='<div class="eventos-emojis-line">';eventosHoje.forEach(e=>{if(e.tipo==='normal')eventosEmojisHtml+=`<span class="event-emoji-calendar" title="Evento"><i class="fas fa-star"></i></span>`;else if(e.tipo==='amor')eventosEmojisHtml+=`<span class="event-emoji-calendar" title="Data Especial"><i class="fas fa-heart"></i></span>`;else if(e.tipo==='rotina')eventosEmojisHtml+=`<span class="event-emoji-calendar" title="Rotina"><i class="fas fa-redo"></i></span>`;else if(e.tipo==='medico')eventosEmojisHtml+=`<span class="event-emoji-calendar" title="Médico"><i class="fas fa-user-md"></i></span>`;});eventosEmojisHtml+='</div>';
+            cell.innerHTML=`<div class="day-number">${dia}</div>${contasBadgesHtml}${eventosEmojisHtml}`;grid.appendChild(cell);}}
+    
+    function criarData(ano,mes,dia){return new Date(ano,mes-1,dia,12,0,0);}
+    function selecionarDia(dia){App.selectedDay=App.selectedDay===dia?null:dia;atualizarCalendario();mostrarConteudo();}
+    
+    async function mostrarConteudo(){document.getElementById('loadingState').style.display='block';document.getElementById('contentArea').style.display='none';await carregarDados();let {mes,ano}=getMesAnoAtual();let content=document.getElementById('dynamicContent');let diaText=App.selectedDay?` - Dia ${App.selectedDay}`:'';document.getElementById('filterInfo').innerHTML=`<i class="fas fa-calendar-alt"></i> ${getNomeMes(mes)}/${ano}${diaText} | <strong>${App.currentFilter==='all'?'Tudo':App.currentFilter==='saldos'?'Saldos':App.currentFilter}</strong>`;try{if(App.currentFilter==='saldos')await renderizarSaldos(content);else if(App.currentFilter==='contas')await renderizarContas(content,mes,ano);else if(App.currentFilter==='eventos')await renderizarEventos(content,mes,ano);else if(App.currentFilter==='gastos')await renderizarGastos(content,mes,ano);else if(App.currentFilter==='lista')await renderizarLista(content);else await renderizarTudo(content,mes,ano);}catch(error){console.error(error);content.innerHTML='<div class="empty-state"><i class="fas fa-exclamation-triangle" style="color:var(--danger)"></i><p>Erro ao carregar dados</p></div>';}
+        document.getElementById('loadingState').style.display='none';document.getElementById('contentArea').style.display='block';}
+    
+    async function renderizarTudo(content,mes,ano){let todasContas=combinarContasDoMes(mes,ano);let eventosFixos=App.dataCache.eventos.filter(e=>e.mes===mes&&e.ano===ano);let eventosInd=App.dataCache.eventosIndividuais.filter(e=>e.mes===mes&&e.ano===ano);let eventosRec=[];App.dataCache.regrasEventos.forEach(r=>eventosRec.push(...calcularOcorrenciasEvento(r,mes,ano)));let todosEventos=[...eventosFixos,...eventosInd,...eventosRec];let gastosMes=App.dataCache.gastos.filter(g=>g.mes===mes&&g.ano===ano);let contasF=App.selectedDay?todasContas.filter(c=>c.dia===App.selectedDay):todasContas;let eventosF=App.selectedDay?todosEventos.filter(e=>e.dia===App.selectedDay):todosEventos;let gastosF=App.selectedDay?gastosMes.filter(g=>g.dia===App.selectedDay):gastosMes;let itens=[...contasF.map(c=>({...c,tipo:'conta'})),...eventosF.map(e=>({...e,tipo:'evento'})),...gastosF.map(g=>({...g,tipo:'gasto'}))];itens.sort((a,b)=>a.dia-b.dia);if(itens.length===0){content.innerHTML='<div class="empty-state"><i class="fas fa-calendar-check"></i><p>Nenhum item encontrado para este período</p></div>';return;}
+        let html='<div class="items-list">';itens.forEach(i=>html+=renderizarItemCard(i,mes,ano));html+='</div>';content.innerHTML=html;}
+    
+    async function renderizarContas(content,mes,ano){let todasContas=combinarContasDoMes(mes,ano);let contasF=App.selectedDay?todasContas.filter(c=>c.dia===App.selectedDay):todasContas;let hoje=new Date();hoje.setHours(0,0,0,0);let ativas=contasF.filter(c=>c.valor_pago===0&&c.status!=='paga');let pagas=contasF.filter(c=>c.valor_pago>0||c.status==='paga');ativas.sort((a,b)=>{let da=criarData(ano,mes,a.dia),db=criarData(ano,mes,b.dia);if(da<hoje&&db>=hoje)return-1;if(da>=hoje&&db<hoje)return 1;return da-db;});if(ativas.length===0&&pagas.length===0){content.innerHTML='<div class="empty-state"><i class="fas fa-file-invoice-dollar"></i><p>Nenhuma conta encontrada</p></div>';return;}
+        let html='<div class="items-list">';if(ativas.length>0){html+='<div class="section-divider"><i class="fas fa-clock"></i> A Pagar</div>';ativas.forEach(c=>html+=renderizarItemCard({...c,tipo:'conta'},mes,ano));}
+        if(pagas.length>0){html+='<div class="section-divider"><i class="fas fa-check-circle"></i> Pagas</div>';pagas.forEach(c=>html+=renderizarItemCard({...c,tipo:'conta'},mes,ano));}
+        html+='</div>';content.innerHTML=html;}
+    
+    async function renderizarEventos(content,mes,ano){let eventosFixos=App.dataCache.eventos.filter(e=>e.mes===mes&&e.ano===ano);let eventosInd=App.dataCache.eventosIndividuais.filter(e=>e.mes===mes&&e.ano===ano);let eventosRec=[];App.dataCache.regrasEventos.forEach(r=>eventosRec.push(...calcularOcorrenciasEvento(r,mes,ano)));let todos=[...eventosFixos,...eventosInd,...eventosRec];if(App.selectedDay)todos=todos.filter(e=>e.dia===App.selectedDay);let hoje=new Date();hoje.setHours(0,0,0,0);let futuros=todos.filter(e=>criarData(e.ano,e.mes,e.dia)>=hoje);let passados=todos.filter(e=>criarData(e.ano,e.mes,e.dia)<hoje);futuros.sort((a,b)=>a.dia-b.dia);passados.sort((a,b)=>b.dia-a.dia);if(todos.length===0){content.innerHTML='<div class="empty-state"><i class="fas fa-calendar-alt"></i><p>Nenhum evento encontrado</p></div>';return;}
+        let html='<div class="items-list">';if(futuros.length>0){html+='<div class="section-divider"><i class="fas fa-star"></i> Próximos Eventos</div>';futuros.forEach(e=>html+=renderizarItemCard({...e,tipo:'evento'},mes,ano));}
+        if(passados.length>0){html+='<div class="section-divider"><i class="fas fa-history"></i> Eventos Passados</div>';passados.forEach(e=>html+=renderizarItemCard({...e,tipo:'evento'},mes,ano));}
+        html+='</div>';content.innerHTML=html;}
+    
+    async function renderizarGastos(content,mes,ano){let gastos=App.dataCache.gastos.filter(g=>g.mes===mes&&g.ano===ano);if(App.selectedDay)gastos=gastos.filter(g=>g.dia===App.selectedDay);gastos.sort((a,b)=>b.dia-a.dia);if(gastos.length===0){content.innerHTML='<div class="empty-state"><i class="fas fa-shopping-bag"></i><p>Nenhum gasto encontrado</p></div>';return;}
+        let html='<div class="items-list">';gastos.forEach(g=>html+=renderizarItemCard({...g,tipo:'gasto'},mes,ano));html+='</div>';content.innerHTML=html;}
+    
+    async function renderizarLista(content){let lista=App.dataCache.lista||[];if(lista.length===0){content.innerHTML='<div class="empty-state"><i class="fas fa-shopping-cart"></i><p>Lista de compras vazia</p><button class="btn btn-primary" onclick="abrirNovoItemLista()" style="margin-top:16px"><i class="fas fa-plus"></i> Adicionar Item</button></div>';return;}
+        let pendentes=lista.filter(i=>!i.comprado);let comprados=lista.filter(i=>i.comprado);let html='<div class="items-list">';if(pendentes.length>0){html+='<div class="section-divider"><i class="fas fa-clock"></i> Pendentes</div>';pendentes.forEach(i=>{html+=`<div class="item-card pendente" onclick="editarItemLista('${i.id}')"><div class="item-info"><div class="item-title"><span class="item-badge">${i.quantidade}x</span>${i.descricao||'Item sem descrição'}</div><div class="item-details">Adicionado por: ${i.added_by||'Sistema'}</div></div><div class="item-actions"><button class="action-btn edit" onclick="event.stopPropagation();alternarComprado('${i.id}')"><i class="fas ${i.comprado?'fa-undo':'fa-check'}"></i></button><button class="action-btn delete" onclick="event.stopPropagation();deletarItemLista('${i.id}')"><i class="fas fa-trash"></i></button></div></div>`;});}
+        if(comprados.length>0){html+='<div class="section-divider"><i class="fas fa-check-double"></i> Comprados</div>';comprados.forEach(i=>{html+=`<div class="item-card paga" onclick="editarItemLista('${i.id}')"><div class="item-info"><div class="item-title"><span class="item-badge">${i.quantidade}x</span>${i.descricao||'Item sem descrição'}</div></div><div class="item-actions"><button class="action-btn edit" onclick="event.stopPropagation();alternarComprado('${i.id}')"><i class="fas fa-undo"></i></button><button class="action-btn delete" onclick="event.stopPropagation();deletarItemLista('${i.id}')"><i class="fas fa-trash"></i></button></div></div>`;});}
+        html+='</div>';content.innerHTML=html;}
+    
+    async function renderizarSaldos(content){if(!App.saldoAutenticado){content.innerHTML='<div class="empty-state"><i class="fas fa-lock"></i><p style="margin:16px 0">Área protegida por senha</p><button class="btn btn-primary" onclick="autenticarSaldos()"><i class="fas fa-unlock-alt"></i> Autenticar</button></div>';return;}
+        let saldos=App.dataCache.saldos||[];let html='<div class="items-list">';let central=saldos.find(s=>s.is_central);if(central){html+=`<div style="padding:16px;background:linear-gradient(135deg,var(--purple),var(--purple-dark));color:#fff;border-radius:8px;margin-bottom:12px"><div style="font-size:.9em;opacity:.9">Saldo Central (afetado por pagamentos)</div><div style="font-size:1.8em;font-weight:700">${formatCurrency(central.valor)}</div><div style="font-size:.8em;margin-top:4px">Atualizado: ${new Date(central.data).toLocaleDateString('pt-BR')}</div><div class="btn-group" style="margin-top:12px"><button class="btn btn-sm btn-success" onclick="abrirAdicionarValorSaldo('${central.id}')"><i class="fas fa-plus"></i> Adicionar</button><button class="btn btn-sm btn-warning" onclick="abrirRetirarValorSaldo('${central.id}')"><i class="fas fa-minus"></i> Retirar</button><button class="btn btn-sm btn-primary" onclick="abrirAtualizarValorSaldo('${central.id}')"><i class="fas fa-sync-alt"></i> Atualizar</button></div></div>`;}
+        let outros=saldos.filter(s=>!s.is_central);if(outros.length>0){html+='<div class="section-divider"><i class="fas fa-piggy-bank"></i> Outros Saldos</div>';outros.forEach(s=>{html+=`<div class="item-card"><div class="item-info"><div class="item-title"><i class="fas fa-wallet"></i> ${s.nome||'Sem nome'}</div><div class="item-details">Atualizado: ${new Date(s.data).toLocaleDateString('pt-BR')}</div></div><div class="item-value">${formatCurrency(s.valor)}</div><div class="item-actions"><button class="action-btn edit" onclick="event.stopPropagation();editarSaldo('${s.id}')"><i class="fas fa-edit"></i></button><button class="action-btn delete" onclick="event.stopPropagation();deletarSaldo('${s.id}')"><i class="fas fa-trash"></i></button></div></div>`;});}
+        html+=`<div style="margin-top:16px;text-align:center"><button class="btn btn-primary" onclick="abrirNovoSaldo()"><i class="fas fa-plus"></i> Novo Saldo</button></div></div>`;content.innerHTML=html;}
+    
+    function renderizarItemCard(item,mes,ano){if(!item)return'';let hoje=new Date();hoje.setHours(0,0,0,0);let classe='',titulo='',detalhes='',valor='',icone='fa-file-invoice-dollar',botoes='';if(item.tipo==='conta'){let venc=criarData(ano||item.ano,mes||item.mes,item.dia||item.dia_vencimento);if(item.valor_pago>0||item.status==='paga')classe='paga';else if(venc<hoje)classe='vencida';else classe='pendente';titulo=item.descricao||'Conta sem descrição';if(item.frequencia&&item.frequencia!=='unico')titulo+=` <span class="item-badge badge-recorrente">${item.frequencia}</span>`;detalhes=`Vence ${item.dia||item.dia_vencimento} ${getNomeMes(mes||item.mes)}/${ano||item.ano}`;valor=formatCurrency(item.valor_original||item.valor||0);if(!item.valor_pago&&item.status!=='paga'){botoes+=`<button class="action-btn pay" onclick="event.stopPropagation();abrirModalPagamento('${item.id}','${item.descricao}',${item.valor_original||item.valor||0},'${item.regra_id||''}',${item.dia||item.dia_vencimento},${mes||item.mes},${ano||item.ano},${item.isRecorrente||false})"><i class="fas fa-dollar-sign"></i></button>`;}}else if(item.tipo==='evento'){let dataEv=criarData(item.ano,item.mes,item.dia);let iconeEvento='';if(item.tipo==='amor'){classe='amor';iconeEvento='<i class="fas fa-heart" style="color:var(--love)"></i>';}else if(item.tipo==='rotina'){classe='rotina';iconeEvento='<i class="fas fa-redo" style="color:var(--rotina)"></i>';}else if(item.tipo==='medico'){classe='medico';iconeEvento='<i class="fas fa-user-md" style="color:var(--warning)"></i>';}else{classe='evento';iconeEvento='<i class="fas fa-star" style="color:var(--star)"></i>';}
+        if(dataEv<hoje)classe+=' paga';titulo=item.titulo||'Evento sem título';
+        let badges = [];
+        if (item.tipo === 'normal') badges.push('Evento');
+        else if (item.tipo === 'amor') badges.push('Especial');
+        else if (item.tipo === 'rotina') badges.push('Rotina');
+        else if (item.tipo === 'medico') badges.push('Médico');
+        
+        if (item.frequencia && item.frequencia !== 'unico') {
+            badges.push(item.frequencia);
+        }
+        
+        if (badges.length > 0) {
+            titulo += ` <span class="item-badge badge-recorrente">${badges.join(' • ')}</span>`;
+                }
+        
+        detalhes=`${item.dia} ${getNomeMes(item.mes)}/${item.ano}`;if(item.hora)detalhes+=` | ${item.hora}`;if(item.local)detalhes+=` | ${item.local}`;
+        
+        return`<div class="item-card ${classe}" onclick="editarItem('${item.id}','${item.tipo}',${item.isRecorrente||false},'${item.regra_id||''}',${item.isIndividual||false},'${item.individual_id||''}')"><div class="item-info"><div class="item-title"><span class="event-emoji">${iconeEvento}</span> ${titulo}</div><div class="item-details">${detalhes}</div></div>${valor?`<div class="item-value">${valor}</div>`:''}<div class="item-actions">${botoes}<button class="action-btn edit" onclick="event.stopPropagation();editarItem('${item.id}','${item.tipo}',${item.isRecorrente||false},'${item.regra_id||''}',${item.isIndividual||false},'${item.individual_id||''}')"><i class="fas fa-edit"></i></button><button class="action-btn delete" onclick="event.stopPropagation();confirmarExclusao('${item.id}','${item.tipo}',${item.isRecorrente||false},'${item.regra_id||''}',${item.dia||0},${item.mes||0},${item.ano||0},${item.isIndividual||false},'${item.individual_id||''}')"><i class="fas fa-trash"></i></button></div></div>`;}else if(item.tipo==='gasto'){classe='gasto';icone='fa-shopping-bag';titulo=item.descricao||'Gasto sem descrição';let cat=CONFIG.categoriasGastos.find(c=>c.id===item.categoria)||CONFIG.categoriasGastos[5];let catNome=cat.nome;if(item.categoria_customizada&&item.categoria==='outros')catNome=item.categoria_customizada;titulo+=` <span class="item-badge">${catNome}</span>`;detalhes=`${item.dia} ${getNomeMes(item.mes)}/${item.ano}`;valor=formatCurrency(item.valor||0);botoes=`<button class="action-btn delete" onclick="event.stopPropagation();cancelarGasto('${item.id}','${item.descricao}',${item.valor})"><i class="fas fa-undo-alt"></i></button><button class="action-btn edit" onclick="event.stopPropagation();editarItem('${item.id}','gasto',false,'',false,'')"><i class="fas fa-edit"></i></button>`;return`<div class="item-card ${classe}" onclick="editarItem('${item.id}','gasto',false,'',false,'')"><div class="item-info"><div class="item-title"><span class="event-emoji"><i class="fas ${icone}"></i></span> ${titulo}</div><div class="item-details">${detalhes}</div></div>${valor?`<div class="item-value">${valor}</div>`:''}<div class="item-actions">${botoes}</div></div>`;}
+        return`<div class="item-card ${classe}" onclick="editarItem('${item.id}','${item.tipo}',${item.isRecorrente||false},'${item.regra_id||''}',${item.isIndividual||false},'${item.individual_id||''}')"><div class="item-info"><div class="item-title"><span class="event-emoji"><i class="fas ${icone}"></i></span> ${titulo}</div><div class="item-details">${detalhes}</div></div>${valor?`<div class="item-value">${valor}</div>`:''}<div class="item-actions">${botoes}<button class="action-btn edit" onclick="event.stopPropagation();editarItem('${item.id}','${item.tipo}',${item.isRecorrente||false},'${item.regra_id||''}',${item.isIndividual||false},'${item.individual_id||''}')"><i class="fas fa-edit"></i></button><button class="action-btn delete" onclick="event.stopPropagation();confirmarExclusao('${item.id}','${item.tipo}',${item.isRecorrente||false},'${item.regra_id||''}',${item.dia||0},${item.mes||0},${item.ano||0},${item.isIndividual||false},'${item.individual_id||''}')"><i class="fas fa-trash"></i></button></div></div>`;}
+    
+    function abrirModal(titulo,icone,conteudo){let modal=document.getElementById('modalContent');modal.innerHTML=`<div class="modal-header"><div class="modal-title"><i class="fas ${icone}"></i> ${titulo}</div><button class="close-modal" onclick="fecharModal()">&times;</button></div><div class="modal-body">${conteudo}</div>`;document.getElementById('modalOverlay').style.display='flex';App.modalHasChanges=false;}
+    function fecharModal(){document.getElementById('modalOverlay').style.display='none';App.modalHasChanges=false;}
+    
+    function abrirModalPagamento(id,descricao,valorOriginal,regraId,dia,mes,ano,isRecorrente){let saldoAtual=App.saldoCentral.valor;let conteudo=`<div style="text-align:center;margin-bottom:16px"><h3>${descricao}</h3><p style="font-size:1.2em;margin:8px 0">Valor original: ${formatCurrency(valorOriginal)}</p><p style="font-size:1.2em;color:var(--purple)">Saldo atual: ${formatCurrency(saldoAtual)}</p></div><div class="form-group"><label class="form-label"><i class="fas fa-money-bill-wave"></i> Valor a pagar</label><input type="number" id="pagamentoValor" class="form-input" value="${valorOriginal.toFixed(2).replace('.',',')}" placeholder="0,00" step="0.01" inputmode="decimal"></div><div class="btn-group" style="margin-top:20px"><button class="btn btn-success" onclick="processarPagamentoModal('${id}','${descricao}',${valorOriginal},'${regraId}',${dia},${mes},${ano},${isRecorrente})" style="flex:2"><i class="fas fa-check"></i> Confirmar Pagamento</button><button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button></div>`;abrirModal('Registrar Pagamento','fa-credit-card',conteudo);}
+    
+    async function processarPagamentoModal(id,descricao,valorOriginal,regraId,dia,mes,ano,isRecorrente){let valorPago=parseCurrency(document.getElementById('pagamentoValor')?.value);if(!valorPago||valorPago<=0){showToast('Informe um valor válido','warning');return;}
+        await processarPagamento(id,descricao,valorPago,regraId,dia,mes,ano,isRecorrente);}
+    
+    async function processarPagamento(id,descricao,valor,regraId='',dia,mes,ano,isRecorrente){try{let isRegraOcorrencia=id.toString().startsWith('regra_');let contaCriadaId=null;let dataPagamento=new Date().toISOString().split('T')[0];let dataOcorrencia=`${ano}-${String(mes).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;if(isRegraOcorrencia){let partes=id.split('_');let regraIdReal=partes[1];let regra=App.dataCache.regrasContas.find(r=>r.id===regraIdReal);if(!regra){showToast('Regra não encontrada','error');return;}
+            let {data:result,error:insertError}=await App.supabase.from('contas').insert({user_id:App.currentUser.id,descricao:regra.descricao_base,dia:dia,mes:mes,ano:ano,valor_original:regra.valor,valor_pago:valor,status:'paga',is_recorrente:false,data_pagamento:dataPagamento,added_by:App.currentUser.email.split('@')[0]}).select();if(insertError)throw insertError;contaCriadaId=result[0].id;await App.supabase.from('excecoes_recorrencia').upsert({user_id:App.currentUser.id,regra_id:regraIdReal,data_excecao:dataOcorrencia,acao:'pagar'},{onConflict:'user_id,regra_id,data_excecao'});await registrarHistorico('pagamento_conta',`Pagamento de conta recorrente: ${regra.descricao_base}`,{id:result[0].id,descricao:regra.descricao_base,valor_original:regra.valor,valor_pago:valor});}else{let conta=App.dataCache.contas.find(c=>c.id===id);if(!conta){showToast('Conta não encontrada','error');return;}
+            await App.supabase.from('contas').update({valor_pago:valor,status:'paga',data_pagamento:dataPagamento,updated_at:new Date().toISOString()}).eq('id',id);contaCriadaId=id;await App.supabase.from('historico_pagamentos').insert({user_id:App.currentUser.id,conta_id:id,descricao:conta.descricao||'Pagamento de conta',valor_pago:valor,data_pagamento:dataPagamento,mes:mes,ano:ano,added_by:App.currentUser.email.split('@')[0]});await registrarHistorico('pagamento_conta',`Pagamento de conta: ${conta.descricao}`,{id,descricao:conta.descricao,valor_original:conta.valor_original,valor_pago:valor});}
+        if(App.saldoCentral.id){let {data:saldoAtual}=await App.supabase.from('saldos').select('valor').eq('id',App.saldoCentral.id).single();if(saldoAtual){let novoValor=saldoAtual.valor-valor;await App.supabase.from('saldos').update({valor:novoValor,data:dataPagamento}).eq('id',App.saldoCentral.id);App.saldoCentral.valor=novoValor;atualizarSaldoHeader();}}
+        showToast('Pagamento registrado com sucesso!','success');fecharModal();await carregarDados(true);await atualizarCalendario();await mostrarConteudo();}catch(error){console.error('Erro ao processar pagamento:',error);showToast('Erro ao processar pagamento: '+error.message,'error');}}
+    
+        async function cancelarGasto(id,descricao,valor){if(!confirm(`Deseja realmente cancelar o gasto "${descricao}" no valor de ${formatCurrency(valor)}? O valor será restaurado ao saldo central.`))return;try{await App.supabase.from('gastos').delete().eq('id',id);if(App.saldoCentral.id){let {data:saldoAtual}=await App.supabase.from('saldos').select('valor').eq('id',App.saldoCentral.id).single();if(saldoAtual){let novoValor=saldoAtual.valor+valor;await App.supabase.from('saldos').update({valor:novoValor}).eq('id',App.saldoCentral.id);App.saldoCentral.valor=novoValor;atualizarSaldoHeader();}}
+        await registrarHistorico('cancelamento_gasto',`Cancelamento de gasto: ${descricao}`,{id,descricao,valor});showToast('Gasto cancelado com sucesso!','success');await carregarDados(true);await atualizarCalendario();await mostrarConteudo();}catch(error){console.error('Erro ao cancelar gasto:',error);showToast('Erro ao cancelar gasto: '+error.message,'error');}}
+    
+    function confirmarExclusao(id,tipo,isRecorrente,regraId='',dia=0,mes=0,ano=0,isIndividual=false,individualId=''){
+        // Se for gasto, não permite exclusão - usa apenas cancelamento
+        if(tipo === 'gasto') {
+            showToast('Use o botão de cancelar para reverter gastos', 'warning');
+            return;
+        }
+        
+        if(isIndividual){if(confirm('Tem certeza que deseja excluir esta ocorrência específica?'))deletarItem(id,tipo,'individual',regraId,dia,mes,ano,individualId);return;}
+        if(!isRecorrente){if(confirm('Tem certeza que deseja excluir este item?'))deletarItem(id,tipo,'unico',regraId,dia,mes,ano);return;}
+        App.pendingDelete={id,tipo,regraId,dia,mes,ano,individualId};let conteudo=`<p style="margin-bottom:16px">Este item é recorrente. Como deseja excluir?</p><div class="delete-option" onclick="selecionarOpcaoExclusao('unico')"><strong><i class="fas fa-times-circle"></i> Excluir apenas esta ocorrência</strong><div class="delete-confirm-text">Exclui apenas este item específico, mantendo as futuras ocorrências</div></div><div class="delete-option" onclick="selecionarOpcaoExclusao('futuro')"><strong><i class="fas fa-forward"></i> Excluir desta data em diante</strong><div class="delete-confirm-text">Exclui este e todos os itens futuros desta recorrência</div></div><div class="delete-option warning" onclick="selecionarOpcaoExclusao('todas')"><strong><i class="fas fa-ban"></i> Excluir todas as ocorrências</strong><div class="delete-confirm-text">Exclui permanentemente a regra e todas as suas ocorrências</div></div><div class="btn-group" style="margin-top:20px"><button class="btn" onclick="fecharModal()" style="background:var(--gray);color:#fff;flex:1">Cancelar</button></div>`;abrirModal('Opções de Exclusão','fa-exclamation-triangle',conteudo);}
+    
+    function selecionarOpcaoExclusao(opcao){if(!App.pendingDelete)return;let {id,tipo,regraId,dia,mes,ano,individualId}=App.pendingDelete;if(confirm(`Tem certeza que deseja ${opcao==='unico'?'excluir apenas esta ocorrência':opcao==='futuro'?'excluir esta e todas as futuras':'EXCLUIR PERMANENTEMENTE todas as ocorrências'}?`)){deletarItem(id,tipo,opcao,regraId,dia,mes,ano,individualId);}}
+    
+    async function deletarItem(id,tipo,opcao='unico',regraId='',dia=0,mes=0,ano=0,individualId=''){
+        try{
+            // Impede exclusão direta de gastos - deve usar cancelamento
+            if(tipo === 'gasto') {
+                showToast('Use o botão de cancelar para reverter gastos', 'warning');
+                return;
+            }
+            
+            if(tipo==='conta'){
+                if(id.toString().startsWith('regra_')){
+                    let regraIdReal=id.split('_')[1];
+                    let regra=App.dataCache.regrasContas.find(r=>r.id===regraIdReal);
+                    let dataExcecao=`${ano}-${String(mes).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+                    if(opcao==='todas'){
+                        await App.supabase.from('regras_contas').delete().eq('id',regraIdReal);
+                    }else if(opcao==='futuro'){
+                        if(regra){
+                            let dataInicio=new Date(regra.data_inicio+'T12:00:00');
+                            let dataExcl=new Date(dataExcecao+'T12:00:00');
+                            if(dataExcl<=dataInicio){
+                                await App.supabase.from('regras_contas').delete().eq('id',regraIdReal);
+                            }else{
+                                let dataFim=new Date(dataExcl);
+                                dataFim.setDate(dataFim.getDate()-1);
+                                await App.supabase.from('regras_contas').update({data_fim:dataFim.toISOString().split('T')[0]}).eq('id',regraIdReal);
+                            }
+                        }
+                    }
+                    if(opcao==='unico'){
+                        await App.supabase.from('excecoes_recorrencia').upsert({
+                            user_id:App.currentUser.id,
+                            regra_id:regraIdReal,
+                            data_excecao:dataExcecao,
+                            acao:'excluir'
+                        },{onConflict:'user_id,regra_id,data_excecao'});
+                    }
+                }else{
+                    let conta=App.dataCache.contas.find(c=>c.id===id);
+                    if(conta&&conta.valor_pago>0){
+                        let opcao=await new Promise(res=>{
+                            abrirModal('Excluir Conta Paga','fa-exclamation-triangle',
+                                `<p style="margin-bottom:20px">Esta conta já foi paga (valor: ${formatCurrency(conta.valor_pago)}).</p>
+                                <div class="delete-option" onclick="fecharModal();res({restaurar:true})">
+                                    <strong><i class="fas fa-undo-alt"></i> Excluir e devolver valor à carteira</strong>
+                                    <div>O valor de ${formatCurrency(conta.valor_pago)} será restituído ao saldo central.</div>
+                                </div>
+                                <div class="delete-option" onclick="fecharModal();res({restaurar:false})">
+                                    <strong><i class="fas fa-trash-alt"></i> Excluir sem devolver valor</strong>
+                                    <div>A conta será removida sem alterar o saldo.</div>
+                                </div>
+                                <div class="btn-group" style="margin-top:20px">
+                                    <button class="btn" onclick="fecharModal();res(null)" style="background:var(--gray);color:#fff;flex:1">Cancelar</button>
+                                </div>`);
+                            window.res=res;
+                        });
+                        if(!opcao)return;
+                        if(opcao.restaurar&&App.saldoCentral.id){
+                            let {data:saldoAtual}=await App.supabase.from('saldos').select('valor').eq('id',App.saldoCentral.id).single();
+                            if(saldoAtual){
+                                let novoValor=saldoAtual.valor+conta.valor_pago;
+                                await App.supabase.from('saldos').update({valor:novoValor}).eq('id',App.saldoCentral.id);
+                                App.saldoCentral.valor=novoValor;
+                                atualizarSaldoHeader();
+                            }
+                        }
+                    }
+                    await App.supabase.from('contas').delete().eq('id',id);
+                }
+            }else if(tipo==='evento'){
+                if(id.toString().startsWith('regra_evento_')){
+                    let regraIdReal=id.split('_')[2];
+                    let regra=App.dataCache.regrasEventos.find(r=>r.id===regraIdReal);
+                    let dataExcecao=`${ano}-${String(mes).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+                    if(opcao==='todas'){
+                        await App.supabase.from('regras_eventos').delete().eq('id',regraIdReal);
+                    }else if(opcao==='futuro'){
+                        if(regra){
+                            let dataInicio=new Date(regra.data_inicio+'T12:00:00');
+                            let dataExcl=new Date(dataExcecao+'T12:00:00');
+                            if(dataExcl<=dataInicio){
+                                await App.supabase.from('regras_eventos').delete().eq('id',regraIdReal);
+                            }else{
+                                let dataFim=new Date(dataExcl);
+                                dataFim.setDate(dataFim.getDate()-1);
+                                await App.supabase.from('regras_eventos').update({data_fim:dataFim.toISOString().split('T')[0]}).eq('id',regraIdReal);
+                            }
+                        }
+                    }
+                    if(opcao==='unico'){
+                        await App.supabase.from('excecoes_recorrencia').upsert({
+                            user_id:App.currentUser.id,
+                            regra_id:regraIdReal,
+                            data_excecao:dataExcecao,
+                            acao:'excluir'
+                        },{onConflict:'user_id,regra_id,data_excecao'});
+                    }
+                }else if(individualId){
+                    await App.supabase.from('eventos_individuais').delete().eq('id',individualId);
+                }else{
+                    await App.supabase.from('eventos').delete().eq('id',id);
+                }
+            }
+            // Removido o bloco else if(tipo==='gasto') - gastos agora usam apenas cancelamento
+            
+            await registrarHistorico('exclusao','Item excluído',{id,tipo,opcao});
+            showToast('Item excluído com sucesso!','success');
+            fecharModal();
+            await carregarDados(true);
+            await atualizarCalendario();
+            await mostrarConteudo();
+        }catch(error){
+            console.error('Erro ao excluir:',error);
+            showToast('Erro ao excluir item: '+error.message,'error');
+        }
+    }
+    
+    function abrirNovoEventoUnificado(){let {mes,ano}=getMesAnoAtual();let tipos=`<div class="btn-group" style="margin-bottom:16px"><button class="event-type-btn normal active" onclick="selecionarTipoEvento('normal')"><i class="fas fa-star"></i> Evento</button><button class="event-type-btn amor" onclick="selecionarTipoEvento('amor')"><i class="fas fa-heart"></i> Data Especial</button><button class="event-type-btn rotina" onclick="selecionarTipoEvento('rotina')"><i class="fas fa-redo"></i> Rotina</button><button class="event-type-btn medico" onclick="selecionarTipoEvento('medico')"><i class="fas fa-user-md"></i> Médico</button></div>`;let frequencias=['unico','semanal','mensal','anual'].map(f=>`<button class="frequency-btn ${f==='unico'?'active':''}" onclick="selecionarFrequenciaEvento('${f}')">${f}</button>`).join('');let conteudo=`${tipos}<input type="hidden" id="eventoTipoSelecionado" value="normal"><div class="form-group"><label class="form-label"><i class="fas fa-heading"></i> Título</label><input type="text" id="eventoTitulo" class="form-input" placeholder="Título"></div><div class="form-group"><label class="form-label"><i class="fas fa-align-left"></i> Descrição</label><textarea id="eventoDescricao" class="form-textarea" rows="2"></textarea></div><div id="rotinaFields" style="display:none"><div class="form-group"><label class="form-label"><i class="fas fa-repeat"></i> Frequência</label><div class="btn-group">${frequencias}</div><input type="hidden" id="eventoFrequencia" value="unico"></div><div class="form-group" id="eventoFimContainer" style="display:none"><label class="form-label"><i class="fas fa-calendar-times"></i> Data de Fim (Opcional)</label><div style="display:flex;gap:8px"><select id="eventoFimMes" class="form-select" style="flex:1"><option value="">Indefinido</option>${CONFIG.meses.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('')}</select><input type="number" id="eventoFimAno" class="form-input" placeholder="Ano" style="flex:1" inputmode="numeric"></div></div></div><div id="eventoUnicoFields"><div class="form-group"><label class="form-label"><i class="fas fa-calendar-alt"></i> Período do Evento</label><div class="date-range"><div class="form-group"><label class="form-label" style="font-size:11px">Início</label><input type="number" id="eventoDiaInicio" class="form-input" min="1" max="31" value="${App.selectedDay||new Date().getDate()}" inputmode="numeric" placeholder="Dia"></div><div class="form-group"><label class="form-label" style="font-size:11px">Fim</label><input type="number" id="eventoDiaFim" class="form-input" min="1" max="31" value="${App.selectedDay||new Date().getDate()}" inputmode="numeric" placeholder="Dia"></div></div></div><div class="form-group"><div class="date-range"><div class="form-group"><select id="eventoMes" class="form-select">${CONFIG.meses.map((m,i)=>`<option value="${i+1}" ${i+1===mes?'selected':''}>${m}</option>`).join('')}</select></div><div class="form-group"><input type="number" id="eventoAno" class="form-input" value="${ano}" inputmode="numeric" placeholder="Ano"></div></div></div></div><div style="display:flex;gap:8px"><div class="form-group" style="flex:1"><label class="form-label"><i class="fas fa-clock"></i> Hora</label><input type="time" id="eventoHora" class="form-input" value="19:00"></div><div class="form-group" style="flex:1"><label class="form-label"><i class="fas fa-map-marker-alt"></i> Local</label><input type="text" id="eventoLocal" class="form-input"></div></div><div class="btn-group" style="margin-top:20px"><button class="btn btn-primary" onclick="salvarNovoEvento()" style="flex:2"><i class="fas fa-save"></i> Salvar</button><button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button></div>`;abrirModal('Novo Evento','fa-calendar-plus',conteudo);}
+    
+    function selecionarTipoEvento(tipo){document.querySelectorAll('.event-type-btn').forEach(b=>b.classList.remove('active'));event.target.classList.add('active');document.getElementById('eventoTipoSelecionado').value=tipo;document.getElementById('rotinaFields').style.display=(tipo==='rotina'||tipo==='medico')?'block':'none';document.getElementById('eventoUnicoFields').style.display=(tipo==='rotina'||tipo==='medico')?'none':'block';}
+    function selecionarFrequenciaEvento(freq){document.querySelectorAll('.frequency-btn').forEach(b=>b.classList.remove('active'));event.target.classList.add('active');document.getElementById('eventoFrequencia').value=freq;document.getElementById('eventoFimContainer').style.display=freq==='unico'?'none':'block';}
+    
+    async function salvarNovoEvento(){let tipo=document.getElementById('eventoTipoSelecionado')?.value;let titulo=document.getElementById('eventoTitulo')?.value.trim();let desc=document.getElementById('eventoDescricao')?.value.trim();let mes=parseInt(document.getElementById('eventoMes')?.value);let ano=parseInt(document.getElementById('eventoAno')?.value);let hora=document.getElementById('eventoHora')?.value;let local=document.getElementById('eventoLocal')?.value.trim();if(!titulo||!mes||!ano){showToast('Preencha título, mês e ano','warning');return;}
+        try{if(tipo==='rotina'||tipo==='medico'){let dia=parseInt(document.getElementById('eventoDiaInicio')?.value);let freq=document.getElementById('eventoFrequencia')?.value;if(!dia){showToast('Preencha o dia','warning');return;}
+            let diaAjustado=Math.min(dia,getDiasNoMes(ano,mes));if(freq==='unico'){await App.supabase.from('eventos').insert({user_id:App.currentUser.id,titulo,descricao:desc||'',dia:diaAjustado,mes,ano,hora:hora||null,local:local||null,tipo,is_recorrente:false,added_by:App.currentUser.email.split('@')[0]});}else{let dataInicio=`${ano}-${String(mes).padStart(2,'0')}-${String(diaAjustado).padStart(2,'0')}`;let dataFim=null;let fimMes=document.getElementById('eventoFimMes')?.value;let fimAno=document.getElementById('eventoFimAno')?.value;if(fimMes&&fimAno){let diaFim=Math.min(dia,getDiasNoMes(parseInt(fimAno),parseInt(fimMes)));dataFim=`${fimAno}-${String(fimMes).padStart(2,'0')}-${String(diaFim).padStart(2,'0')}`;}
+            await App.supabase.from('regras_eventos').insert({user_id:App.currentUser.id,titulo_base:titulo,descricao:desc||'',dia:diaAjustado,hora:hora||null,local:local||null,tipo,frequencia:freq,data_inicio:dataInicio,data_fim:dataFim,ativo:true,added_by:App.currentUser.email.split('@')[0]});}}else{let diaInicio=parseInt(document.getElementById('eventoDiaInicio')?.value);let diaFim=parseInt(document.getElementById('eventoDiaFim')?.value);if(!diaInicio||!diaFim){showToast('Preencha o período do evento','warning');return;}
+            if(diaInicio>diaFim){showToast('Dia final deve ser maior ou igual ao dia inicial','warning');return;}
+            for(let dia=diaInicio;dia<=diaFim;dia++){let diaAjustado=Math.min(dia,getDiasNoMes(ano,mes));await App.supabase.from('eventos').insert({user_id:App.currentUser.id,titulo:dia===diaInicio?titulo:`${titulo} (continuação)`,descricao:desc||'',dia:diaAjustado,mes,ano,hora:hora||null,local:local||null,tipo:tipo||'normal',is_recorrente:false,added_by:App.currentUser.email.split('@')[0]});}}
+        await registrarHistorico('criacao_evento',`Evento criado: ${titulo}`,{titulo,mes,ano,tipo});showToast('Evento salvo!','success');fecharModal();await carregarDados(true);await atualizarCalendario();await mostrarConteudo();}catch(error){console.error('Erro ao salvar evento:',error);showToast('Erro: '+error.message,'error');}}
+    
+    function abrirNovaConta(){let {mes,ano}=getMesAnoAtual();let frequencias=['unico','semanal','mensal','anual'].map(f=>`<button class="frequency-btn ${f==='unico'?'active':''}" onclick="selecionarFrequencia('${f}')">${f}</button>`).join('');let conteudo=`<div class="form-group"><label class="form-label"><i class="fas fa-tag"></i> Descrição</label><input type="text" id="contaDescricao" class="form-input" placeholder="Ex: Aluguel"></div><div class="form-group"><label class="form-label"><i class="fas fa-repeat"></i> Frequência</label><div class="btn-group">${frequencias}</div><input type="hidden" id="contaFrequencia" value="unico"></div><div class="form-group"><label class="form-label"><i class="fas fa-calendar-day"></i> Dia do Vencimento</label><input type="number" id="contaDia" class="form-input" min="1" max="31" value="${App.selectedDay||10}" inputmode="numeric"></div><div class="form-group"><label class="form-label"><i class="fas fa-money-bill-wave"></i> Valor</label><input type="number" id="contaValor" class="form-input" placeholder="0,00" step="0.01" inputmode="decimal"></div><div class="form-group" id="contaInicioContainer"><label class="form-label"><i class="fas fa-calendar"></i> Data de Início</label><div style="display:flex;gap:8px"><select id="contaInicioMes" class="form-select" style="flex:1">${CONFIG.meses.map((m,i)=>`<option value="${i+1}" ${i+1===mes?'selected':''}>${m}</option>`).join('')}</select><input type="number" id="contaInicioAno" class="form-input" value="${ano}" style="flex:1" inputmode="numeric"></div></div><div class="form-group" id="contaFimContainer" style="display:none"><label class="form-label"><i class="fas fa-calendar-times"></i> Data de Fim (Opcional)</label><div style="display:flex;gap:8px"><select id="contaFimMes" class="form-select" style="flex:1"><option value="">Indefinido</option>${CONFIG.meses.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('')}</select><input type="number" id="contaFimAno" class="form-input" placeholder="Ano" style="flex:1" inputmode="numeric"></div></div><div class="btn-group" style="margin-top:20px"><button class="btn btn-primary" onclick="salvarNovaConta()" style="flex:2"><i class="fas fa-save"></i> Salvar</button><button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button></div>`;abrirModal('Nova Conta','fa-plus-circle',conteudo);}
+    function selecionarFrequencia(freq){document.querySelectorAll('.frequency-btn').forEach(b=>b.classList.remove('active'));event.target.classList.add('active');document.getElementById('contaFrequencia').value=freq;document.getElementById('contaFimContainer').style.display=freq==='unico'?'none':'block';}
+    
+    async function salvarNovaConta(){let desc=document.getElementById('contaDescricao')?.value.trim();let freq=document.getElementById('contaFrequencia')?.value;let dia=parseInt(document.getElementById('contaDia')?.value);let valor=parseCurrency(document.getElementById('contaValor')?.value);let inicioMes=parseInt(document.getElementById('contaInicioMes')?.value);let inicioAno=parseInt(document.getElementById('contaInicioAno')?.value);if(!desc||!dia||!valor||!inicioMes||!inicioAno){showToast('Preencha todos os campos obrigatórios','warning');return;}
+        let diaAjustado=Math.min(dia,getDiasNoMes(inicioAno,inicioMes));try{if(freq==='unico'){await App.supabase.from('contas').insert({user_id:App.currentUser.id,descricao:desc,dia:diaAjustado,mes:inicioMes,ano:inicioAno,valor_original:valor,valor_pago:0,status:'pendente',is_recorrente:false,added_by:App.currentUser.email.split('@')[0]});}else{let dataInicio=`${inicioAno}-${String(inicioMes).padStart(2,'0')}-${String(diaAjustado).padStart(2,'0')}`;let dataFim=null;let fimMes=document.getElementById('contaFimMes')?.value;let fimAno=document.getElementById('contaFimAno')?.value;if(fimMes&&fimAno){let diaFim=Math.min(dia,getDiasNoMes(parseInt(fimAno),parseInt(fimMes)));dataFim=`${fimAno}-${String(fimMes).padStart(2,'0')}-${String(diaFim).padStart(2,'0')}`;}
+            await App.supabase.from('regras_contas').insert({user_id:App.currentUser.id,descricao_base:desc,dia_vencimento:diaAjustado,valor:valor,frequencia:freq,data_inicio:dataInicio,data_fim:dataFim,ativo:true,added_by:App.currentUser.email.split('@')[0]});}
+        await registrarHistorico('criacao_conta',`Conta criada: ${desc}`,{desc,valor,freq});showToast('Conta salva!','success');fecharModal();await carregarDados(true);await atualizarCalendario();await mostrarConteudo();}catch(error){console.error('Erro ao salvar conta:',error);showToast('Erro: '+error.message,'error');}}
+    
+    function abrirNovoGasto(){let {mes,ano}=getMesAnoAtual();let categorias=CONFIG.categoriasGastos.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');let conteudo=`<div class="form-group"><label class="form-label"><i class="fas fa-align-left"></i> Descrição</label><input type="text" id="gastoDescricao" class="form-input" placeholder="Ex: Supermercado"></div><div class="form-group"><label class="form-label"><i class="fas fa-money-bill-wave"></i> Valor</label><input type="number" id="gastoValor" class="form-input" placeholder="0,00" step="0.01" inputmode="decimal"></div><div id="gastoOutrosContainer" style="display:none"><div class="form-group"><label class="form-label"><i class="fas fa-pen"></i> Especifique a categoria</label><input type="text" id="gastoOutrosTexto" class="form-input" placeholder="Digite a categoria"></div></div><div style="display:flex;gap:8px"><div class="form-group" style="flex:1"><label class="form-label"><i class="fas fa-calendar-day"></i> Dia</label><input type="number" id="gastoDia" class="form-input" min="1" max="31" value="${App.selectedDay||new Date().getDate()}" inputmode="numeric"></div><div class="form-group" style="flex:1"><label class="form-label"><i class="fas fa-calendar"></i> Mês</label><select id="gastoMes" class="form-select">${CONFIG.meses.map((m,i)=>`<option value="${i+1}" ${i+1===mes?'selected':''}>${m}</option>`).join('')}</select></div><div class="form-group" style="flex:1"><label class="form-label"><i class="fas fa-calendar"></i> Ano</label><input type="number" id="gastoAno" class="form-input" value="${ano}" inputmode="numeric"></div></div><div class="form-group"><label class="form-label"><i class="fas fa-tags"></i> Categoria</label><select id="gastoCategoria" class="form-select" onchange="document.getElementById('gastoOutrosContainer').style.display=this.value==='outros'?'block':'none'">${categorias}</select></div><div class="btn-group" style="margin-top:20px"><button class="btn btn-gasto" onclick="salvarNovoGasto()" style="flex:2"><i class="fas fa-save"></i> Salvar</button><button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button></div>`;abrirModal('Novo Gasto','fa-shopping-bag',conteudo);}
+    
+    async function salvarNovoGasto(){let desc=document.getElementById('gastoDescricao')?.value.trim();let valor=parseCurrency(document.getElementById('gastoValor')?.value);let dia=parseInt(document.getElementById('gastoDia')?.value);let mes=parseInt(document.getElementById('gastoMes')?.value);let ano=parseInt(document.getElementById('gastoAno')?.value);let cat=document.getElementById('gastoCategoria')?.value;let catCustom=null;if(cat==='outros'){catCustom=document.getElementById('gastoOutrosTexto')?.value.trim();if(!catCustom){showToast('Especifique a categoria','warning');return;}}
+        if(!desc||!valor||!dia||!mes||!ano){showToast('Preencha todos os campos','warning');return;}
+        let diaAjustado=Math.min(dia,getDiasNoMes(ano,mes));let data=`${ano}-${String(mes).padStart(2,'0')}-${String(diaAjustado).padStart(2,'0')}`;try{let gastoData={user_id:App.currentUser.id,descricao:desc,valor:valor,categoria:cat||'outros',dia:diaAjustado,mes:mes,ano:ano,data:data,added_by:App.currentUser.email.split('@')[0]};if(cat==='outros'&&catCustom)gastoData.categoria_customizada=catCustom;await App.supabase.from('gastos').insert(gastoData);if(App.saldoCentral.id){let {data:saldoAtual}=await App.supabase.from('saldos').select('valor').eq('id',App.saldoCentral.id).single();if(saldoAtual){let novoValor=saldoAtual.valor-valor;await App.supabase.from('saldos').update({valor:novoValor,data:data}).eq('id',App.saldoCentral.id);App.saldoCentral.valor=novoValor;atualizarSaldoHeader();}}
+        await registrarHistorico('criacao_gasto',`Gasto: ${desc}`,{desc,valor,cat});showToast('Gasto registrado!','success');fecharModal();await carregarDados(true);await atualizarCalendario();await mostrarConteudo();}catch(error){console.error('Erro ao salvar gasto:',error);showToast('Erro: '+error.message,'error');}}
+    
+    function abrirNovoItemLista(){let conteudo=`<div class="form-group"><label class="form-label"><i class="fas fa-hashtag"></i> Quantidade</label><input type="number" id="itemQuantidade" class="form-input" min="1" value="1" inputmode="numeric"></div><div class="form-group"><label class="form-label"><i class="fas fa-box"></i> Item</label><input type="text" id="itemDescricao" class="form-input" placeholder="Ex: Leite"></div><div class="btn-group" style="margin-top:20px"><button class="btn btn-primary" onclick="salvarNovoItemLista()" style="flex:2"><i class="fas fa-save"></i> Adicionar</button><button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button></div>`;abrirModal('Novo Item na Lista','fa-cart-plus',conteudo);}
+    
+    async function salvarNovoItemLista(){let qtd=parseInt(document.getElementById('itemQuantidade')?.value);let desc=document.getElementById('itemDescricao')?.value.trim();if(!qtd||!desc){showToast('Preencha quantidade e descrição','warning');return;}
+        try{await App.supabase.from('lista_compras').insert({user_id:App.currentUser.id,quantidade:qtd,descricao:desc,comprado:false,added_by:App.currentUser.email.split('@')[0]});await registrarHistorico('criacao_lista',`Item adicionado: ${desc}`,{qtd,desc});showToast('Item adicionado!','success');fecharModal();await carregarDados(true);await mostrarConteudo();}catch(error){console.error('Erro:',error);showToast('Erro: '+error.message,'error');}}
+    
+    async function alternarComprado(id){let item=App.dataCache.lista.find(i=>i.id===id);if(!item)return;let novo=!item.comprado;try{await App.supabase.from('lista_compras').update({comprado:novo,comprado_em:novo?new Date().toISOString():null}).eq('id',id);await carregarDados(true);await mostrarConteudo();}catch(error){showToast('Erro ao atualizar','error');}}
+    
+    async function editarItemLista(id){let item=App.dataCache.lista.find(i=>i.id===id);if(!item)return;let conteudo=`<div class="form-group"><label class="form-label"><i class="fas fa-hashtag"></i> Quantidade</label><input type="number" id="editItemQuantidade" class="form-input" min="1" value="${item.quantidade||1}" inputmode="numeric"></div><div class="form-group"><label class="form-label"><i class="fas fa-box"></i> Item</label><input type="text" id="editItemDescricao" class="form-input" value="${item.descricao||''}"></div><div class="btn-group" style="margin-top:20px"><button class="btn btn-primary" onclick="salvarEdicaoItemLista('${item.id}')" style="flex:2"><i class="fas fa-save"></i> Salvar</button><button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button></div>`;abrirModal('Editar Item da Lista','fa-edit',conteudo);}
+    
+    async function salvarEdicaoItemLista(id){let qtd=parseInt(document.getElementById('editItemQuantidade')?.value);let desc=document.getElementById('editItemDescricao')?.value.trim();if(!qtd||!desc){showToast('Preencha todos os campos','warning');return;}
+        try{await App.supabase.from('lista_compras').update({quantidade:qtd,descricao:desc}).eq('id',id);showToast('Item atualizado!','success');fecharModal();await carregarDados(true);await mostrarConteudo();}catch(error){showToast('Erro: '+error.message,'error');}}
+    
+    async function deletarItemLista(id){if(!confirm('Tem certeza?'))return;try{await App.supabase.from('lista_compras').delete().eq('id',id);await carregarDados(true);await mostrarConteudo();}catch(error){showToast('Erro: '+error.message,'error');}}
+    
+    function abrirNovoSaldo(){if(!App.saldoAutenticado){autenticarSaldos();return;}
+        let isCentral=App.dataCache.saldos.length===0;let conteudo=`<div class="form-group"><label class="form-label"><i class="fas fa-tag"></i> Nome do Saldo</label><input type="text" id="saldoNome" class="form-input" placeholder="Ex: Conta Corrente"></div><div class="form-group"><label class="form-label"><i class="fas fa-money-bill-wave"></i> Valor</label><input type="number" id="saldoValor" class="form-input" placeholder="0,00" step="0.01" inputmode="decimal"></div><div class="form-group"><label class="form-label"><i class="fas fa-calendar"></i> Data</label><input type="date" id="saldoData" class="form-input" value="${new Date().toISOString().split('T')[0]}"></div>${isCentral?'<p class="text-center" style="color:var(--success)"><i class="fas fa-info-circle"></i> Este será o saldo central</p>':''}<div class="btn-group" style="margin-top:20px"><button class="btn btn-primary" onclick="salvarNovoSaldo()" style="flex:2"><i class="fas fa-save"></i> Salvar</button><button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button></div>`;abrirModal('Novo Saldo','fa-wallet',conteudo);}
+    
+    async function salvarNovoSaldo(){let nome=document.getElementById('saldoNome')?.value.trim();let valor=parseCurrency(document.getElementById('saldoValor')?.value);let data=document.getElementById('saldoData')?.value;if(!nome||valor===undefined){showToast('Preencha nome e valor','warning');return;}
+        let isCentral=App.dataCache.saldos.length===0;try{let {data:result,error}=await App.supabase.from('saldos').insert({user_id:App.currentUser.id,nome:nome,valor:valor,data:data||new Date().toISOString().split('T')[0],is_central:isCentral,added_by:App.currentUser.email.split('@')[0]}).select();if(error)throw error;if(isCentral&&result&&result[0]){App.saldoCentral.id=result[0].id;App.saldoCentral.valor=valor;atualizarSaldoHeader();}
+        showToast('Saldo salvo!','success');fecharModal();await carregarDados(true);await mostrarConteudo();}catch(error){showToast('Erro: '+error.message,'error');}}
+    
+    function abrirAdicionarValorSaldo(id){if(!App.saldoAutenticado){autenticarSaldos();return;}
+        let conteudo=`<div class="form-group"><label class="form-label"><i class="fas fa-plus-circle"></i> Valor a adicionar</label><input type="number" id="operacaoValor" class="form-input" placeholder="0,00" step="0.01" inputmode="decimal"></div><div class="btn-group" style="margin-top:20px"><button class="btn btn-success" onclick="processarOperacaoSaldo('${id}','adicionar')" style="flex:2"><i class="fas fa-check"></i> Confirmar</button><button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button></div>`;abrirModal('Adicionar Valor','fa-plus-circle',conteudo);}
+    
+    function abrirRetirarValorSaldo(id){if(!App.saldoAutenticado){autenticarSaldos();return;}
+        let conteudo=`<div class="form-group"><label class="form-label"><i class="fas fa-minus-circle"></i> Valor a retirar</label><input type="number" id="operacaoValor" class="form-input" placeholder="0,00" step="0.01" inputmode="decimal"></div><div class="btn-group" style="margin-top:20px"><button class="btn btn-warning" onclick="processarOperacaoSaldo('${id}','retirar')" style="flex:2"><i class="fas fa-check"></i> Confirmar</button><button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button></div>`;abrirModal('Retirar Valor','fa-minus-circle',conteudo);}
+    
+    function abrirAtualizarValorSaldo(id){if(!App.saldoAutenticado){autenticarSaldos();return;}
+        let saldo=App.dataCache.saldos.find(s=>s.id===id);if(!saldo)return;let conteudo=`<div class="form-group"><label class="form-label"><i class="fas fa-sync-alt"></i> Novo valor total</label><input type="number" id="operacaoValor" class="form-input" value="${saldo.valor}" step="0.01" inputmode="decimal"></div><div class="btn-group" style="margin-top:20px"><button class="btn btn-primary" onclick="processarOperacaoSaldo('${id}','atualizar')" style="flex:2"><i class="fas fa-check"></i> Atualizar</button><button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button></div>`;abrirModal('Atualizar Saldo','fa-sync-alt',conteudo);}
+    
+    async function processarOperacaoSaldo(id,tipo){let valor=parseCurrency(document.getElementById('operacaoValor')?.value);if(!valor||valor<=0){showToast('Informe um valor válido','warning');return;}
+        try{let {data:saldoAtual}=await App.supabase.from('saldos').select('valor').eq('id',id).single();if(saldoAtual){let novoValor;if(tipo==='adicionar'){novoValor=saldoAtual.valor+valor;}else if(tipo==='retirar'){novoValor=saldoAtual.valor-valor;if(novoValor<0){showToast('Saldo insuficiente','warning');return;}}else if(tipo==='atualizar'){novoValor=valor;}
+            await App.supabase.from('saldos').update({valor:novoValor,data:new Date().toISOString().split('T')[0]}).eq('id',id);if(id===App.saldoCentral.id){App.saldoCentral.valor=novoValor;atualizarSaldoHeader();}
+            showToast(`Saldo ${tipo==='adicionar'?'adicionado':tipo==='retirar'?'retirado':'atualizado'} com sucesso!`,'success');fecharModal();await carregarDados(true);await mostrarConteudo();}}catch(error){showToast('Erro: '+error.message,'error');}}
+    
+    async function editarSaldo(id){if(!App.saldoAutenticado){autenticarSaldos();return;}
+        let saldo=App.dataCache.saldos.find(s=>s.id===id);if(!saldo)return;let conteudo=`<div class="form-group"><label class="form-label"><i class="fas fa-tag"></i> Nome</label><input type="text" id="editSaldoNome" class="form-input" value="${saldo.nome||''}"></div><div class="form-group"><label class="form-label"><i class="fas fa-money-bill-wave"></i> Valor</label><input type="number" id="editSaldoValor" class="form-input" value="${saldo.valor}" step="0.01" inputmode="decimal"></div><div class="form-group"><label class="form-label"><i class="fas fa-calendar"></i> Data</label><input type="date" id="editSaldoData" class="form-input" value="${saldo.data||new Date().toISOString().split('T')[0]}"></div>${saldo.is_central?'<p class="text-center" style="color:var(--success)"><i class="fas fa-info-circle"></i> Saldo central</p>':''}<div class="btn-group" style="margin-top:20px"><button class="btn btn-primary" onclick="salvarEdicaoSaldo('${saldo.id}')" style="flex:2"><i class="fas fa-save"></i> Salvar</button><button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button></div>`;abrirModal('Editar Saldo','fa-edit',conteudo);}
+    
+    async function salvarEdicaoSaldo(id){let nome=document.getElementById('editSaldoNome')?.value.trim();let valor=parseCurrency(document.getElementById('editSaldoValor')?.value);let data=document.getElementById('editSaldoData')?.value;if(!nome||valor===undefined){showToast('Preencha nome e valor','warning');return;}
+        try{await App.supabase.from('saldos').update({nome:nome,valor:valor,data:data}).eq('id',id);if(id===App.saldoCentral.id){App.saldoCentral.valor=valor;atualizarSaldoHeader();}
+        showToast('Saldo atualizado!','success');fecharModal();await carregarDados(true);await mostrarConteudo();}catch(error){showToast('Erro: '+error.message,'error');}}
+    
+    async function deletarSaldo(id){let saldo=App.dataCache.saldos.find(s=>s.id===id);if(saldo?.is_central){showToast('Saldo central não pode ser excluído','warning');return;}
+        if(!confirm('Excluir este saldo?'))return;try{await App.supabase.from('saldos').delete().eq('id',id);showToast('Saldo excluído!','success');await carregarDados(true);await mostrarConteudo();}catch(error){showToast('Erro: '+error.message,'error');}}
+    
+    function autenticarSaldos(){let senha=prompt('Digite a senha de 4 dígitos para acessar os saldos:');if(!senha)return;if(senha.length!==4||isNaN(senha)){showToast('Senha inválida!','warning');return;}
+        if(senha!==App.saldoSenha){showToast('Senha incorreta!','error');return;}
+        App.saldoAutenticado=true;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));document.querySelector('[data-filter="saldos"]').classList.add('active');App.currentFilter='saldos';mostrarConteudo();showToast('Autenticado!','success');}
+    
+    function abrirMenuSeguranca(){let conteudo=`<p style="margin-bottom:20px"><strong>Alterar Senhas</strong></p><div class="form-group"><label class="form-label">Senha de Acesso (6+ dígitos)</label><input type="password" id="novaSenhaAcesso" class="form-input" placeholder="Nova senha"></div><div class="form-group"><label class="form-label">Confirmar senha de acesso</label><input type="password" id="confirmaSenhaAcesso" class="form-input" placeholder="Confirme"></div><hr style="margin:20px 0"><div class="form-group"><label class="form-label">Senha do Saldo (4 dígitos)</label><input type="password" id="novaSenhaSaldo" class="form-input" placeholder="Nova senha (4 dígitos)"></div><div class="form-group"><label class="form-label">Confirmar senha do saldo</label><input type="password" id="confirmaSenhaSaldo" class="form-input" placeholder="Confirme"></div><div class="btn-group" style="margin-top:20px"><button class="btn btn-primary" onclick="alterarSenhas()" style="flex:2"><i class="fas fa-save"></i> Salvar</button><button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button></div>`;abrirModal('Segurança','fa-lock',conteudo);}
+    
+    async function alterarSenhas(){let novaAcesso=document.getElementById('novaSenhaAcesso')?.value;let confirmaAcesso=document.getElementById('confirmaSenhaAcesso')?.value;let novaSaldo=document.getElementById('novaSenhaSaldo')?.value;let confirmaSaldo=document.getElementById('confirmaSenhaSaldo')?.value;if(novaAcesso||confirmaAcesso){if(novaAcesso!==confirmaAcesso){showToast('As senhas de acesso não conferem','warning');return;}
+        if(novaAcesso.length<6){showToast('Senha de acesso deve ter no mínimo 6 caracteres','warning');return;}
+        try{await App.supabase.auth.updateUser({password:novaAcesso});showToast('Senha de acesso alterada!','success');}catch(error){showToast('Erro ao alterar senha de acesso','error');return;}}
+        if(novaSaldo||confirmaSaldo){if(novaSaldo!==confirmaSaldo){showToast('As senhas do saldo não conferem','warning');return;}
+        if(!/^\d{4}$/.test(novaSaldo)){showToast('Senha do saldo deve ter exatamente 4 dígitos','warning');return;}
+        try{let {data:existing}=await App.supabase.from('configuracoes').select('id').eq('user_id',App.currentUser.id).eq('chave','saldo_senha');if(existing&&existing.length>0){await App.supabase.from('configuracoes').update({valor:novaSaldo}).eq('user_id',App.currentUser.id).eq('chave','saldo_senha');}else{await App.supabase.from('configuracoes').insert({user_id:App.currentUser.id,chave:'saldo_senha',valor:novaSaldo});}
+        App.saldoSenha=novaSaldo;showToast('Senha do saldo alterada!','success');}catch(error){showToast('Erro ao alterar senha do saldo','error');return;}}
+        fecharModal();}
+    
+    async function editarItem(id,tipo,isRecorrente=false,regraId='',isIndividual=false,individualId=''){if(tipo==='conta'){if(isRecorrente||id.toString().startsWith('regra_')){let regraIdReal=id.toString().startsWith('regra_')?id.split('_')[1]:regraId;editarRegraConta(regraIdReal);}else{editarConta(id);}}else if(tipo==='evento'){if(isIndividual||individualId){editarEventoIndividual(individualId);}else if(isRecorrente||id.toString().startsWith('regra_evento_')){let regraIdReal=id.toString().startsWith('regra_evento_')?id.split('_')[2]:regraId;editarRegraEvento(regraIdReal);}else{editarEvento(id);}}else if(tipo==='gasto'){editarGasto(id);}}
+    
+    async function editarRegraEvento(id){let regra=App.dataCache.regrasEventos.find(r=>r.id===id);if(!regra)return;let dataInicio=new Date(regra.data_inicio+'T12:00:00');let tipos=`<div class="btn-group" style="margin-bottom:16px"><button class="event-type-btn normal ${regra.tipo==='normal'||!regra.tipo?'active':''}" onclick="selecionarTipoEventoEdit('normal')"><i class="fas fa-star"></i> Evento</button><button class="event-type-btn amor ${regra.tipo==='amor'?'active':''}" onclick="selecionarTipoEventoEdit('amor')"><i class="fas fa-heart"></i> Data Especial</button><button class="event-type-btn rotina ${regra.tipo==='rotina'?'active':''}" onclick="selecionarTipoEventoEdit('rotina')"><i class="fas fa-redo"></i> Rotina</button><button class="event-type-btn medico ${regra.tipo==='medico'?'active':''}" onclick="selecionarTipoEventoEdit('medico')"><i class="fas fa-user-md"></i> Médico</button></div>`;let frequencias=['unico','semanal','mensal','anual'].map(f=>`<button class="frequency-btn ${f===regra.frequencia?'active':''}" onclick="selecionarFrequenciaEventoEdit('${f}')">${f}</button>`).join('');let conteudo=`${tipos}<input type="hidden" id="editEventoTipo" value="${regra.tipo||'normal'}"><div class="form-group"><label class="form-label"><i class="fas fa-heading"></i> Título</label><input type="text" id="editEventoTitulo" class="form-input" value="${regra.titulo_base||''}"></div><div class="form-group"><label class="form-label"><i class="fas fa-align-left"></i> Descrição</label><textarea id="editEventoDescricao" class="form-textarea" rows="2">${regra.descricao||''}</textarea></div><div class="form-group"><label class="form-label"><i class="fas fa-repeat"></i> Frequência</label><div class="btn-group">${frequencias}</div><input type="hidden" id="editEventoFrequencia" value="${regra.frequencia}"></div><div style="display:flex;gap:8px"><div class="form-group" style="flex:1"><label class="form-label"><i class="fas fa-calendar-day"></i> Dia</label><input type="number" id="editEventoDia" class="form-input" min="1" max="31" value="${regra.dia||''}" inputmode="numeric"></div><div class="form-group" style="flex:1"><label class="form-label"><i class="fas fa-clock"></i> Hora</label><input type="time" id="editEventoHora" class="form-input" value="${regra.hora||''}"></div></div><div class="form-group"><label class="form-label"><i class="fas fa-calendar"></i> Data de Início</label><div style="display:flex;gap:8px"><select id="editEventoInicioMes" class="form-select" style="flex:1">${CONFIG.meses.map((m,i)=>`<option value="${i+1}" ${i+1===dataInicio.getMonth()+1?'selected':''}>${m}</option>`).join('')}</select><input type="number" id="editEventoInicioAno" class="form-input" value="${dataInicio.getFullYear()}" style="flex:1" inputmode="numeric"></div></div><div class="form-group" id="editEventoFimContainer" style="display:${regra.frequencia==='unico'?'none':'block'}"><label class="form-label"><i class="fas fa-calendar-times"></i> Data de Fim (Opcional)</label><div style="display:flex;gap:8px"><select id="editEventoFimMes" class="form-select" style="flex:1"><option value="">Indefinido</option>${CONFIG.meses.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('')}</select><input type="number" id="editEventoFimAno" class="form-input" placeholder="Ano" style="flex:1" inputmode="numeric"></div></div><div class="form-group"><label class="form-label"><i class="fas fa-map-marker-alt"></i> Local</label><input type="text" id="editEventoLocal" class="form-input" value="${regra.local||''}"></div><div class="btn-group" style="margin-top:20px"><button class="btn btn-primary" onclick="salvarEdicaoRegraEvento('${regra.id}')" style="flex:2"><i class="fas fa-save"></i> Salvar</button><button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button></div>`;abrirModal('Editar Regra de Evento','fa-edit',conteudo);}
+    
+    function selecionarTipoEventoEdit(tipo){document.querySelectorAll('.event-type-btn').forEach(b=>b.classList.remove('active'));event.target.classList.add('active');document.getElementById('editEventoTipo').value=tipo;}
+    function selecionarFrequenciaEventoEdit(freq){document.querySelectorAll('.frequency-btn').forEach(b=>b.classList.remove('active'));event.target.classList.add('active');document.getElementById('editEventoFrequencia').value=freq;document.getElementById('editEventoFimContainer').style.display=freq==='unico'?'none':'block';}
+    
+    async function salvarEdicaoRegraEvento(id){let tipo=document.getElementById('editEventoTipo')?.value;let titulo=document.getElementById('editEventoTitulo')?.value.trim();let desc=document.getElementById('editEventoDescricao')?.value.trim();let freq=document.getElementById('editEventoFrequencia')?.value;let dia=parseInt(document.getElementById('editEventoDia')?.value);let hora=document.getElementById('editEventoHora')?.value;let inicioMes=parseInt(document.getElementById('editEventoInicioMes')?.value);let inicioAno=parseInt(document.getElementById('editEventoInicioAno')?.value);let local=document.getElementById('editEventoLocal')?.value.trim();if(!titulo||!dia||!inicioMes||!inicioAno){showToast('Preencha título, dia e data de início','warning');return;}
+        let diaAjustado=Math.min(dia,getDiasNoMes(inicioAno,inicioMes));let dataInicio=`${inicioAno}-${String(inicioMes).padStart(2,'0')}-${String(diaAjustado).padStart(2,'0')}`;let dataFim=null;let fimMes=document.getElementById('editEventoFimMes')?.value;let fimAno=document.getElementById('editEventoFimAno')?.value;if(fimMes&&fimAno&&freq!=='unico'){let diaFim=Math.min(dia,getDiasNoMes(parseInt(fimAno),parseInt(fimMes)));dataFim=`${fimAno}-${String(fimMes).padStart(2,'0')}-${String(diaFim).padStart(2,'0')}`;}
+        try{await App.supabase.from('regras_eventos').update({titulo_base:titulo,descricao:desc||'',dia:diaAjustado,hora:hora||null,local:local||null,tipo,frequencia:freq,data_inicio:dataInicio,data_fim:dataFim}).eq('id',id);showToast('Regra de evento atualizada!','success');fecharModal();await carregarDados(true);await atualizarCalendario();await mostrarConteudo();}catch(error){showToast('Erro: '+error.message,'error');}}
+    
+    async function editarEventoOcorrencia(regraId,dia,mes,ano){let regra=App.dataCache.regrasEventos.find(r=>r.id===regraId);if(!regra)return;let dataOcor=`${ano}-${String(mes).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;let existente=App.dataCache.eventosIndividuais.find(e=>e.regra_id===regraId&&e.data_original===dataOcor);let conteudo=`<div class="form-group"><label class="form-label"><i class="fas fa-heading"></i> Título</label><input type="text" id="editEventoOcorTitulo" class="form-input" value="${existente?.titulo||regra.titulo_base}"></div><div class="form-group"><label class="form-label"><i class="fas fa-align-left"></i> Descrição</label><textarea id="editEventoOcorDescricao" class="form-textarea">${existente?.descricao||regra.descricao||''}</textarea></div><div style="display:flex;gap:8px"><div class="form-group" style="flex:1"><label class="form-label"><i class="fas fa-clock"></i> Hora</label><input type="time" id="editEventoOcorHora" class="form-input" value="${existente?.hora||regra.hora||''}"></div><div class="form-group" style="flex:1"><label class="form-label"><i class="fas fa-map-marker-alt"></i> Local</label><input type="text" id="editEventoOcorLocal" class="form-input" value="${existente?.local||regra.local||''}"></div></div><p class="text-center" style="color:var(--warning)"><i class="fas fa-info-circle"></i> Editando apenas esta ocorrência</p><div class="btn-group" style="margin-top:20px"><button class="btn btn-primary" onclick="salvarEdicaoEventoOcorrencia('${regraId}',${dia},${mes},${ano})" style="flex:2"><i class="fas fa-save"></i> Salvar</button><button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button></div>`;abrirModal('Editar Ocorrência','fa-edit',conteudo);}
+    
+    async function salvarEdicaoEventoOcorrencia(regraId,dia,mes,ano){let titulo=document.getElementById('editEventoOcorTitulo')?.value.trim();let desc=document.getElementById('editEventoOcorDescricao')?.value.trim();let hora=document.getElementById('editEventoOcorHora')?.value;let local=document.getElementById('editEventoOcorLocal')?.value.trim();if(!titulo){showToast('Preencha o título','warning');return;}
+        let dataOcor=`${ano}-${String(mes).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;try{let existente=App.dataCache.eventosIndividuais.find(e=>e.regra_id===regraId&&e.data_original===dataOcor);if(existente){await App.supabase.from('eventos_individuais').update({titulo,descricao:desc||'',hora:hora||null,local:local||null}).eq('id',existente.id);}else{await App.supabase.from('eventos_individuais').insert({user_id:App.currentUser.id,regra_id:regraId,titulo,descricao:desc||'',dia,mes,ano,hora:hora||null,local:local||null,tipo:'normal',data_original:dataOcor,added_by:App.currentUser.email.split('@')[0]});}
+        showToast('Ocorrência atualizada!','success');fecharModal();await carregarDados(true);await atualizarCalendario();await mostrarConteudo();}catch(error){showToast('Erro: '+error.message,'error');}}
+    
+    async function editarEventoIndividual(id){let e=App.dataCache.eventosIndividuais.find(e=>e.id===id);if(!e)return;let conteudo=`<div class="form-group"><label class="form-label"><i class="fas fa-heading"></i> Título</label><input type="text" id="editEventoIndTitulo" class="form-input" value="${e.titulo||''}"></div><div class="form-group"><label class="form-label"><i class="fas fa-align-left"></i> Descrição</label><textarea id="editEventoIndDescricao" class="form-textarea">${e.descricao||''}</textarea></div><div style="display:flex;gap:8px"><div class="form-group" style="flex:1"><label class="form-label"><i class="fas fa-calendar-day"></i> Dia</label><input type="number" id="editEventoIndDia" class="form-input" min="1" max="31" value="${e.dia||''}" inputmode="numeric"></div><div class="form-group" style="flex:1"><label class="form-label"><i class="fas fa-clock"></i> Hora</label><input type="time" id="editEventoIndHora" class="form-input" value="${e.hora||''}"></div></div><div style="display:flex;gap:8px"><div class="form-group" style="flex:1"><label class="form-label"><i class="fas fa-calendar"></i> Mês</label><select id="editEventoIndMes" class="form-select">${CONFIG.meses.map((m,i)=>`<option value="${i+1}" ${i+1===e.mes?'selected':''}>${m}</option>`).join('')}</select></div><div class="form-group" style="flex:1"><label class="form-label"><i class="fas fa-calendar"></i> Ano</label><input type="number" id="editEventoIndAno" class="form-input" value="${e.ano||''}" inputmode="numeric"></div></div><div class="form-group"><label class="form-label"><i class="fas fa-map-marker-alt"></i> Local</label><input type="text" id="editEventoIndLocal" class="form-input" value="${e.local||''}"></div><div class="btn-group" style="margin-top:20px"><button class="btn btn-primary" onclick="salvarEdicaoEventoIndividual('${e.id}')" style="flex:2"><i class="fas fa-save"></i> Salvar</button><button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button></div>`;abrirModal('Editar Ocorrência','fa-edit',conteudo);}
+    
+    async function salvarEdicaoEventoIndividual(id){let titulo=document.getElementById('editEventoIndTitulo')?.value.trim();let desc=document.getElementById('editEventoIndDescricao')?.value.trim();let dia=parseInt(document.getElementById('editEventoIndDia')?.value);let mes=parseInt(document.getElementById('editEventoIndMes')?.value);let ano=parseInt(document.getElementById('editEventoIndAno')?.value);let hora=document.getElementById('editEventoIndHora')?.value;let local=document.getElementById('editEventoIndLocal')?.value.trim();if(!titulo||!dia||!mes||!ano){showToast('Preencha título e data','warning');return;}
+        let diaAjustado=Math.min(dia,getDiasNoMes(ano,mes));try{await App.supabase.from('eventos_individuais').update({titulo,descricao:desc||'',dia:diaAjustado,mes,ano,hora:hora||null,local:local||null}).eq('id',id);showToast('Ocorrência atualizada!','success');fecharModal();await carregarDados(true);await atualizarCalendario();await mostrarConteudo();}catch(error){showToast('Erro: '+error.message,'error');}}
+    
+    async function editarConta(id){let c=App.dataCache.contas.find(c=>c.id===id);if(!c)return;let conteudo=`<div class="form-group"><label class="form-label"><i class="fas fa-tag"></i> Descrição</label><input type="text" id="editContaDescricao" class="form-input" value="${c.descricao||''}"></div><div class="form-group"><label class="form-label"><i class="fas fa-calendar-day"></i> Dia</label><input type="number" id="editContaDia" class="form-input" min="1" max="31" value="${c.dia||c.dia_vencimento||''}" inputmode="numeric"></div><div class="form-group"><label class="form-label"><i class="fas fa-calendar"></i> Mês/Ano</label><div style="display:flex;gap:8px"><select id="editContaMes" class="form-select">${CONFIG.meses.map((m,i)=>`<option value="${i+1}" ${i+1===c.mes?'selected':''}>${m}</option>`).join('')}</select><input type="number" id="editContaAno" class="form-input" value="${c.ano||''}" inputmode="numeric"></div></div><div class="form-group"><label class="form-label"><i class="fas fa-money-bill-wave"></i> Valor Original</label><input type="number" id="editContaValorOriginal" class="form-input" value="${c.valor_original||c.valor||''}" step="0.01" inputmode="decimal"></div><div class="form-group"><label class="form-label"><i class="fas fa-money-bill-wave"></i> Valor Pago</label><input type="number" id="editContaValorPago" class="form-input" value="${c.valor_pago||''}" step="0.01" inputmode="decimal"></div><div class="form-group"><label class="form-label"><i class="fas fa-check-circle"></i> Status</label><select id="editContaStatus" class="form-select"><option value="pendente" ${c.status==='pendente'?'selected':''}>Pendente</option><option value="paga" ${c.status==='paga'?'selected':''}>Paga</option></select></div><div class="btn-group" style="margin-top:20px"><button class="btn btn-primary" onclick="salvarEdicaoConta('${c.id}')" style="flex:2"><i class="fas fa-save"></i> Salvar</button><button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button></div>`;abrirModal('Editar Conta','fa-edit',conteudo);}
+    
+    async function salvarEdicaoConta(id){let desc=document.getElementById('editContaDescricao')?.value.trim();let dia=parseInt(document.getElementById('editContaDia')?.value);let mes=parseInt(document.getElementById('editContaMes')?.value);let ano=parseInt(document.getElementById('editContaAno')?.value);let valOrig=parseCurrency(document.getElementById('editContaValorOriginal')?.value);let valPago=parseCurrency(document.getElementById('editContaValorPago')?.value);let status=document.getElementById('editContaStatus')?.value;if(!desc||!dia||!mes||!ano){showToast('Preencha todos os campos','warning');return;}
+        let diaAjustado=Math.min(dia,getDiasNoMes(ano,mes));try{await App.supabase.from('contas').update({descricao:desc,dia:diaAjustado,mes,ano,valor_original:valOrig,valor_pago:valPago,status}).eq('id',id);showToast('Conta atualizada!','success');fecharModal();await carregarDados(true);await atualizarCalendario();await mostrarConteudo();}catch(error){showToast('Erro: '+error.message,'error');}}
+    
+    async function editarRegraConta(id){let r=App.dataCache.regrasContas.find(r=>r.id===id);if(!r)return;let dataInicio=new Date(r.data_inicio+'T12:00:00');let frequencias=['unico','semanal','mensal','anual'].map(f=>`<button class="frequency-btn ${f===r.frequencia?'active':''}" onclick="selecionarFrequenciaEdit('${f}')">${f}</button>`).join('');let conteudo=`<div class="form-group"><label class="form-label"><i class="fas fa-tag"></i> Descrição Base</label><input type="text" id="editRegraDescricao" class="form-input" value="${r.descricao_base||''}"></div><div class="form-group"><label class="form-label"><i class="fas fa-repeat"></i> Frequência</label><div class="btn-group">${frequencias}</div><input type="hidden" id="editRegraFrequencia" value="${r.frequencia}"></div><div class="form-group"><label class="form-label"><i class="fas fa-calendar-day"></i> Dia do Vencimento</label><input type="number" id="editRegraDia" class="form-input" min="1" max="31" value="${r.dia_vencimento||''}" inputmode="numeric"></div><div class="form-group"><label class="form-label"><i class="fas fa-money-bill-wave"></i> Valor</label><input type="number" id="editRegraValor" class="form-input" value="${r.valor||''}" step="0.01" inputmode="decimal"></div><div class="form-group"><label class="form-label"><i class="fas fa-calendar"></i> Data de Início</label><div style="display:flex;gap:8px"><select id="editRegraInicioMes" class="form-select">${CONFIG.meses.map((m,i)=>`<option value="${i+1}" ${i+1===dataInicio.getMonth()+1?'selected':''}>${m}</option>`).join('')}</select><input type="number" id="editRegraInicioAno" class="form-input" value="${dataInicio.getFullYear()}" inputmode="numeric"></div></div><div class="form-group" id="editRegraFimContainer" style="display:${r.frequencia==='unico'?'none':'block'}"><label class="form-label"><i class="fas fa-calendar-times"></i> Data de Fim</label><div style="display:flex;gap:8px"><select id="editRegraFimMes" class="form-select"><option value="">Indefinido</option>${CONFIG.meses.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('')}</select><input type="number" id="editRegraFimAno" class="form-input" placeholder="Ano" inputmode="numeric"></div></div><div class="btn-group" style="margin-top:20px"><button class="btn btn-primary" onclick="salvarEdicaoRegraConta('${r.id}')" style="flex:2"><i class="fas fa-save"></i> Salvar</button><button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button></div>`;abrirModal('Editar Regra de Conta','fa-edit',conteudo);}
+    function selecionarFrequenciaEdit(freq){document.querySelectorAll('.frequency-btn').forEach(b=>b.classList.remove('active'));event.target.classList.add('active');document.getElementById('editRegraFrequencia').value=freq;document.getElementById('editRegraFimContainer').style.display=freq==='unico'?'none':'block';}
+    
+    async function salvarEdicaoRegraConta(id){let desc=document.getElementById('editRegraDescricao')?.value.trim();let freq=document.getElementById('editRegraFrequencia')?.value;let dia=parseInt(document.getElementById('editRegraDia')?.value);let valor=parseCurrency(document.getElementById('editRegraValor')?.value);let inicioMes=parseInt(document.getElementById('editRegraInicioMes')?.value);let inicioAno=parseInt(document.getElementById('editRegraInicioAno')?.value);if(!desc||!dia||!valor||!inicioMes||!inicioAno){showToast('Preencha todos os campos','warning');return;}
+        let diaAjustado=Math.min(dia,getDiasNoMes(inicioAno,inicioMes));let dataInicio=`${inicioAno}-${String(inicioMes).padStart(2,'0')}-${String(diaAjustado).padStart(2,'0')}`;let dataFim=null;let fimMes=document.getElementById('editRegraFimMes')?.value;let fimAno=document.getElementById('editRegraFimAno')?.value;if(fimMes&&fimAno&&freq!=='unico'){let diaFim=Math.min(dia,getDiasNoMes(parseInt(fimAno),parseInt(fimMes)));dataFim=`${fimAno}-${String(fimMes).padStart(2,'0')}-${String(diaFim).padStart(2,'0')}`;}
+        try{await App.supabase.from('regras_contas').update({descricao_base:desc,dia_vencimento:diaAjustado,valor:valor,frequencia:freq,data_inicio:dataInicio,data_fim:dataFim}).eq('id',id);showToast('Regra atualizada!','success');fecharModal();await carregarDados(true);await atualizarCalendario();await mostrarConteudo();}catch(error){showToast('Erro: '+error.message,'error');}}
+    
+    async function editarEvento(id){let e=App.dataCache.eventos.find(e=>e.id===id);if(!e)return;let conteudo=`<div class="form-group"><label class="form-label"><i class="fas fa-heading"></i> Título</label><input type="text" id="editEventoTitulo" class="form-input" value="${e.titulo||''}"></div><div class="form-group"><label class="form-label"><i class="fas fa-align-left"></i> Descrição</label><textarea id="editEventoDescricao" class="form-textarea">${e.descricao||''}</textarea></div><div style="display:flex;gap:8px"><div class="form-group" style="flex:1"><label class="form-label"><i class="fas fa-calendar-day"></i> Dia</label><input type="number" id="editEventoDia" class="form-input" min="1" max="31" value="${e.dia||''}" inputmode="numeric"></div><div class="form-group" style="flex:1"><label class="form-label"><i class="fas fa-clock"></i> Hora</label><input type="time" id="editEventoHora" class="form-input" value="${e.hora||''}"></div></div><div style="display:flex;gap:8px"><div class="form-group" style="flex:1"><label class="form-label"><i class="fas fa-calendar"></i> Mês</label><select id="editEventoMes" class="form-select">${CONFIG.meses.map((m,i)=>`<option value="${i+1}" ${i+1===e.mes?'selected':''}>${m}</option>`).join('')}</select></div><div class="form-group" style="flex:1"><label class="form-label"><i class="fas fa-calendar"></i> Ano</label><input type="number" id="editEventoAno" class="form-input" value="${e.ano||''}" inputmode="numeric"></div></div><div class="form-group"><label class="form-label"><i class="fas fa-map-marker-alt"></i> Local</label><input type="text" id="editEventoLocal" class="form-input" value="${e.local||''}"></div><div class="btn-group" style="margin-top:20px"><button class="btn btn-primary" onclick="salvarEdicaoEvento('${e.id}')" style="flex:2"><i class="fas fa-save"></i> Salvar</button><button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button></div>`;abrirModal('Editar Evento','fa-edit',conteudo);}
+    
+    async function salvarEdicaoEvento(id){let titulo=document.getElementById('editEventoTitulo')?.value.trim();let desc=document.getElementById('editEventoDescricao')?.value.trim();let dia=parseInt(document.getElementById('editEventoDia')?.value);let mes=parseInt(document.getElementById('editEventoMes')?.value);let ano=parseInt(document.getElementById('editEventoAno')?.value);let hora=document.getElementById('editEventoHora')?.value;let local=document.getElementById('editEventoLocal')?.value.trim();if(!titulo||!dia||!mes||!ano){showToast('Preencha título e data','warning');return;}
+        let diaAjustado=Math.min(dia,getDiasNoMes(ano,mes));try{await App.supabase.from('eventos').update({titulo,descricao:desc||'',dia:diaAjustado,mes,ano,hora:hora||null,local:local||null}).eq('id',id);showToast('Evento atualizado!','success');fecharModal();await carregarDados(true);await atualizarCalendario();await mostrarConteudo();}catch(error){showToast('Erro: '+error.message,'error');}}
+    
+    async function editarGasto(id){let g=App.dataCache.gastos.find(g=>g.id===id);if(!g)return;let categorias=CONFIG.categoriasGastos.map(c=>`<option value="${c.id}" ${c.id===g.categoria?'selected':''}>${c.nome}</option>`).join('');let conteudo=`<div class="form-group"><label class="form-label"><i class="fas fa-align-left"></i> Descrição</label><input type="text" id="editGastoDescricao" class="form-input" value="${g.descricao||''}"></div><div class="form-group"><label class="form-label"><i class="fas fa-money-bill-wave"></i> Valor</label><input type="number" id="editGastoValor" class="form-input" value="${g.valor||''}" step="0.01" inputmode="decimal"></div><div style="display:flex;gap:8px"><div class="form-group" style="flex:1"><label class="form-label"><i class="fas fa-calendar-day"></i> Dia</label><input type="number" id="editGastoDia" class="form-input" min="1" max="31" value="${g.dia||''}" inputmode="numeric"></div><div class="form-group" style="flex:1"><label class="form-label"><i class="fas fa-calendar"></i> Mês</label><select id="editGastoMes" class="form-select">${CONFIG.meses.map((m,i)=>`<option value="${i+1}" ${i+1===g.mes?'selected':''}>${m}</option>`).join('')}</select></div><div class="form-group" style="flex:1"><label class="form-label"><i class="fas fa-calendar"></i> Ano</label><input type="number" id="editGastoAno" class="form-input" value="${g.ano||''}" inputmode="numeric"></div></div><div class="form-group"><label class="form-label"><i class="fas fa-tags"></i> Categoria</label><select id="editGastoCategoria" class="form-select">${categorias}</select></div><div class="btn-group" style="margin-top:20px"><button class="btn btn-gasto" onclick="salvarEdicaoGasto('${g.id}')" style="flex:2"><i class="fas fa-save"></i> Salvar</button><button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button></div>`;abrirModal('Editar Gasto','fa-edit',conteudo);}
+    
+    async function salvarEdicaoGasto(id){let desc=document.getElementById('editGastoDescricao')?.value.trim();let valor=parseCurrency(document.getElementById('editGastoValor')?.value);let dia=parseInt(document.getElementById('editGastoDia')?.value);let mes=parseInt(document.getElementById('editGastoMes')?.value);let ano=parseInt(document.getElementById('editGastoAno')?.value);let cat=document.getElementById('editGastoCategoria')?.value;if(!desc||!valor||!dia||!mes||!ano){showToast('Preencha todos os campos','warning');return;}
+        let diaAjustado=Math.min(dia,getDiasNoMes(ano,mes));let g=App.dataCache.gastos.find(g=>g.id===id);let valorAntigo=g.valor;let diferenca=valor-valorAntigo;try{await App.supabase.from('gastos').update({descricao:desc,valor:valor,categoria:cat||'outros',dia:diaAjustado,mes:mes,ano:ano}).eq('id',id);if(diferenca!==0&&App.saldoCentral.id){let {data:saldoAtual}=await App.supabase.from('saldos').select('valor').eq('id',App.saldoCentral.id).single();if(saldoAtual){let novoValor=saldoAtual.valor-diferenca;await App.supabase.from('saldos').update({valor:novoValor}).eq('id',App.saldoCentral.id);App.saldoCentral.valor=novoValor;atualizarSaldoHeader();}}
+        showToast('Gasto atualizado!','success');fecharModal();await carregarDados(true);await atualizarCalendario();await mostrarConteudo();}catch(error){showToast('Erro: '+error.message,'error');}}
+    
+    function abrirMenuRelatorio(){let html='<div class="items-list" style="max-height:60vh;overflow-y:auto">';if(App.historicoAcoes.length===0){html+='<div class="empty-state"><i class="fas fa-history"></i><p>Nenhuma ação registrada</p></div>';}else{html+='<div style="padding:10px;background:#f8f9fa;margin-bottom:10px;border-radius:4px;text-align:center"><strong>Total: '+App.historicoAcoes.length+'</strong></div>';App.historicoAcoes.slice(0,50).forEach((a,i)=>{let data=new Date(a.data).toLocaleString('pt-BR');let cor='var(--purple)';if(a.tipo.includes('pagamento'))cor='var(--success)';if(a.tipo.includes('exclusao'))cor='var(--danger)';if(a.tipo.includes('edicao'))cor='var(--warning)';let detalhes=a.detalhes||{};let infoExtra='';if(a.tipo.includes('pagamento')||a.tipo.includes('gasto'))infoExtra=` - Valor: ${formatCurrency(detalhes.valor_pago||detalhes.valor||0)}`;else if(a.tipo.includes('edicao')&&detalhes.valor_anterior&&detalhes.valor_novo)infoExtra=` - R$ ${detalhes.valor_anterior} → R$ ${detalhes.valor_novo}`;html+=`<div class="item-card" style="border-left-color:${cor}"><div class="item-info"><div class="item-title"><i class="fas ${a.tipo.includes('criacao')?'fa-plus-circle':a.tipo.includes('pagamento')?'fa-check-circle':a.tipo.includes('exclusao')?'fa-trash':a.tipo.includes('edicao')?'fa-edit':'fa-history'}"></i> ${a.descricao}${infoExtra}</div><div class="item-details">${data} • ${a.usuario||''}</div></div></div>`;});}
+        html+='</div><div class="btn-group" style="margin-top:20px"><button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Fechar</button></div>';abrirModal('Últimas 50 Ações','fa-history',html);}
+    
+    function abrirMenuPosicaoFab(){let conteudo=`<div style="text-align:center"><i class="fas fa-arrows-alt" style="font-size:3em;color:var(--purple);margin-bottom:16px"></i><p><strong>O botão flutuante (+) pode ser movido livremente!</strong></p><p style="margin:16px 0">Para movê-lo, basta clicar e segurar sobre o botão e arrastar para a posição desejada.</p><p>O aplicativo lembrará a última posição escolhida.</p><div class="btn-group" style="margin-top:20px"><button class="btn btn-primary" onclick="fecharModal()" style="flex:1">Entendi</button></div></div>`;abrirModal('Movendo o Botão','fa-arrows-alt',conteudo);}
+    
+    function abrirManual(){let conteudo=`<div class="manual-section"><h3><i class="fas fa-home"></i> Home Life - Manual Rápido</h3><p>Bem-vindo ao seu gestor doméstico! Aqui está um guia rápido das funcionalidades:</p><div class="manual-section"><h4>📅 Calendário</h4><ul><li><strong>Balões coloridos:</strong> mostram contas a pagar (verde = normal, vermelho = vencida)</li><li><strong>Emojis abaixo:</strong> representam eventos (⭐ = evento, ❤️ = data especial, ⌚ = rotina, 💊 = médico)</li><li><strong>Clique em um dia</strong> para filtrar os itens da lista por esse dia</li></ul></div><div class="manual-section"><h4>💰 Contas</h4><ul><li>Cadastre contas fixas ou recorrentes (semanal, mensal, anual)</li><li>Ao pagar, o valor é debitado do saldo central automaticamente</li><li>Contas vencidas aparecem em vermelho no calendário</li></ul></div><div class="manual-section"><h4>🎉 Eventos</h4><ul><li>Crie eventos comuns, datas especiais (❤️), rotinas (⌚) ou consultas médicas (💊)</li><li>Eventos recorrentes podem ser editados individualmente ou em massa</li></ul></div><div class="manual-section"><h4>🛒 Gastos e Lista</h4><ul><li><strong>Gastos:</strong> registre compras e o valor é debitado do saldo central</li><li><strong>Lista de compras:</strong> mantenha controle de itens a comprar e marque como comprado</li></ul></div><div class="manual-section"><h4>💵 Saldos</h4><ul><li>Protegido por senha de 4 dígitos (padrão: 1234)</li><li>O saldo central é afetado por pagamentos de contas e gastos</li><li>Você pode adicionar, retirar ou atualizar o valor manualmente</li></ul></div><div class="manual-section"><h4>➕ Botão Flutuante</h4><ul><li>Use o botão (+) para criar rapidamente contas, eventos, gastos ou itens de lista</li><li>Você pode arrastá-lo para qualquer posição na tela</li></ul></div><div class="manual-section"><h4>⚙️ Menu Lateral (Home Life)</h4><ul><li><strong>Relatório:</strong> histórico das últimas ações</li><li><strong>Posição Botão:</strong> informações sobre como mover o botão flutuante</li><li><strong>Segurança:</strong> altere a senha de acesso e a senha dos saldos</li><li><strong>Manual:</strong> este guia rápido</li></ul></div><p style="margin-top:16px;color:var(--purple);text-align:center"><i class="fas fa-smile"></i> Aproveite o Home Life!</p><div class="btn-group" style="margin-top:20px"><button class="btn btn-primary" onclick="fecharModal()" style="flex:1">Fechar</button></div></div>`;abrirModal('Manual de Instruções','fa-book',conteudo);}
+    
+    function selecionarPosicaoFab(i){let pos=CONFIG.posicoesFab[i].pos;let fab=document.getElementById('fabContainer');Object.assign(fab.style,pos);fab.style.bottom=pos.bottom||'auto';fab.style.top=pos.top||'auto';fab.style.left=pos.left||'auto';fab.style.right=pos.right||'auto';fab.style.transform=pos.transform||'none';localStorage.setItem('fabPosition',JSON.stringify(pos));showToast('Posição salva!','success');fecharModal();}
+    
+    function carregarPosicaoFab() {
+        try {
+            const fab = document.getElementById('fabContainer');
+            if (!fab) return;
+            
+            // Posição padrão (180px do bottom)
+            let pos = {
+                bottom: '180px',
+                right: '20px'
+            };
+            
+            // Tenta carregar posição salva
+            const saved = localStorage.getItem('fabPosition');
+            if (saved) {
+                try {
+                    const savedPos = JSON.parse(saved);
+                    if (savedPos.bottom || savedPos.top || savedPos.left || savedPos.right) {
+                        pos = savedPos;
+                    }
+                } catch (e) {
+                    console.warn('Posição salva inválida, usando padrão');
+                }
+            }
+            
+            Object.assign(fab.style, {
+                bottom: pos.bottom || '180px',
+                right: pos.right || '20px',
+                top: pos.top || 'auto',
+                left: pos.left || 'auto',
+                transform: pos.transform || 'none'
+            });
+            
+            fab.style.display = 'block';
+            
+        } catch (error) {
+            console.error('Erro ao carregar posição:', error);
+            const fab = document.getElementById('fabContainer');
+            if (fab) {
+                fab.style.bottom = '180px';
+                fab.style.right = '20px';
+            }
+        }
+    }
+    
+   function inicializarFabMovel(){let fab=document.getElementById('fabContainer');let offX=0,offY=0,drag=false;fab.addEventListener('mousedown',e=>{if(e.target.classList.contains('fab-main')||e.target===fab){drag=true;offX=e.clientX-fab.offsetLeft;offY=e.clientY-fab.offsetTop;fab.style.transition='none';}});document.addEventListener('mousemove',e=>{if(drag){e.preventDefault();let x=e.clientX-offX,y=e.clientY-offY;fab.style.left=Math.min(Math.max(0,x),window.innerWidth-fab.offsetWidth)+'px';fab.style.top=Math.min(Math.max(0,y),window.innerHeight-fab.offsetHeight)+'px';fab.style.right='auto';fab.style.bottom='auto';}});document.addEventListener('mouseup',()=>{if(drag){drag=false;fab.style.transition='';}});fab.addEventListener('touchstart',e=>{if(e.target.classList.contains('fab-main')||e.target===fab){drag=true;let t=e.touches[0];offX=t.clientX-fab.offsetLeft;offY=t.clientY-fab.offsetTop;fab.style.transition='none';}});document.addEventListener('touchmove',e=>{if(drag){e.preventDefault();let t=e.touches[0],x=t.clientX-offX,y=t.clientY-offY;fab.style.left=Math.min(Math.max(0,x),window.innerWidth-fab.offsetWidth)+'px';fab.style.top=Math.min(Math.max(0,y),window.innerHeight-fab.offsetHeight)+'px';fab.style.right='auto';fab.style.bottom='auto';}});document.addEventListener('touchend',()=>{if(drag){drag=false;fab.style.transition='';}});}
+    
+    function resetarParaHoje(){let hoje=new Date();App.currentMonthOffset=0;App.selectedDay=hoje.getDate();App.currentFilter='all';document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));document.querySelector('[data-filter="all"]').classList.add('active');atualizarCalendario();mostrarConteudo();}
+    
+    function abrirSideMenu() {
+        document.getElementById('sideMenu').classList.add('open');
+        document.getElementById('sideMenuOverlay').classList.add('open');
+    }
+    
+    function fecharSideMenu() {
+        document.getElementById('sideMenu').classList.remove('open');
+        document.getElementById('sideMenuOverlay').classList.remove('open');
+    }
+    
+    async function init(){
+        try{
+            App.supabase=window.supabase.createClient(CONFIG.supabase.url,CONFIG.supabase.anonKey);
+            let {data:{session}}=await App.supabase.auth.getSession();
+            
+            if(session){
+                App.currentUser=session.user;
+                document.getElementById('authContainer').style.display='none';
+                document.getElementById('mainContainer').style.display='block';
+                
+                // Carregar dados e renderizar tudo imediatamente
+                await carregarDados(true);
+                carregarPosicaoFab();
+                
+                // Resetar para hoje (garante calendário preenchido)
+                let hoje=new Date();
+                App.currentMonthOffset=0;
+                App.selectedDay=hoje.getDate();
+                App.currentFilter='all';
+                document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+                document.querySelector('[data-filter="all"]').classList.add('active');
+                
+                await atualizarCalendario();
+                await mostrarConteudo();
+            } else {
+                document.getElementById('authContainer').style.display='flex';
+            }
+            
+            document.getElementById('btnLogin').addEventListener('click',async()=>{
+                let email=document.getElementById('loginEmail').value.trim(),pass=document.getElementById('loginPassword').value;
+                if(!email||!pass){showToast('Preencha email e senha','warning');return;}
+                try{
+                    let {data,error}=await App.supabase.auth.signInWithPassword({email,password:pass});
+                    if(error) showToast(error.message,'error');
+                    else{
+                        App.currentUser=data.user;
+                        document.getElementById('authContainer').style.display='none';
+                        document.getElementById('mainContainer').style.display='block';
+                        await carregarDados(true);
+                        carregarPosicaoFab();
+                        resetarParaHoje();
+                        showToast('Login realizado!','success');
+                    }
+                } catch(e){showToast('Erro no login','error');}
+            });
+            
+            document.getElementById('btnRegister').addEventListener('click',async()=>{
+                let email=document.getElementById('registerEmail').value.trim(),pass=document.getElementById('registerPassword').value;
+                if(!email||!pass){showToast('Preencha email e senha','warning');return;}
+                if(pass.length<6){showToast('Senha mínimo 6 caracteres','warning');return;}
+                try{
+                    let {error}=await App.supabase.auth.signUp({email,password:pass});
+                    if(error) showToast(error.message,'error');
+                    else{
+                        showToast('Conta criada! Faça login.','success');
+                        document.getElementById('registerForm').style.display='none';
+                        document.getElementById('loginForm').style.display='block';
+                    }
+                } catch(e){showToast('Erro no registro','error');}
+            });
+            
+            document.getElementById('btnLogout').addEventListener('click',()=>{
+                if(confirm('Deseja realmente sair?')){
+                    App.supabase.auth.signOut();
+                    App.currentUser=null;
+                    App.saldoAutenticado=false;
+                    document.getElementById('authContainer').style.display='flex';
+                    document.getElementById('mainContainer').style.display='none';
+                }
+            });
+            
+            document.getElementById('btnHistorico').addEventListener('click',abrirMenuRelatorio);
+            document.getElementById('linkRegister').addEventListener('click',()=>{
+                document.getElementById('loginForm').style.display='none';
+                document.getElementById('registerForm').style.display='block';
+            });
+            
+            document.getElementById('linkLogin').addEventListener('click',()=>{
+                document.getElementById('registerForm').style.display='none';
+                document.getElementById('loginForm').style.display='block';
+            });
+            
+            document.getElementById('btnToday').addEventListener('click',resetarParaHoje);
+            document.getElementById('btnPrevMonth').addEventListener('click',()=>{
+                App.currentMonthOffset--;
+                App.selectedDay=null;
+                atualizarCalendario();
+                mostrarConteudo();
+            });
+            
+            document.getElementById('btnNextMonth').addEventListener('click',()=>{
+                App.currentMonthOffset++;
+                App.selectedDay=null;
+                atualizarCalendario();
+                mostrarConteudo();
+            });
+            
+            document.getElementById('btnSaldoHeader').addEventListener('click',autenticarSaldos);
+            
+            document.getElementById('btnMenu').addEventListener('click',abrirSideMenu);
+            document.getElementById('sideMenuOverlay').addEventListener('click',fecharSideMenu);
+            
+            document.querySelectorAll('.filter-btn').forEach(btn=>{
+                btn.addEventListener('click',function(){
+                    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+                    this.classList.add('active');
+                    App.currentFilter=this.dataset.filter;
+                    mostrarConteudo();
+                });
+            });
+            
+            document.getElementById('fabMain').addEventListener('click',()=>{
+                document.getElementById('fabContainer').classList.toggle('open');
+            });
+            
+            document.addEventListener('click',e=>{
+                if(!document.getElementById('fabContainer').contains(e.target)){
+                    document.getElementById('fabContainer').classList.remove('open');
+                }
+            });
+            
+            document.getElementById('modalOverlay').addEventListener('click',e=>{
+                if(e.target===e.currentTarget) fecharModal();
+            });
+            
+            // Pequeno atraso para garantir que o DOM esteja completamente carregado
+setTimeout(() => {
+    inicializarFabMovel();
+}, 100);
+            
+        } catch(error){
+            console.error('Erro na inicialização:',error);
+            showToast('Erro ao iniciar aplicativo: '+error.message,'error');
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>
+
+

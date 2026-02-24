@@ -515,7 +515,7 @@
 
         .filter-buttons {
             display: flex;
-            gap: 4px;
+            gap: 20px;
             justify-content: center;
             position: relative
         }
@@ -1385,6 +1385,25 @@
             border: 1px solid var(--purple)
         }
 
+        .inline-calendar-day.disabled {
+            opacity: 0.3;
+            pointer-events: none;
+            background: #f0f0f0;
+            cursor: not-allowed
+        }
+
+        .inline-calendar-day.active {
+            background: var(--bg-success-light);
+            color: var(--text-success);
+            font-weight: 600;
+            border: 1px solid var(--success)
+        }
+
+        .inline-calendar-day.active:hover {
+            background: var(--success);
+            color: #fff
+        }
+
         .extrato-item {
             padding: 12px;
             border-bottom: 1px solid #eee;
@@ -1659,6 +1678,7 @@
             selectedMonth: new Date().getMonth() + 1,
             selectedYear: new Date().getFullYear(),
             saldoSenha: '1234',
+            acessoNovaSenha: '',
             saldoAutenticado: false,
             modalHasChanges: false,
             pendingDelete: null,
@@ -1978,6 +1998,8 @@
                     ...App.notificacoesConfig,
                     ...config.notificacoes
                 };
+                if (config.saldoSenha) App.saldoSenha = config.saldoSenha;
+                if (config.acessoNovaSenha) App.acessoNovaSenha = config.acessoNovaSenha;
             } catch (e) { }
         }
 
@@ -1985,7 +2007,9 @@
             if (!App.currentUser) return;
             const key = `homelife_config_${App.currentUser.id}`;
             localStorage.setItem(key, JSON.stringify({
-                notificacoes: App.notificacoesConfig
+                notificacoes: App.notificacoesConfig,
+                saldoSenha: App.saldoSenha,
+                acessoNovaSenha: App.acessoNovaSenha
             }));
         }
 
@@ -2449,10 +2473,12 @@
                 titulo = item.descricao || 'Conta sem descrição';
                 if (item.frequencia && item.frequencia !== 'unico') titulo += ` <span class="item-badge badge-recorrente">${item.frequencia}</span>`;
                 detalhes = `Vence ${item.dia || item.dia_vencimento} ${getNomeMes(item.mes || mes)}/${item.ano || ano}`;
-                valor = formatCurrency(item.valor_original || item.valor || 0);
+                
+                let valorExibicao = item.valor_pago > 0 ? item.valor_pago : (item.valor_original || item.valor || 0);
+                valor = formatCurrency(valorExibicao);
                 
                 if (item.valor_pago > 0 || item.status === 'paga') {
-                    botoes += `<button class="action-btn undo" onclick="event.stopPropagation();abrirModalDesfazerPagamento('${item.id}','${item.descricao}',${item.valor_pago || item.valor_original || item.valor || 0},'${item.regra_id || ''}',${item.dia || item.dia_vencimento},${item.mes || mes},${item.ano || ano},${item.isRecorrente || false})"><i class="fas fa-undo-alt"></i></button>`;
+                    botoes += `<button class="action-btn undo" onclick="event.stopPropagation();abrirModalDesfazerPagamento('${item.id}','${item.descricao}',${valorExibicao},'${item.regra_id || ''}',${item.dia || item.dia_vencimento},${item.mes || mes},${item.ano || ano},${item.isRecorrente || false})"><i class="fas fa-undo-alt"></i></button>`;
                 } else {
                     botoes += `<button class="action-btn pay" onclick="event.stopPropagation();abrirModalPagamento('${item.id}','${item.descricao}',${item.valor_original || item.valor || 0},'${item.regra_id || ''}',${item.dia || item.dia_vencimento},${item.mes || mes},${item.ano || ano},${item.isRecorrente || false}, '${item.codigo_pagamento || ''}')"><i class="fas fa-dollar-sign"></i></button>`;
                 }
@@ -2928,7 +2954,7 @@
             }
         }
 
-        // Função para abrir novo evento
+        // Função para abrir novo evento com calendário inteligente
         function abrirNovoEventoUnificado() {
             let { mes, ano } = getMesAnoAtual();
             let diaPadrao = App.selectedDay || new Date().getDate();
@@ -2949,17 +2975,26 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label"><i class="fas fa-repeat"></i> Frequência</label>
-                    <select id="eventoFrequencia" class="form-select" onchange="if(this.value==='unico') { document.getElementById('eventoDataFimDiv').style.display='block'; } else { document.getElementById('eventoDataFimDiv').style.display='block'; }">
+                    <select id="eventoFrequencia" class="form-select" onchange="atualizarVisibilidadeDataFim()">
                         ${frequenciasHtml}
                     </select>
                 </div>
                 <div class="form-group">
                     <label class="form-label"><i class="fas fa-calendar-day"></i> Data de Início</label>
-                    <input type="date" id="eventoDataInicio" class="form-input" value="${ano}-${String(mes).padStart(2, '0')}-${String(diaPadrao).padStart(2, '0')}">
+                    <input type="date" id="eventoDataInicio" class="form-input" onchange="atualizarCalendarioInteligente()" value="${ano}-${String(mes).padStart(2, '0')}-${String(diaPadrao).padStart(2, '0')}">
                 </div>
                 <div id="eventoDataFimDiv" class="form-group">
                     <label class="form-label"><i class="fas fa-calendar-day"></i> Data de Fim (para eventos de múltiplos dias)</label>
-                    <input type="date" id="eventoDataFim" class="form-input">
+                    <input type="date" id="eventoDataFim" class="form-input" onchange="atualizarCalendarioInteligente()">
+                </div>
+                <div id="eventoCalendarioInteligente" class="inline-calendar" style="display:none;">
+                    <div style="margin-bottom:8px; font-size:0.9em; color:var(--purple)">
+                        <i class="fas fa-info-circle"></i> Selecione as datas recorrentes (em branco = indefinido)
+                    </div>
+                    <div class="inline-calendar-grid" id="calendarioInteligenteGrid"></div>
+                    <div style="margin-top:8px; text-align:center; font-size:0.8em; color:var(--gray)">
+                        <span id="calendarioInteligenteInfo"></span>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label class="form-label"><i class="fas fa-align-left"></i> Descrição</label>
@@ -2997,6 +3032,103 @@
                 </div>
             `;
             abrirModal('Novo Evento', 'fa-calendar-plus', conteudo);
+            setTimeout(atualizarVisibilidadeDataFim, 100);
+        }
+
+        function atualizarVisibilidadeDataFim() {
+            let frequencia = document.getElementById('eventoFrequencia')?.value;
+            let dataFimDiv = document.getElementById('eventoDataFimDiv');
+            let calendarioInteligente = document.getElementById('eventoCalendarioInteligente');
+            
+            if (frequencia === 'unico') {
+                dataFimDiv.style.display = 'block';
+                calendarioInteligente.style.display = 'none';
+            } else {
+                dataFimDiv.style.display = 'none';
+                calendarioInteligente.style.display = 'block';
+                atualizarCalendarioInteligente();
+            }
+        }
+
+        function atualizarCalendarioInteligente() {
+            let frequencia = document.getElementById('eventoFrequencia')?.value;
+            if (frequencia === 'unico') return;
+            
+            let dataInicioStr = document.getElementById('eventoDataInicio')?.value;
+            if (!dataInicioStr) return;
+            
+            let dataInicio = new Date(dataInicioStr + 'T12:00:00');
+            let ano = dataInicio.getFullYear();
+            let mes = dataInicio.getMonth() + 1;
+            let dia = dataInicio.getDate();
+            
+            let dataFimStr = document.getElementById('eventoDataFim')?.value;
+            let dataFim = dataFimStr ? new Date(dataFimStr + 'T12:00:00') : null;
+            
+            let grid = document.getElementById('calendarioInteligenteGrid');
+            grid.innerHTML = '';
+            
+            let mesesMostrar = 3;
+            let hoje = new Date();
+            hoje.setHours(0, 0, 0, 0);
+            
+            for (let i = 0; i < mesesMostrar; i++) {
+                let mesAtual = mes + i;
+                let anoAtual = ano;
+                while (mesAtual > 12) {
+                    mesAtual -= 12;
+                    anoAtual++;
+                }
+                
+                let diasNoMes = getDiasNoMes(anoAtual, mesAtual);
+                
+                for (let d = 1; d <= diasNoMes; d++) {
+                    let dataAtual = new Date(anoAtual, mesAtual - 1, d, 12, 0, 0);
+                    if (dataAtual < dataInicio) continue;
+                    if (dataFim && dataAtual > dataFim) continue;
+                    
+                    let ativo = false;
+                    
+                    switch (frequencia) {
+                        case 'semanal':
+                            if (dataAtual.getDay() === dataInicio.getDay()) ativo = true;
+                            break;
+                        case 'quinzenal':
+                            let diffDias = Math.floor((dataAtual - dataInicio) / (1000 * 60 * 60 * 24));
+                            if (diffDias % 14 === 0) ativo = true;
+                            break;
+                        case 'mensal':
+                            if (dataAtual.getDate() === dia) ativo = true;
+                            break;
+                        case 'semestral':
+                            let diffMeses = (dataAtual.getFullYear() - dataInicio.getFullYear()) * 12 + (dataAtual.getMonth() - dataInicio.getMonth());
+                            if (diffMeses % 6 === 0 && dataAtual.getDate() === dia) ativo = true;
+                            break;
+                        case 'anual':
+                            if (dataAtual.getMonth() === dataInicio.getMonth() && dataAtual.getDate() === dia) ativo = true;
+                            break;
+                    }
+                    
+                    if (ativo) {
+                        let cell = document.createElement('div');
+                        cell.className = `inline-calendar-day active ${dataAtual.toDateString() === hoje.toDateString() ? 'today' : ''}`;
+                        cell.textContent = d;
+                        cell.onclick = () => {
+                            document.getElementById('eventoDataFim').value = dataParaString(anoAtual, mesAtual, d);
+                            atualizarCalendarioInteligente();
+                        };
+                        grid.appendChild(cell);
+                    } else {
+                        let cell = document.createElement('div');
+                        cell.className = 'inline-calendar-day disabled';
+                        cell.textContent = d;
+                        grid.appendChild(cell);
+                    }
+                }
+            }
+            
+            let info = document.getElementById('calendarioInteligenteInfo');
+            info.innerHTML = dataFim ? `Fim em: ${dataFim.toLocaleDateString('pt-BR')}` : 'Sem data de fim (evento indefinido)';
         }
 
         function abrirSeletorIcones() {
@@ -3032,6 +3164,12 @@
             if (!titulo || !dataInicioStr) {
                 showToast('Preencha título e data de início', 'warning');
                 return;
+            }
+
+            if (frequencia !== 'unico' && !dataFimStr) {
+                if (!confirm('Data de fim em branco criará eventos indefinidamente. Continuar?')) {
+                    return;
+                }
             }
 
             let dataInicio = new Date(dataInicioStr + 'T12:00:00');
@@ -3360,7 +3498,7 @@
                     }
                 }
 
-                await registrarHistorico('pagamento_conta', `Conta paga: ${id}`, { id, valor, usuario: App.usuarioAtual });
+                await registrarHistorico('pagamento_conta', `Conta paga: ${desc}`, { id, valor, usuario: App.usuarioAtual });
                 
                 verificarNotificacoes({ descricao: 'Pagamento confirmado', valor }, 'contas');
                 
@@ -3543,7 +3681,7 @@
                         await App.supabase.from('excecoes_recorrencia').delete().eq('regra_id', regraId);
                     }
 
-                    await registrarHistorico('exclusao_evento', `Evento excluído (${tipo})`, { id, tipo, usuario: App.usuarioAtual });
+                    await registrarHistorico('exclusao_evento', `Evento excluído (${tipo})`, { id, usuario: App.usuarioAtual });
                     showToast('Evento excluído!', 'success');
                     fecharModal();
                     await carregarDados(true);
@@ -3583,7 +3721,7 @@
                         await App.supabase.from('excecoes_recorrencia').delete().eq('regra_id', regraId);
                     }
 
-                    await registrarHistorico('exclusao_conta', `Conta excluída (${tipo})`, { id, tipo, usuario: App.usuarioAtual });
+                    await registrarHistorico('exclusao_conta', `Conta excluída (${tipo})`, { id, usuario: App.usuarioAtual });
                     showToast('Conta excluída!', 'success');
                     fecharModal();
                     await carregarDados(true);
@@ -3841,25 +3979,101 @@
         function abrirMenuSeguranca() {
             let conteudo = `
                 <div class="form-group">
-                    <label class="form-label">Alterar Senha do Saldo</label>
-                    <input type="password" id="novaSenhaSaldo" class="form-input" placeholder="Nova senha (4 dígitos)" maxlength="4" inputmode="numeric">
+                    <label class="form-label">Senha Atual (acesso)</label>
+                    <input type="password" id="senhaAtualAcesso" class="form-input" placeholder="Digite a senha atual" maxlength="6" inputmode="numeric">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Nova Senha de Acesso</label>
+                    <input type="password" id="novaSenhaAcesso" class="form-input" placeholder="6 dígitos" maxlength="6" inputmode="numeric">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Confirmar Nova Senha de Acesso</label>
+                    <input type="password" id="confirmaSenhaAcesso" class="form-input" placeholder="Repita a nova senha" maxlength="6" inputmode="numeric">
+                </div>
+                <hr style="margin:16px 0; border-color:#eee">
+                <div class="form-group">
+                    <label class="form-label">Senha Atual (saldo)</label>
+                    <input type="password" id="senhaAtualSaldo" class="form-input" placeholder="Digite a senha atual" maxlength="4" inputmode="numeric">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Nova Senha do Saldo</label>
+                    <input type="password" id="novaSenhaSaldo" class="form-input" placeholder="4 dígitos" maxlength="4" inputmode="numeric">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Confirmar Nova Senha do Saldo</label>
+                    <input type="password" id="confirmaSenhaSaldo" class="form-input" placeholder="Repita a nova senha" maxlength="4" inputmode="numeric">
                 </div>
                 <div class="btn-group">
-                    <button class="btn btn-primary" onclick="alterarSenhaSaldo()"><i class="fas fa-save"></i> Salvar</button>
+                    <button class="btn btn-primary" onclick="alterarSenhas()"><i class="fas fa-save"></i> Salvar Alterações</button>
                     <button class="btn" onclick="fecharModal()" style="background:var(--gray);color:#fff">Cancelar</button>
                 </div>
             `;
             abrirModal('Segurança', 'fa-lock', conteudo);
         }
 
-        function alterarSenhaSaldo() {
-            let novaSenha = document.getElementById('novaSenhaSaldo')?.value;
-            if (!novaSenha || novaSenha.length !== 4) {
-                showToast('Senha deve ter 4 dígitos', 'warning');
-                return;
+        function alterarSenhas() {
+            let senhaAtualAcesso = document.getElementById('senhaAtualAcesso')?.value;
+            let novaSenhaAcesso = document.getElementById('novaSenhaAcesso')?.value;
+            let confirmaSenhaAcesso = document.getElementById('confirmaSenhaAcesso')?.value;
+            
+            let senhaAtualSaldo = document.getElementById('senhaAtualSaldo')?.value;
+            let novaSenhaSaldo = document.getElementById('novaSenhaSaldo')?.value;
+            let confirmaSenhaSaldo = document.getElementById('confirmaSenhaSaldo')?.value;
+
+            // Validar senha de acesso se foi preenchida
+            if (novaSenhaAcesso || confirmaSenhaAcesso || senhaAtualAcesso) {
+                if (!senhaAtualAcesso) {
+                    showToast('Digite a senha atual de acesso', 'warning');
+                    return;
+                }
+                
+                let authSenhaAtual = prompt('Digite sua senha de login para confirmar:');
+                if (authSenhaAtual !== App.acessoNovaSenha && App.acessoNovaSenha) {
+                    showToast('Senha de login incorreta', 'error');
+                    return;
+                }
+                
+                if (!novaSenhaAcesso || novaSenhaAcesso.length !== 6) {
+                    showToast('Nova senha de acesso deve ter 6 dígitos', 'warning');
+                    return;
+                }
+                
+                if (novaSenhaAcesso !== confirmaSenhaAcesso) {
+                    showToast('As novas senhas de acesso não coincidem', 'warning');
+                    return;
+                }
+                
+                App.acessoNovaSenha = novaSenhaAcesso;
+                showToast('Senha de acesso alterada!', 'success');
             }
-            App.saldoSenha = novaSenha;
-            showToast('Senha alterada!', 'success');
+
+            // Validar senha do saldo se foi preenchida
+            if (novaSenhaSaldo || confirmaSenhaSaldo || senhaAtualSaldo) {
+                if (!senhaAtualSaldo) {
+                    showToast('Digite a senha atual do saldo', 'warning');
+                    return;
+                }
+                
+                if (senhaAtualSaldo !== App.saldoSenha) {
+                    showToast('Senha atual do saldo incorreta', 'error');
+                    return;
+                }
+                
+                if (!novaSenhaSaldo || novaSenhaSaldo.length !== 4) {
+                    showToast('Nova senha do saldo deve ter 4 dígitos', 'warning');
+                    return;
+                }
+                
+                if (novaSenhaSaldo !== confirmaSenhaSaldo) {
+                    showToast('As novas senhas do saldo não coincidem', 'warning');
+                    return;
+                }
+                
+                App.saldoSenha = novaSenhaSaldo;
+                showToast('Senha do saldo alterada!', 'success');
+            }
+
+            salvarConfigLocal();
             fecharModal();
         }
 
@@ -3961,12 +4175,42 @@
             let html = '<div class="items-list">';
             App.historicoAcoes.slice(0, 100).forEach(h => {
                 let data = new Date(h.data).toLocaleString('pt-BR');
+                let detalhes = '';
+                
+                if (h.tipo === 'criacao_conta') {
+                    detalhes = `Conta: ${h.detalhes.descricao} - Valor: ${formatCurrency(h.detalhes.valor)} - Frequência: ${h.detalhes.frequencia}`;
+                } else if (h.tipo === 'pagamento_conta') {
+                    detalhes = `Valor pago: ${formatCurrency(h.detalhes.valor)}`;
+                } else if (h.tipo === 'criacao_gasto') {
+                    detalhes = `Gasto: ${h.detalhes.desc} - Valor: ${formatCurrency(h.detalhes.valor)} - Categoria: ${h.detalhes.cat}`;
+                } else if (h.tipo === 'criacao_evento') {
+                    detalhes = `Evento: ${h.detalhes.titulo} - Ícone: ${h.detalhes.icone}`;
+                } else if (h.tipo === 'edicao_conta' || h.tipo === 'edicao_evento' || h.tipo === 'edicao_gasto' || h.tipo === 'edicao_giro' || h.tipo === 'edicao_saldo' || h.tipo === 'edicao_lista') {
+                    detalhes = 'Informações atualizadas';
+                } else if (h.tipo === 'exclusao_item') {
+                    detalhes = `Tipo: ${h.detalhes.tipo}`;
+                } else if (h.tipo === 'exclusao_evento' || h.tipo === 'exclusao_conta' || h.tipo === 'exclusao_giro' || h.tipo === 'exclusao_saldo' || h.tipo === 'exclusao_lista') {
+                    detalhes = 'Item removido';
+                } else if (h.tipo === 'criacao_lista') {
+                    detalhes = `Item: ${h.detalhes.desc} - Quantidade: ${h.detalhes.qtd}`;
+                } else if (h.tipo === 'criacao_giro') {
+                    detalhes = `Giro: ${h.detalhes.desc} - Valor: ${formatCurrency(h.detalhes.valor)} - Pessoa: ${h.detalhes.pessoa}`;
+                } else if (h.tipo === 'pagamento_giro') {
+                    detalhes = `Valor: ${formatCurrency(h.detalhes.valor)}`;
+                } else if (h.tipo === 'recebimento_giro') {
+                    detalhes = `Valor: ${formatCurrency(h.detalhes.valor)}`;
+                } else if (h.tipo === 'adicao_saldo' || h.tipo === 'retirada_saldo' || h.tipo === 'atualizacao_saldo') {
+                    detalhes = `Valor: ${formatCurrency(h.detalhes.valor)}`;
+                } else if (h.detalhes && typeof h.detalhes === 'object') {
+                    detalhes = JSON.stringify(h.detalhes).replace(/[{}"]/g, ' ').replace(/,/g, ', ');
+                }
+                
                 html += `<div class="historico-item">
                     <div class="historico-header">
-                        <span><i class="fas ${h.tipo === 'criacao_conta' ? 'fa-file-invoice-dollar' : h.tipo === 'pagamento_conta' ? 'fa-dollar-sign' : 'fa-history'}"></i> ${h.descricao}</span>
+                        <span><i class="fas ${h.tipo === 'criacao_conta' ? 'fa-file-invoice-dollar' : h.tipo === 'pagamento_conta' ? 'fa-dollar-sign' : h.tipo === 'criacao_gasto' ? 'fa-shopping-bag' : h.tipo === 'criacao_evento' ? 'fa-calendar-plus' : h.tipo === 'criacao_lista' ? 'fa-shopping-cart' : h.tipo === 'criacao_giro' ? 'fa-hand-holding-usd' : h.tipo === 'edicao' ? 'fa-edit' : h.tipo === 'exclusao' ? 'fa-trash' : 'fa-history'}"></i> ${h.descricao}</span>
                         <span class="historico-data">${data}</span>
                     </div>
-                    <div class="historico-descricao">${h.detalhes ? JSON.stringify(h.detalhes) : ''}</div>
+                    <div class="historico-descricao">${detalhes}</div>
                     <div class="historico-usuario">${h.usuario || 'desconhecido'}</div>
                 </div>`;
             });

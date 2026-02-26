@@ -2109,51 +2109,70 @@
             } catch (e) { }
         }
 
-        async function carregarAssinatura() {
-            if (!App.currentUser) return;
-            
-            try {
-                const { data, error } = await App.supabase
-                    .from('assinaturas')
-                    .select('data_expiracao, status')
-                    .eq('user_id', App.currentUser.id)
-                    .maybeSingle();
+       async function carregarAssinatura() {
+    if (!App.currentUser) return;
+    
+    try {
+        const { data, error } = await App.supabase
+            .from('assinaturas')
+            .select('data_expiracao, status')
+            .eq('user_id', App.currentUser.id)
+            .maybeSingle();
 
-                if (data && data.status === 'ativo') {
-                    let dataExpiracao = new Date(data.data_expiracao);
-                    let hoje = new Date();
-                    
-                    if (dataExpiracao >= hoje) {
-                        App.assinaturaAtiva = true;
-                        App.dataExpiracao = dataExpiracao;
-                    } else {
-                        App.assinaturaAtiva = false;
-                        App.dataExpiracao = dataExpiracao;
-                    }
-                } else {
-                    App.assinaturaAtiva = false;
-                    App.dataExpiracao = null;
-                }
-                
-                atualizarStatusAssinaturaMenu();
-            } catch (error) {
-                console.error('Erro ao carregar assinatura:', error);
-                App.assinaturaAtiva = false;
-            }
-        }
-
-        function atualizarStatusAssinaturaMenu() {
-            let menuItem = document.getElementById('menuAssinaturaStatus');
-            if (!menuItem) return;
+        if (data && data.status === 'ativo') {
+            let dataExpiracao = new Date(data.data_expiracao);
+            let hoje = new Date();
             
-            if (App.assinaturaAtiva && App.dataExpiracao) {
-                let dias = Math.ceil((App.dataExpiracao - new Date()) / (1000 * 60 * 60 * 24));
-                menuItem.innerHTML = `Premium <span class="assinatura-badge">${dias} dias</span>`;
+            // Zera as horas para comparar apenas as datas
+            hoje.setHours(0, 0, 0, 0);
+            dataExpiracao.setHours(0, 0, 0, 0);
+            
+            // Se a data de expiração for maior ou igual a hoje, está ativa
+            if (dataExpiracao >= hoje) {
+                App.assinaturaAtiva = true;
+                App.dataExpiracao = new Date(data.data_expiracao); // Mantém a data original
             } else {
-                menuItem.innerHTML = `Premium <span class="assinatura-badge assinatura-expirada">Expirada</span>`;
+                App.assinaturaAtiva = false;
+                App.dataExpiracao = new Date(data.data_expiracao);
             }
+        } else {
+            App.assinaturaAtiva = false;
+            App.dataExpiracao = null;
         }
+        
+        atualizarStatusAssinaturaMenu();
+    } catch (error) {
+        console.error('Erro ao carregar assinatura:', error);
+        App.assinaturaAtiva = false;
+    }
+}
 
+       function atualizarStatusAssinaturaMenu() {
+    let menuItem = document.getElementById('menuAssinaturaStatus');
+    if (!menuItem) return;
+    
+    if (App.assinaturaAtiva && App.dataExpiracao) {
+        let hoje = new Date();
+        hoje.setHours(0, 0, 0, 0); // Zera as horas para comparar apenas datas
+        
+        let dataExpiracao = new Date(App.dataExpiracao);
+        dataExpiracao.setHours(0, 0, 0, 0); // Zera as horas também
+        
+        // Calcula diferença em milissegundos e converte para dias
+        let diffMs = dataExpiracao - hoje;
+        let diffDias = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+        
+        // Ajuste: se for exatamente 0, significa que vence hoje
+        // Se for negativo, já venceu
+        if (diffDias < 0) {
+            menuItem.innerHTML = `Premium <span class="assinatura-badge assinatura-expirada">Expirada</span>`;
+        } else {
+            menuItem.innerHTML = `Premium <span class="assinatura-badge">${diffDias} dias</span>`;
+        }
+    } else {
+        menuItem.innerHTML = `Premium <span class="assinatura-badge assinatura-expirada">Expirada</span>`;
+    }
+}
         function podeExecutarAcao() {
             return App.assinaturaAtiva;
         }

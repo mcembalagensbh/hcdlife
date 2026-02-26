@@ -2218,117 +2218,157 @@
         }
 
         function abrirModalAssinaturaBloqueio() {
-            let diasRestantes = App.dataExpiracao ? 
-                Math.ceil((App.dataExpiracao - new Date()) / (1000 * 60 * 60 * 24)) : 0;
-            
-            let conteudo = `
-                <div style="padding:16px; text-align:center">
-                    <i class="fas fa-lock" style="font-size:48px; color:var(--danger); margin-bottom:16px"></i>
-                    <h3 style="color:var(--danger); margin-bottom:16px">Premium Expirado</h3>
-                    
-                    <p style="margin-bottom:16px">
-                        Seu período grátis de 30 dias terminou${diasRestantes < 0 ? ` há ${Math.abs(diasRestantes)} dias` : ''}.
-                    </p>
-                    
-                    <p style="margin-bottom:16px; background:var(--bg-warning-light); padding:12px; border-radius:8px;">
-                        <i class="fas fa-eye"></i> Você ainda pode visualizar todos os seus dados normalmente.<br>
-                        Para <strong>adicionar, editar ou excluir</strong>, assine o Premium.
-                    </p>
-                    
-                    <div style="display:flex; gap:12px; margin:20px 0; flex-wrap:wrap; justify-content:center">
-                        <div class="plano-card mensal" onclick="gerarLinkPagamento('mensal')" style="width:160px">
-                            <i class="fas fa-crown" style="font-size:28px"></i>
-                            <h4 style="margin:8px 0">Mensal</h4>
-                            <div class="plano-preco">R$ 17,90</div>
-                            <div class="plano-periodo">por mês</div>
-                        </div>
-                        
-                        <div class="plano-card anual plano-destaque" onclick="gerarLinkPagamento('anual')" style="width:160px">
-                            <i class="fas fa-star" style="font-size:28px"></i>
-                            <h4 style="margin:8px 0">Anual</h4>
-                            <div class="plano-preco">R$ 189,90</div>
-                            <div class="plano-periodo">por ano</div>
-                        </div>
-                    </div>
-                    
-                    <div style="text-align:left; background:#f9f9f9; padding:12px; border-radius:8px; margin:16px 0">
-                        <p><strong>✅ Plano Gratuito (Visualização):</strong><br>
-                        - Ver todas as contas, eventos e gastos<br>
-                        - Acessar relatórios e extrato<br>
-                        - Dados sempre disponíveis</p>
-                        
-                        <p><strong>⭐ Premium (Edição):</strong><br>
-                        - Adicionar, editar e excluir itens<br>
-                        - Criar contas e eventos recorrentes<br>
-                        - Controle total de saldos e giros<br>
-                        - Múltiplos usuários na mesma conta<br>
-                        - Suporte prioritário<br>
-                        - <strong>Cancele a qualquer momento, sem multas</strong></p>
-                    </div>
-                    
-                    <p style="font-size:12px; color:var(--gray); margin:16px 0">
-                        <i class="fas fa-clock"></i> Após a confirmação do pagamento, a liberação é imediata e automática.<br>
-                        Você continua de onde parou, todos os seus dados permanecem.
-                    </p>
-                    
-                    <div class="btn-group" style="margin-top:20px">
-                        <button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Apenas Visualizar</button>
-                    </div>
-                </div>
-            `;
-            abrirModal('Premium Necessário', 'fa-crown', conteudo);
+    // Calcula os dias de expiração de forma correta
+    let diasTexto = '';
+    let diasRestantes = 0;
+    
+    if (App.dataExpiracao) {
+        let hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+        
+        let dataExp = new Date(App.dataExpiracao);
+        dataExp.setHours(0, 0, 0, 0);
+        
+        let diffMs = hoje.getTime() - dataExp.getTime();
+        diasRestantes = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        
+        if (diasRestantes === 0) {
+            diasTexto = 'hoje';
+        } else if (diasRestantes === 1) {
+            diasTexto = '1 dia';
+        } else {
+            diasTexto = `${diasRestantes} dias`;
         }
+    }
+    
+    let conteudo = `
+        <div style="padding:16px; text-align:center">
+            <i class="fas fa-lock" style="font-size:48px; color:var(--danger); margin-bottom:16px"></i>
+            <h3 style="color:var(--danger); margin-bottom:16px">Premium Expirado</h3>
+            
+            <p style="margin-bottom:16px">
+                Seu período grátis de 30 dias terminou${diasTexto ? ` há ${diasTexto}` : ''}.
+            </p>
+            
+            <p style="margin-bottom:16px; background:var(--bg-warning-light); padding:12px; border-radius:8px;">
+                <i class="fas fa-eye"></i> Você ainda pode visualizar todos os seus dados normalmente.<br>
+                Para <strong>adicionar, editar ou excluir</strong>, assine o Premium.
+            </p>
+            
+            <div style="display:flex; gap:12px; margin:20px 0; flex-wrap:wrap; justify-content:center">
+                <div class="plano-card mensal" onclick="gerarLinkPagamento('mensal')" style="width:160px">
+                    <i class="fas fa-crown" style="font-size:28px"></i>
+                    <h4 style="margin:8px 0">Mensal</h4>
+                    <div class="plano-preco">R$ 17,90</div>
+                    <div class="plano-periodo">por mês</div>
+                </div>
+                
+                <div class="plano-card anual plano-destaque" onclick="gerarLinkPagamento('anual')" style="width:160px">
+                    <i class="fas fa-star" style="font-size:28px"></i>
+                    <h4 style="margin:8px 0">Anual</h4>
+                    <div class="plano-preco">R$ 189,90</div>
+                    <div class="plano-periodo">por ano</div>
+                </div>
+            </div>
+            
+            <div style="text-align:left; background:#f9f9f9; padding:12px; border-radius:8px; margin:16px 0">
+                <p><strong>✅ Plano Gratuito (Visualização):</strong><br>
+                - Ver todas as contas, eventos e gastos<br>
+                - Acessar relatórios e extrato<br>
+                - Dados sempre disponíveis</p>
+                
+                <p><strong>⭐ Premium (Edição):</strong><br>
+                - Adicionar, editar e excluir itens<br>
+                - Criar contas e eventos recorrentes<br>
+                - Controle total de saldos e giros<br>
+                - Múltiplos usuários na mesma conta<br>
+                - Suporte prioritário<br>
+                - <strong>Cancele a qualquer momento, sem multas</strong></p>
+            </div>
+            
+            <p style="font-size:12px; color:var(--gray); margin:16px 0">
+                <i class="fas fa-clock"></i> Após a confirmação do pagamento, a liberação é imediata e automática.<br>
+                Você continua de onde parou, todos os seus dados permanecem.
+            </p>
+            
+            <div class="btn-group" style="margin-top:20px">
+                <button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Apenas Visualizar</button>
+            </div>
+        </div>
+    `;
+    abrirModal('Premium Necessário', 'fa-crown', conteudo);
+}
 
         function abrirModalAssinatura() {
-            if (!App.assinaturaAtiva) {
-                abrirModalAssinaturaBloqueio();
-                return;
-            }
+    if (!App.assinaturaAtiva) {
+        abrirModalAssinaturaBloqueio();
+        return;
+    }
+    
+    let dataExpiracao = App.dataExpiracao ? App.dataExpiracao.toLocaleDateString('pt-BR') : 'Desconhecida';
+    
+    // CALCULO CORRETO DE DIAS (igual ao do menu)
+    let hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    
+    let dataExp = new Date(App.dataExpiracao);
+    dataExp.setHours(0, 0, 0, 0);
+    
+    let diffMs = dataExp.getTime() - hoje.getTime();
+    let diasRestantes = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    // Define o texto baseado nos dias restantes
+    let diasTexto = '';
+    if (diasRestantes < 0) {
+        diasTexto = '<span style="color: var(--danger)">Expirada</span>';
+    } else if (diasRestantes === 0) {
+        diasTexto = 'Hoje';
+    } else if (diasRestantes === 1) {
+        diasTexto = '1 dia';
+    } else {
+        diasTexto = `${diasRestantes} dias`;
+    }
+    
+    let conteudo = `
+        <div style="padding:16px; text-align:center">
+            <i class="fas fa-crown" style="font-size:48px; color:var(--warning); margin-bottom:16px"></i>
+            <h3>Premium Ativo</h3>
             
-            let dataExpiracao = App.dataExpiracao ? App.dataExpiracao.toLocaleDateString('pt-BR') : 'Desconhecida';
-            let diasRestantes = App.dataExpiracao ? 
-                Math.ceil((App.dataExpiracao - new Date()) / (1000 * 60 * 60 * 24)) : 0;
+            <div style="background:var(--bg-success-light); color:var(--text-success); padding:16px; border-radius:8px; margin:16px 0">
+                <div style="font-size:1.2em">Válida até ${dataExpiracao}</div>
+                <div style="font-size:2em; font-weight:700">${diasTexto}</div>
+                <div style="font-size:0.9em; margin-top:8px">${diasRestantes === 1 ? 'dia restante' : diasRestantes > 1 ? 'dias restantes' : ''}</div>
+            </div>
             
-            let conteudo = `
-                <div style="padding:16px; text-align:center">
-                    <i class="fas fa-crown" style="font-size:48px; color:var(--warning); margin-bottom:16px"></i>
-                    <h3>Premium Ativo</h3>
-                    
-                    <div style="background:var(--bg-success-light); color:var(--text-success); padding:16px; border-radius:8px; margin:16px 0">
-                        <div style="font-size:1.2em">Válida até ${dataExpiracao}</div>
-                        <div style="font-size:2em; font-weight:700">${diasRestantes} dias</div>
-                        <div style="font-size:0.9em; margin-top:8px">restantes</div>
-                    </div>
-                    
-                    <p style="margin-bottom:16px">
-                        <i class="fas fa-check-circle" style="color:var(--success)"></i> Você tem acesso a todas as funcionalidades Premium.
-                    </p>
-                    
-                    <div style="display:flex; gap:12px; margin:20px 0; flex-wrap:wrap; justify-content:center">
-                        <div class="plano-card mensal" onclick="gerarLinkPagamento('mensal')" style="width:140px">
-                            <h4>Renovar Mensal</h4>
-                            <div class="plano-preco">R$ 17,90</div>
-                        </div>
-                        
-                        <div class="plano-card anual" onclick="gerarLinkPagamento('anual')" style="width:140px">
-                            <h4>Renovar Anual</h4>
-                            <div class="plano-preco">R$ 189,90</div>
-                        </div>
-                    </div>
-                    
-                    <p style="font-size:12px; color:var(--gray)">
-                        <i class="fas fa-clock"></i> Pagamento Mercado Pago do Grupo Mundo Carol.<br>
-                        Cancele a qualquer momento sem taxas e multas, confira as políticas no Menu/Politicas.<br>
-                        Pague via Cartão, Boleto ou Mercado Pago
-                    </p>
-                    
-                    <div class="btn-group" style="margin-top:20px">
-                        <button class="btn btn-primary" onclick="fecharModal()">Fechar</button>
-                    </div>
+            <p style="margin-bottom:16px">
+                <i class="fas fa-check-circle" style="color:var(--success)"></i> Você tem acesso a todas as funcionalidades Premium.
+            </p>
+            
+            <div style="display:flex; gap:12px; margin:20px 0; flex-wrap:wrap; justify-content:center">
+                <div class="plano-card mensal" onclick="gerarLinkPagamento('mensal')" style="width:140px">
+                    <h4>Renovar Mensal</h4>
+                    <div class="plano-preco">R$ 17,90</div>
                 </div>
-            `;
-            abrirModal('Meu Premium', 'fa-crown', conteudo);
-        }
+                
+                <div class="plano-card anual" onclick="gerarLinkPagamento('anual')" style="width:140px">
+                    <h4>Renovar Anual</h4>
+                    <div class="plano-preco">R$ 189,90</div>
+                </div>
+            </div>
+            
+            <p style="font-size:12px; color:var(--gray)">
+                <i class="fas fa-clock"></i> Pagamento Mercado Pago do Grupo Mundo Carol.<br>
+                Cancele a qualquer momento sem taxas e multas, confira as políticas no Menu/Politicas.<br>
+                Pague via Cartão, Boleto ou Mercado Pago
+            </p>
+            
+            <div class="btn-group" style="margin-top:20px">
+                <button class="btn btn-primary" onclick="fecharModal()">Fechar</button>
+            </div>
+        </div>
+    `;
+    abrirModal('Meu Premium', 'fa-crown', conteudo);
+}
 
         function abrirPoliticasTermos() {
             let conteudo = `

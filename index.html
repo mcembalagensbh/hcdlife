@@ -2147,25 +2147,32 @@
     }
 }
 
-       function atualizarStatusAssinaturaMenu() {
+     function atualizarStatusAssinaturaMenu() {
     let menuItem = document.getElementById('menuAssinaturaStatus');
     if (!menuItem) return;
     
     if (App.assinaturaAtiva && App.dataExpiracao) {
         let hoje = new Date();
-        hoje.setHours(0, 0, 0, 0); // Zera as horas para comparar apenas datas
+        hoje.setHours(0, 0, 0, 0); // Zera as horas
         
         let dataExpiracao = new Date(App.dataExpiracao);
-        dataExpiracao.setHours(0, 0, 0, 0); // Zera as horas também
+        dataExpiracao.setHours(0, 0, 0, 0); // Zera as horas
         
-        // Calcula diferença em milissegundos e converte para dias
-        let diffMs = dataExpiracao - hoje;
-        let diffDias = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+        // Calcula a diferença em dias de forma precisa
+        // Converte ambas para timestamp (milissegundos desde 1970)
+        let diffMs = dataExpiracao.getTime() - hoje.getTime();
         
-        // Ajuste: se for exatamente 0, significa que vence hoje
-        // Se for negativo, já venceu
+        // Converte para dias (1 dia = 24 * 60 * 60 * 1000 ms)
+        let diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        
+        console.log('Hoje:', hoje.toLocaleDateString(), 'Expira:', dataExpiracao.toLocaleDateString(), 'Diferença:', diffDias);
+        
         if (diffDias < 0) {
             menuItem.innerHTML = `Premium <span class="assinatura-badge assinatura-expirada">Expirada</span>`;
+        } else if (diffDias === 0) {
+            menuItem.innerHTML = `Premium <span class="assinatura-badge">Hoje</span>`;
+        } else if (diffDias === 1) {
+            menuItem.innerHTML = `Premium <span class="assinatura-badge">Amanhã</span>`;
         } else {
             menuItem.innerHTML = `Premium <span class="assinatura-badge">${diffDias} dias</span>`;
         }

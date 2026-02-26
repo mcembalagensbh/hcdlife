@@ -48,8 +48,7 @@
             --bg-warning-light: #fff3cd;
             --text-warning: #856404;
             --green-dark: #2e7d32;
-            --pagarme: #6f42c1;
-            --pagarme-dark: #5a32a3;
+            --mp: #009ee3;
         }
 
         body {
@@ -208,7 +207,7 @@
         }
 
         .btn-pagarme {
-            background: linear-gradient(135deg, var(--pagarme), var(--pagarme-dark));
+            background: linear-gradient(135deg, var(--mp), #0077b3);
             color: #fff
         }
 
@@ -303,50 +302,19 @@
             white-space: nowrap
         }
 
-        .saldo-header-container {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            background: rgba(255, 255, 255, .15);
-            border-radius: 20px;
-            padding: 2px 2px 2px 8px;
-        }
-
         .saldo-header {
+            background: rgba(255, 255, 255, .15);
             color: #fff;
+            border: 0;
+            border-radius: 20px;
+            padding: 4px 8px;
             font-size: clamp(0.7rem, 3vw, 0.9rem);
             font-weight: 600;
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 4px;
-            white-space: nowrap;
-            padding: 2px 0;
-        }
-
-        .toggle-saldo-btn {
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            color: #fff;
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.2s;
-            margin-left: 2px;
-        }
-
-        .toggle-saldo-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: scale(1.05);
-        }
-
-        .toggle-saldo-btn.active {
-            background: var(--success);
+            white-space: nowrap
         }
 
         .header-actions {
@@ -1543,19 +1511,18 @@
         }
 
         .plano-card {
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 16px;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            text-align: center;
+            background: linear-gradient(135deg, var(--purple-light), var(--purple));
             color: white;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            text-align: center;
         }
 
         .plano-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            transform: scale(1.02);
         }
 
         .plano-card.mensal {
@@ -1564,11 +1531,25 @@
 
         .plano-card.anual {
             background: linear-gradient(135deg, #f39c12, #e67e22);
+        }
+
+        .plano-preco {
+            font-size: 1.5em;
+            font-weight: 700;
+            margin: 8px 0;
+        }
+
+        .plano-periodo {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .plano-destaque {
             position: relative;
             overflow: hidden;
         }
 
-        .plano-card.anual::before {
+        .plano-destaque::after {
             content: "🔥 MAIS VENDIDO";
             position: absolute;
             top: 10px;
@@ -1581,76 +1562,51 @@
             transform: rotate(45deg);
         }
 
-        .plano-preco {
-            font-size: 2em;
-            font-weight: 700;
-            margin: 10px 0;
-        }
-
-        .plano-periodo {
-            font-size: 0.9em;
-            opacity: 0.9;
-        }
-
-        .plano-detalhes {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid rgba(255,255,255,0.3);
-            font-size: 0.9em;
-        }
-
-        .plano-detalhes-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
+        .exclusao-gasto-opcao {
+            padding: 12px;
+            border: 2px solid #eee;
+            border-radius: 8px;
             margin: 8px 0;
-            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s;
         }
 
-        .plano-detalhes-item i {
-            width: 20px;
+        .exclusao-gasto-opcao:hover {
+            border-color: var(--purple);
+            background: var(--purple-light);
         }
 
-        .comparativo-planos {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin: 20px 0;
+        .exclusao-gasto-opcao.selected {
+            border-color: var(--purple);
+            background: var(--purple-light);
         }
 
-        .comparativo-item {
-            display: flex;
+        .toggle-saldo {
+            display: inline-flex;
             align-items: center;
-            padding: 8px;
-            background: #f8f9fa;
-            border-radius: 6px;
+            gap: 4px;
+            padding: 4px 8px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.1);
+            cursor: pointer;
+            font-size: 11px;
         }
 
-        .comparativo-nome {
-            flex: 2;
-            font-weight: 600;
+        .toggle-saldo i {
+            font-size: 12px;
         }
 
-        .comparativo-gratis {
-            flex: 1;
+        .toggle-saldo.active {
+            background: var(--success);
+        }
+
+        .assinatura-footer {
+            margin-top: 20px;
+            padding: 12px;
+            border-top: 1px solid #eee;
             text-align: center;
-            color: var(--success);
-        }
-
-        .comparativo-premium {
-            flex: 1;
-            text-align: center;
-            color: var(--purple-dark);
-            font-weight: 600;
-        }
-
-        .premium-badge {
-            background: linear-gradient(135deg, var(--purple), var(--purple-dark));
-            color: white;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.7rem;
-            margin-left: 4px;
+            font-size: 11px;
+            color: var(--gray);
         }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -1709,6 +1665,10 @@
             <div class="side-menu-item" onclick="abrirUltimasAcoes();fecharSideMenu()"><i class="fas fa-history"></i> Últimas Ações</div>
             <div class="side-menu-item" onclick="abrirManual();fecharSideMenu()"><i class="fas fa-book"></i> Manual</div>
             <div class="side-menu-item" onclick="abrirModalAssinatura();fecharSideMenu()"><i class="fas fa-crown"></i> <span id="menuAssinaturaStatus">Premium</span></div>
+            <div class="side-menu-item" onclick="window.location.href='mailto:hcdtec.mylife@gmail.com'"><i class="fas fa-question-circle"></i> Ajuda</div>
+            <div class="assinatura-footer">
+                Um app do Grupo<br>Mundo Carol Ltda
+            </div>
         </div>
 
         <div class="header">
@@ -1716,13 +1676,8 @@
                 <h1><i class="fas fa-home"></i> My Life</h1>
                 <div class="header-center">
                     <button class="header-today-btn" id="btnToday"><i class="fas fa-calendar-day"></i> Hoje</button>
-                    <div class="saldo-header-container" id="saldoContainer" style="display:none">
-                        <div class="saldo-header" id="btnSaldoHeader">
-                            <i class="fas fa-wallet"></i><span id="saldoHeaderValue">R$ 0,00</span>
-                        </div>
-                        <button class="toggle-saldo-btn" id="toggleSaldoBtn" title="Ocultar saldo do cabeçalho">
-                            <i class="fas fa-eye"></i>
-                        </button>
+                    <div class="saldo-header" id="btnSaldoHeader" style="display:flex;">
+                        <i class="fas fa-wallet"></i><span id="saldoHeaderValue">R$ 0,00</span>
                     </div>
                 </div>
                 <div class="header-actions">
@@ -1874,7 +1829,6 @@
             saldoSenha: '1234',
             acessoNovaSenha: '',
             saldoAutenticado: false,
-            saldoExibirHeader: true,
             modalHasChanges: false,
             pendingDelete: null,
             saldoCentral: { id: null, valor: 0 },
@@ -1904,40 +1858,41 @@
             dataExpiracao: null,
             usuarioAtual: null,
             processandoLinkPagamento: false,
-            cacheLoaded: false
+            cacheLoaded: false,
+            exibirSaldoHeader: true
         };
 
         // Funções auxiliares
-        function showToast(m, t) {
-            const to = document.getElementById('toast');
-            to.textContent = m;
-            to.className = `toast ${t}`;
-            to.style.display = 'block';
-            setTimeout(() => to.style.display = 'none', 3000);
+        function showToast(mensagem, tipo) {
+            const toast = document.getElementById('toast');
+            toast.textContent = mensagem;
+            toast.className = `toast ${tipo}`;
+            toast.style.display = 'block';
+            setTimeout(() => toast.style.display = 'none', 3000);
         }
 
-        function formatCurrency(v) {
-            return 'R$ ' + (v || 0).toFixed(2).replace('.', ',');
+        function formatCurrency(valor) {
+            return 'R$ ' + (valor || 0).toFixed(2).replace('.', ',');
         }
 
-        function parseCurrency(v) {
-            if (!v) return 0;
-            if (typeof v === 'string') return parseFloat(v.replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
-            return parseFloat(v) || 0;
+        function parseCurrency(valor) {
+            if (!valor) return 0;
+            if (typeof valor === 'string') return parseFloat(valor.replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+            return parseFloat(valor) || 0;
         }
 
         function getDiasNoMes(ano, mes) {
             return new Date(ano, mes, 0).getDate();
         }
 
-        function getNomeMes(num) {
-            return CONFIG.meses[num - 1] || '';
+        function getNomeMes(numero) {
+            return CONFIG.meses[numero - 1] || '';
         }
 
         function getMesAnoAtual() {
-            const h = new Date();
-            const d = new Date(h.getFullYear(), h.getMonth() + App.currentMonthOffset, 1);
-            return { mes: d.getMonth() + 1, ano: d.getFullYear() };
+            const hoje = new Date();
+            const data = new Date(hoje.getFullYear(), hoje.getMonth() + App.currentMonthOffset, 1);
+            return { mes: data.getMonth() + 1, ano: data.getFullYear() };
         }
 
         function dataValida(ano, mes, dia) {
@@ -1956,41 +1911,41 @@
             return new Date(str + 'T12:00:00');
         }
 
-        function ajustarDataAnoMes(data, ano, mes) {
-            let novaData = new Date(data);
-            novaData.setFullYear(ano);
-            novaData.setMonth(mes - 1);
-            return novaData;
-        }
-
         function atualizarSaldoHeader() {
-            document.getElementById('saldoHeaderValue').textContent = formatCurrency(App.saldoCentral.valor);
+            const saldoElement = document.getElementById('btnSaldoHeader');
+            const valorElement = document.getElementById('saldoHeaderValue');
             
-            // Controlar exibição do saldo no header
-            const saldoContainer = document.getElementById('saldoContainer');
-            const toggleBtn = document.getElementById('toggleSaldoBtn');
-            
-            if (App.saldoExibirHeader && App.saldoCentral.id) {
-                saldoContainer.style.display = 'flex';
-                toggleBtn.innerHTML = '<i class="fas fa-eye"></i>';
-                toggleBtn.title = 'Ocultar saldo do cabeçalho';
+            if (App.exibirSaldoHeader && App.saldoCentral) {
+                saldoElement.style.display = 'flex';
+                valorElement.textContent = formatCurrency(App.saldoCentral.valor);
             } else {
-                saldoContainer.style.display = 'none';
+                saldoElement.style.display = 'none';
             }
         }
 
-        // Função para alternar exibição do saldo no header
-        function toggleSaldoHeader() {
-            App.saldoExibirHeader = !App.saldoExibirHeader;
+        async function verificarNotificacoes(item, tipo) {
+            if (!App.currentUser || !('Notification' in window)) return;
+            if (Notification.permission !== 'granted') return;
             
-            // Salvar preferência no localStorage
-            if (App.currentUser) {
-                localStorage.setItem(`saldo_exibir_${App.currentUser.id}`, App.saldoExibirHeader ? 'true' : 'false');
+            let config = App.notificacoesConfig;
+            if (!config[tipo] && tipo !== 'novoItem') return;
+            if (tipo === 'novoItem' && !config.novoItem) return;
+            
+            let corpo = `${item.descricao || item.titulo || item} - ${App.usuarioAtual}`;
+            
+            if (config.tipo === 'banner' || config.tipo === 'ambos') {
+                showToast(`🔔 ${corpo}`, 'info');
             }
             
-            atualizarSaldoHeader();
-            
-            showToast(App.saldoExibirHeader ? 'Saldo visível no cabeçalho' : 'Saldo oculto no cabeçalho', 'info');
+            if (config.tipo === 'bloqueio' || config.tipo === 'ambos') {
+                new Notification('My Life', {
+                    body: corpo,
+                    icon: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/svgs/solid/home.svg',
+                    badge: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/svgs/solid/bell.svg',
+                    vibrate: [200, 100, 200],
+                    requireInteraction: true
+                });
+            }
         }
 
         async function verificarECriarSaldoCentral() {
@@ -2063,32 +2018,6 @@
             } catch (e) { }
         }
 
-        async function verificarNotificacoes(item, tipo) {
-            if (!App.currentUser || !('Notification' in window)) return;
-            if (Notification.permission !== 'granted') return;
-            
-            let config = App.notificacoesConfig;
-            if (!config[tipo] && tipo !== 'novoItem') return;
-            if (tipo === 'novoItem' && !config.novoItem) return;
-            
-            let corpo = `${item.descricao || item.titulo || item} - ${App.usuarioAtual}`;
-            
-            if (config.tipo === 'banner' || config.tipo === 'ambos') {
-                showToast(`🔔 ${corpo}`, 'info');
-            }
-            
-            if (config.tipo === 'bloqueio' || config.tipo === 'ambos') {
-                new Notification('My Life', {
-                    body: corpo,
-                    icon: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/svgs/solid/home.svg',
-                    badge: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/svgs/solid/bell.svg',
-                    vibrate: [200, 100, 200],
-                    requireInteraction: true
-                });
-            }
-        }
-
-        // Funções de assinatura
         async function carregarAssinatura() {
             if (!App.currentUser) return;
             
@@ -2153,12 +2082,7 @@
         }
 
         function verificarEAcaoEdicao(callback) {
-            if (!App.usuarioAtual) {
-                abrirSelecaoUsuario(true, 'edicao');
-                return;
-            }
-            
-            if (!podeExecutarAcao()) {
+            if (!App.assinaturaAtiva) {
                 abrirModalAssinaturaBloqueio();
                 return;
             }
@@ -2177,42 +2101,115 @@
         }
 
         function abrirModalAssinaturaBloqueio() {
+            let diasRestantes = App.dataExpiracao ? 
+                Math.ceil((App.dataExpiracao - new Date()) / (1000 * 60 * 60 * 24)) : 0;
+            
             let conteudo = `
                 <div style="padding:16px; text-align:center">
                     <i class="fas fa-lock" style="font-size:48px; color:var(--danger); margin-bottom:16px"></i>
-                    <h3 style="color:var(--danger); margin-bottom:16px">Plano Premium Expirado</h3>
+                    <h3 style="color:var(--danger); margin-bottom:16px">Premium Expirado</h3>
                     
                     <p style="margin-bottom:16px">
-                        Seu período grátis de 30 dias terminou.
+                        Seu período grátis de 30 dias terminou${diasRestantes < 0 ? ` há ${Math.abs(diasRestantes)} dias` : ''}.
                     </p>
                     
                     <p style="margin-bottom:16px; background:var(--bg-warning-light); padding:12px; border-radius:8px;">
                         <i class="fas fa-eye"></i> Você ainda pode visualizar todos os seus dados normalmente.<br>
-                        Para <strong>adicionar, editar ou excluir</strong>, assine o plano Premium.
+                        Para <strong>adicionar, editar ou excluir</strong>, assine o Premium.
                     </p>
                     
-                    <div style="display:flex; gap:16px; justify-content:center; margin:20px 0; flex-wrap:wrap">
-                        <div class="plano-card mensal" onclick="gerarLinkPagamento('mensal')" style="width:180px; padding:15px">
-                            <i class="fas fa-crown" style="font-size:24px"></i>
-                            <h4 style="margin:8px 0">Premium Mensal</h4>
-                            <div class="plano-preco" style="font-size:1.5em">R$ 17,90</div>
+                    <div style="display:flex; gap:12px; margin:20px 0; flex-wrap:wrap; justify-content:center">
+                        <div class="plano-card mensal" onclick="gerarLinkPagamento('mensal')" style="width:160px">
+                            <i class="fas fa-crown" style="font-size:28px"></i>
+                            <h4 style="margin:8px 0">Mensal</h4>
+                            <div class="plano-preco">R$ 17,90</div>
                             <div class="plano-periodo">por mês</div>
                         </div>
                         
-                        <div class="plano-card anual" onclick="gerarLinkPagamento('anual')" style="width:180px; padding:15px">
-                            <i class="fas fa-star" style="font-size:24px"></i>
-                            <h4 style="margin:8px 0">Premium Anual</h4>
-                            <div class="plano-preco" style="font-size:1.5em">R$ 189,90</div>
+                        <div class="plano-card anual plano-destaque" onclick="gerarLinkPagamento('anual')" style="width:160px">
+                            <i class="fas fa-star" style="font-size:28px"></i>
+                            <h4 style="margin:8px 0">Anual</h4>
+                            <div class="plano-preco">R$ 189,90</div>
                             <div class="plano-periodo">por ano</div>
                         </div>
                     </div>
+                    
+                    <div style="text-align:left; background:#f9f9f9; padding:12px; border-radius:8px; margin:16px 0">
+                        <p><strong>✅ Plano Gratuito (Visualização):</strong><br>
+                        - Ver todas as contas, eventos e gastos<br>
+                        - Acessar relatórios e extrato<br>
+                        - Dados sempre disponíveis</p>
+                        
+                        <p><strong>⭐ Premium (Edição):</strong><br>
+                        - Adicionar, editar e excluir itens<br>
+                        - Criar contas e eventos recorrentes<br>
+                        - Controle total de saldos e giros<br>
+                        - Múltiplos usuários na mesma conta<br>
+                        - Suporte prioritário<br>
+                        - <strong>Cancele a qualquer momento, sem multas</strong></p>
+                    </div>
+                    
+                    <p style="font-size:12px; color:var(--gray); margin:16px 0">
+                        <i class="fas fa-clock"></i> Após a confirmação do pagamento, a liberação é imediata e automática.<br>
+                        Você continua de onde parou, todos os seus dados permanecem.
+                    </p>
                     
                     <div class="btn-group" style="margin-top:20px">
                         <button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Apenas Visualizar</button>
                     </div>
                 </div>
             `;
-            abrirModal('Plano Premium Necessário', 'fa-crown', conteudo);
+            abrirModal('Premium Necessário', 'fa-crown', conteudo);
+        }
+
+        function abrirModalAssinatura() {
+            if (!App.assinaturaAtiva) {
+                abrirModalAssinaturaBloqueio();
+                return;
+            }
+            
+            let dataExpiracao = App.dataExpiracao ? App.dataExpiracao.toLocaleDateString('pt-BR') : 'Desconhecida';
+            let diasRestantes = App.dataExpiracao ? 
+                Math.ceil((App.dataExpiracao - new Date()) / (1000 * 60 * 60 * 24)) : 0;
+            
+            let conteudo = `
+                <div style="padding:16px; text-align:center">
+                    <i class="fas fa-crown" style="font-size:48px; color:var(--warning); margin-bottom:16px"></i>
+                    <h3>Premium Ativo</h3>
+                    
+                    <div style="background:var(--bg-success-light); color:var(--text-success); padding:16px; border-radius:8px; margin:16px 0">
+                        <div style="font-size:1.2em">Válida até ${dataExpiracao}</div>
+                        <div style="font-size:2em; font-weight:700">${diasRestantes} dias</div>
+                        <div style="font-size:0.9em; margin-top:8px">restantes</div>
+                    </div>
+                    
+                    <p style="margin-bottom:16px">
+                        <i class="fas fa-check-circle" style="color:var(--success)"></i> Você tem acesso a todas as funcionalidades Premium.
+                    </p>
+                    
+                    <div style="display:flex; gap:12px; margin:20px 0; flex-wrap:wrap; justify-content:center">
+                        <div class="plano-card mensal" onclick="gerarLinkPagamento('mensal')" style="width:140px">
+                            <h4>Renovar Mensal</h4>
+                            <div class="plano-preco">R$ 17,90</div>
+                        </div>
+                        
+                        <div class="plano-card anual" onclick="gerarLinkPagamento('anual')" style="width:140px">
+                            <h4>Renovar Anual</h4>
+                            <div class="plano-preco">R$ 189,90</div>
+                        </div>
+                    </div>
+                    
+                    <p style="font-size:12px; color:var(--gray)">
+                        <i class="fas fa-clock"></i> Renovação automática via Mercado Pago.<br>
+                        Cancele quando quiser pelo painel do Mercado Pago.
+                    </p>
+                    
+                    <div class="btn-group" style="margin-top:20px">
+                        <button class="btn btn-primary" onclick="fecharModal()">Fechar</button>
+                    </div>
+                </div>
+            `;
+            abrirModal('Meu Premium', 'fa-crown', conteudo);
         }
 
         async function gerarLinkPagamento(plano) {
@@ -2223,16 +2220,15 @@
             try {
                 showToast('Gerando link de pagamento...', 'info');
                 
-                // Usar links diretos do Mercado Pago
-                const url = CONFIG.mercadopago.links[plano];
+                const link = CONFIG.mercadopago.links[plano];
                 
-                if (!url) {
-                    throw new Error('Plano inválido');
+                if (!link) {
+                    throw new Error('Link não encontrado para o plano selecionado');
                 }
                 
-                window.open(url, '_blank');
+                window.open(link, '_blank');
                 
-                showToast('Link gerado! Pagamento será processado automaticamente.', 'success');
+                showToast('Redirecionando para o Mercado Pago...', 'success');
                 
                 fecharModal();
                 
@@ -2275,105 +2271,6 @@
             }
         }
 
-        function abrirModalAssinatura() {
-            if (!App.assinaturaAtiva) {
-                abrirModalAssinaturaBloqueio();
-                return;
-            }
-            
-            let dataExpiracao = App.dataExpiracao ? App.dataExpiracao.toLocaleDateString('pt-BR') : 'Desconhecida';
-            let diasRestantes = App.dataExpiracao ? 
-                Math.ceil((App.dataExpiracao - new Date()) / (1000 * 60 * 60 * 24)) : 0;
-            
-            let conteudo = `
-                <div style="padding:16px">
-                    <div style="text-align:center; margin-bottom:20px">
-                        <i class="fas fa-crown" style="font-size:48px; color:var(--warning)"></i>
-                        <h3 style="margin:10px 0">Plano Premium</h3>
-                    </div>
-                    
-                    <div style="background:var(--bg-success-light); color:var(--text-success); padding:16px; border-radius:8px; margin:16px 0">
-                        <div style="font-size:1.2em">Válida até ${dataExpiracao}</div>
-                        <div style="font-size:2em; font-weight:700">${diasRestantes} dias</div>
-                        <div style="font-size:0.9em; margin-top:8px">restantes</div>
-                    </div>
-                    
-                    <div class="comparativo-planos">
-                        <h4 style="color:var(--purple); margin-bottom:8px">Comparativo de Planos</h4>
-                        
-                        <div class="comparativo-item">
-                            <span class="comparativo-nome">Visualização de dados</span>
-                            <span class="comparativo-gratis"><i class="fas fa-check" style="color:var(--success)"></i> Grátis</span>
-                            <span class="comparativo-premium"><i class="fas fa-check" style="color:var(--purple)"></i> Premium</span>
-                        </div>
-                        
-                        <div class="comparativo-item">
-                            <span class="comparativo-nome">Adicionar itens</span>
-                            <span class="comparativo-gratis"><i class="fas fa-times" style="color:var(--danger)"></i></span>
-                            <span class="comparativo-premium"><i class="fas fa-check" style="color:var(--purple)"></i></span>
-                        </div>
-                        
-                        <div class="comparativo-item">
-                            <span class="comparativo-nome">Editar itens</span>
-                            <span class="comparativo-gratis"><i class="fas fa-times" style="color:var(--danger)"></i></span>
-                            <span class="comparativo-premium"><i class="fas fa-check" style="color:var(--purple)"></i></span>
-                        </div>
-                        
-                        <div class="comparativo-item">
-                            <span class="comparativo-nome">Excluir itens</span>
-                            <span class="comparativo-gratis"><i class="fas fa-times" style="color:var(--danger)"></i></span>
-                            <span class="comparativo-premium"><i class="fas fa-check" style="color:var(--purple)"></i></span>
-                        </div>
-                        
-                        <div class="comparativo-item">
-                            <span class="comparativo-nome">Múltiplos usuários familiares</span>
-                            <span class="comparativo-gratis"><i class="fas fa-times" style="color:var(--danger)"></i></span>
-                            <span class="comparativo-premium"><i class="fas fa-check" style="color:var(--purple)"></i> Sim</span>
-                        </div>
-                        
-                        <div class="comparativo-item">
-                            <span class="comparativo-nome">Acesso simultâneo</span>
-                            <span class="comparativo-gratis"><i class="fas fa-times" style="color:var(--danger)"></i></span>
-                            <span class="comparativo-premium"><i class="fas fa-check" style="color:var(--purple)"></i> Sim</span>
-                        </div>
-                        
-                        <div class="comparativo-item">
-                            <span class="comparativo-nome">Cancelamento a qualquer momento</span>
-                            <span class="comparativo-gratis"><i class="fas fa-minus" style="color:var(--gray)"></i></span>
-                            <span class="comparativo-premium"><i class="fas fa-check" style="color:var(--purple)"></i> Sem multas</span>
-                        </div>
-                    </div>
-                    
-                    <p style="font-size:0.9em; color:var(--gray); text-align:center; margin:16px 0">
-                        <i class="fas fa-clock"></i> Ao renovar, você continua de onde parou. Seus dados permanecem intactos.
-                    </p>
-                    
-                    <div style="display:flex; gap:16px; justify-content:center; margin:20px 0; flex-wrap:wrap">
-                        <div class="plano-card mensal" onclick="gerarLinkPagamento('mensal')" style="width:180px; padding:15px">
-                            <i class="fas fa-crown" style="font-size:24px"></i>
-                            <h4 style="margin:8px 0">Mensal</h4>
-                            <div class="plano-preco" style="font-size:1.5em">R$ 17,90</div>
-                            <div class="plano-periodo">por mês</div>
-                        </div>
-                        
-                        <div class="plano-card anual" onclick="gerarLinkPagamento('anual')" style="width:180px; padding:15px">
-                            <i class="fas fa-star" style="font-size:24px"></i>
-                            <h4 style="margin:8px 0">Anual</h4>
-                            <div class="plano-preco" style="font-size:1.5em">R$ 189,90</div>
-                            <div class="plano-periodo">por ano</div>
-                            <div style="font-size:0.8em; margin-top:8px">Economize R$ 25</div>
-                        </div>
-                    </div>
-                    
-                    <div class="btn-group" style="margin-top:20px">
-                        <button class="btn btn-primary" onclick="fecharModal()" style="flex:1">Fechar</button>
-                    </div>
-                </div>
-            `;
-            abrirModal('Plano Premium', 'fa-crown', conteudo);
-        }
-
-        // Função de limpeza automática
         async function limparDadosAntigos() {
             if (!App.currentUser) return;
             
@@ -2417,7 +2314,6 @@
             }
         }
 
-        // Funções de cache local
         async function carregarDadosDoCache() {
             if (!App.currentUser) return false;
             
@@ -2431,7 +2327,6 @@
                 if (cached && timestamp) {
                     const cacheAge = Date.now() - parseInt(timestamp);
                     
-                    // Cache válido por 5 minutos para dados completos
                     if (cacheAge < 5 * 60 * 1000) {
                         App.dataCache = JSON.parse(cached);
                         atualizarListaBadge();
@@ -2461,7 +2356,6 @@
             }
         }
 
-        // Funções de notificação
         async function inicializarNotificacoes() {
             if (!('Notification' in window)) {
                 console.log('Notificações não suportadas');
@@ -2504,7 +2398,81 @@
             }
         }
 
-        // Funções de cálculo de recorrência
+        async function agendarNotificacoes() {
+            if (!App.currentUser) return;
+            
+            let config = App.notificacoesConfig;
+            let hoje = new Date();
+            hoje.setHours(0, 0, 0, 0);
+            
+            let notificacoes = [];
+            
+            if (config.contas) {
+                let { mes, ano } = getMesAnoAtual();
+                let contas = combinarContasDoMes(mes, ano);
+                
+                contas.forEach(conta => {
+                    if (conta.valor_pago > 0 || conta.status === 'paga') return;
+                    
+                    let dataVenc = criarData(conta.ano, conta.mes, conta.dia);
+                    let diasAntecedencia = config.antecedencia.contas || 0;
+                    let dataNotificacao = new Date(dataVenc);
+                    dataNotificacao.setDate(dataNotificacao.getDate() - diasAntecedencia);
+                    
+                    if (dataNotificacao <= hoje) return;
+                    
+                    notificacoes.push({
+                        titulo: 'Conta a vencer',
+                        corpo: `${conta.descricao} - ${formatCurrency(conta.valor_original || conta.valor)}`,
+                        data: dataNotificacao,
+                        tipo: 'conta'
+                    });
+                });
+            }
+            
+            if (config.eventos) {
+                let { mes, ano } = getMesAnoAtual();
+                let eventos = combinarEventosDoMes(mes, ano);
+                
+                eventos.forEach(evento => {
+                    let dataEvento = criarData(evento.ano, evento.mes, evento.dia);
+                    let diasAntecedencia = config.antecedencia.eventos || 0;
+                    let dataNotificacao = new Date(dataEvento);
+                    dataNotificacao.setDate(dataNotificacao.getDate() - diasAntecedencia);
+                    
+                    if (dataNotificacao <= hoje) return;
+                    
+                    notificacoes.push({
+                        titulo: 'Evento próximo',
+                        corpo: evento.titulo,
+                        data: dataNotificacao,
+                        tipo: 'evento'
+                    });
+                });
+            }
+            
+            App.notificacoesAgendadas = notificacoes;
+            
+            if (App.serviceWorkerRegistration && 'showNotification' in App.serviceWorkerRegistration) {
+                notificacoes.forEach(notif => {
+                    let agora = new Date();
+                    let diffMs = notif.data - agora;
+                    
+                    if (diffMs > 0 && diffMs <= 30 * 24 * 60 * 60 * 1000) {
+                        setTimeout(() => {
+                            App.serviceWorkerRegistration.showNotification(notif.titulo, {
+                                body: notif.corpo,
+                                icon: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/svgs/solid/home.svg',
+                                badge: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/svgs/solid/bell.svg',
+                                vibrate: [200, 100, 200],
+                                data: { tipo: notif.tipo }
+                            });
+                        }, diffMs);
+                    }
+                });
+            }
+        }
+
         function calcularProximaData(data, frequencia, diaReferencia = null) {
             let novaData = new Date(data);
             
@@ -2718,7 +2686,6 @@
             return resultados;
         }
 
-        // Funções de carregamento de dados
         async function carregarDados(forceRefresh) {
             if (!App.currentUser) return;
             
@@ -2792,12 +2759,6 @@
                     await verificarECriarSaldoCentral();
                 }
 
-                // Carregar preferência de exibição do saldo
-                const saldoExibirPref = localStorage.getItem(`saldo_exibir_${App.currentUser.id}`);
-                if (saldoExibirPref !== null) {
-                    App.saldoExibirHeader = saldoExibirPref === 'true';
-                }
-
                 App.dataCache = {
                     contas: contas || [], regrasContas: regrasContas || [], eventos: eventos || [],
                     eventosIndividuais: eventosIndividuais || [], regrasEventos: regrasEventos || [],
@@ -2808,6 +2769,8 @@
                 salvarCacheLocal();
                 atualizarListaBadge();
                 atualizarSaldoHeader();
+                
+                agendarNotificacoes();
                 
                 document.getElementById('loadingState').style.display = 'none';
             } catch (error) {
@@ -3059,9 +3022,8 @@
                     <div class="item-value">${formatCurrency(g.valor)}</div>
                     <div class="item-actions">
                         ${podeEditar ? `
-                            <button class="action-btn undo" onclick="event.stopPropagation();verificarEAcaoEdicao(() => cancelarGasto('${g.id}','${g.descricao}',${g.valor}))"><i class="fas fa-undo-alt"></i></button>
+                            <button class="action-btn delete" onclick="event.stopPropagation();verificarEAcaoEdicao(() => confirmarExclusaoGasto('${g.id}','${g.descricao}',${g.valor}))"><i class="fas fa-trash"></i></button>
                             <button class="action-btn edit" onclick="event.stopPropagation();verificarEAcaoEdicao(() => editarGasto('${g.id}'))"><i class="fas fa-edit"></i></button>
-                            <button class="action-btn delete" onclick="event.stopPropagation();verificarEAcaoEdicao(() => deletarGasto('${g.id}'))"><i class="fas fa-trash"></i></button>
                         ` : ''}
                     </div>
                 </div>`;
@@ -3137,13 +3099,21 @@
 
             if (central) {
                 let dataAtualizacao = new Date(central.data || new Date());
+                dataAtualizacao.setDate(dataAtualizacao.getDate() + 1);
+                
+                let toggleIcon = App.exibirSaldoHeader ? 'fa-eye' : 'fa-eye-slash';
+                let toggleText = App.exibirSaldoHeader ? 'Ocultar' : 'Mostrar';
+                
                 html += `<div style="padding:16px;background:linear-gradient(135deg,var(--purple),var(--purple-dark));color:#fff;border-radius:8px;margin-bottom:12px">
-                    <div style="font-size:.9em;opacity:.9">Saldo Central</div>
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <div style="font-size:.9em;opacity:.9">Saldo Central</div>
+                        <div class="toggle-saldo ${App.exibirSaldoHeader ? 'active' : ''}" onclick="toggleExibirSaldoHeader()">
+                            <i class="fas ${toggleIcon}"></i> ${toggleText} no cabeçalho
+                        </div>
+                    </div>
                     <div style="font-size:1.8em;font-weight:700">${formatCurrency(central.valor)}</div>
                     <div style="font-size:.8em;margin-top:4px">Atualizado: ${dataAtualizacao.toLocaleDateString('pt-BR')}</div>
-                    <div style="margin-top:4px; font-size:0.8em; background:rgba(255,255,255,0.2); padding:4px 8px; border-radius:4px">
-                        <i class="fas fa-info-circle"></i> Dados mantidos por 3 meses
-                    </div>
+                    <div style="font-size:.7em;margin-top:2px;opacity:0.8">* Dados dos últimos 3 meses são mantidos</div>
                     ${podeEditar ? `
                     <div class="btn-group" style="margin-top:12px">
                         <button class="btn btn-sm btn-success" onclick="abrirAdicionarValorSaldo('${central.id}')"><i class="fas fa-plus"></i> Adicionar</button>
@@ -3181,6 +3151,12 @@
             }
             html += '</div>';
             content.innerHTML = html;
+        }
+
+        function toggleExibirSaldoHeader() {
+            App.exibirSaldoHeader = !App.exibirSaldoHeader;
+            atualizarSaldoHeader();
+            mostrarConteudo();
         }
 
         async function renderizarGiros(content) {
@@ -3242,7 +3218,6 @@
             content.innerHTML = html;
         }
 
-        // Funções de usuário
         function carregarUsuarioLocal() {
             if (!App.currentUser) return;
             const key = `mylife_usuario_${App.currentUser.id}`;
@@ -3297,7 +3272,6 @@
             }
         }
 
-        // Função para abrir nova conta
         function abrirNovaConta() {
             let { mes, ano } = getMesAnoAtual();
             let diaPadrao = App.selectedDay || new Date().getDate();
@@ -3430,7 +3404,6 @@
             }
         }
 
-        // Função para editar conta
         function editarConta(id, isRecorrente, regraId, dia, mes, ano) {
             if (!App.dataCache || (!App.dataCache.contas && !App.dataCache.regrasContas)) {
                 showToast('Dados não carregados. Tente novamente.', 'warning');
@@ -3551,7 +3524,6 @@
             }
         }
 
-        // Função para abrir novo evento
         function abrirNovoEventoUnificado() {
             let { mes, ano } = getMesAnoAtual();
             let diaPadrao = App.selectedDay || new Date().getDate();
@@ -3887,7 +3859,6 @@
             }
         }
 
-        // Função para editar evento
         function editarEvento(id, isRecorrente, regraId, isIndividual, individualId, dia, mes, ano) {
             if (!App.dataCache || (!App.dataCache.eventos && !App.dataCache.regrasEventos && !App.dataCache.eventosIndividuais)) {
                 showToast('Dados não carregados. Tente novamente.', 'warning');
@@ -4135,7 +4106,6 @@
             }
         }
 
-        // Função de pagamento
         function abrirModalPagamento(id, desc, valor, regraId, dia, mes, ano, isRecorrente, codigoPagamento) {
             let codigoHtml = codigoPagamento ? `
                 <div class="payment-info">
@@ -4288,7 +4258,73 @@
             }
         }
 
+        function confirmarExclusaoGasto(id, desc, valor) {
+            let conteudo = `
+                <div style="padding:16px">
+                    <h3 style="margin-bottom:16px">Excluir Gasto</h3>
+                    <p>Como deseja excluir este gasto?</p>
+                    <div class="exclusao-gasto-opcao" onclick="excluirGastoComSaldo('${id}', ${valor})">
+                        <strong>Excluir e devolver saldo</strong>
+                        <p style="font-size:0.9em;color:var(--gray)">O valor de ${formatCurrency(valor)} voltará para o saldo central</p>
+                    </div>
+                    <div class="exclusao-gasto-opcao" onclick="excluirGastoSemSaldo('${id}')">
+                        <strong>Excluir sem devolver saldo</strong>
+                        <p style="font-size:0.9em;color:var(--gray)">O valor será removido permanentemente (não volta para o saldo)</p>
+                    </div>
+                    <div class="btn-group" style="margin-top:20px">
+                        <button class="btn" onclick="fecharModal()" style="background:var(--gray);color:#fff">Cancelar</button>
+                    </div>
+                </div>
+            `;
+            abrirModal('Excluir Gasto', 'fa-trash', conteudo);
+        }
+
+        async function excluirGastoComSaldo(id, valor) {
+            try {
+                await App.supabase.from('gastos').delete().eq('id', id);
+
+                if (App.saldoCentral.id) {
+                    let { data: saldoAtual } = await App.supabase.from('saldos').select('valor').eq('id', App.saldoCentral.id).single();
+                    if (saldoAtual) {
+                        let novoValor = saldoAtual.valor + valor;
+                        await App.supabase.from('saldos').update({ valor: novoValor }).eq('id', App.saldoCentral.id);
+                        App.saldoCentral.valor = novoValor;
+                        atualizarSaldoHeader();
+                    }
+                }
+
+                await registrarHistorico('exclusao_gasto', `Gasto excluído com devolução`, { id, valor, usuario: App.usuarioAtual });
+                showToast('Gasto excluído e saldo devolvido!', 'success');
+                fecharModal();
+                await carregarDados(true);
+                await mostrarConteudo();
+            } catch (error) {
+                console.error('Erro ao excluir gasto:', error);
+                showToast('Erro: ' + error.message, 'error');
+            }
+        }
+
+        async function excluirGastoSemSaldo(id) {
+            try {
+                await App.supabase.from('gastos').delete().eq('id', id);
+
+                await registrarHistorico('exclusao_gasto', `Gasto excluído sem devolução`, { id, usuario: App.usuarioAtual });
+                showToast('Gasto excluído!', 'success');
+                fecharModal();
+                await carregarDados(true);
+                await mostrarConteudo();
+            } catch (error) {
+                console.error('Erro ao excluir gasto:', error);
+                showToast('Erro: ' + error.message, 'error');
+            }
+        }
+
         function confirmarExclusao(id, tipo, isRecorrente, regraId, dia, mes, ano, isIndividual, individualId) {
+            if (tipo === 'gasto') {
+                confirmarExclusaoGasto(id, '', 0);
+                return;
+            }
+
             if (tipo === 'evento' && (isRecorrente || regraId || (!isRecorrente && dia && mes && ano))) {
                 let evento = isRecorrente ? App.dataCache.regrasEventos.find(r => r.id === regraId) : 
                             isIndividual ? App.dataCache.eventosIndividuais.find(e => e.id === individualId) :
@@ -4491,851 +4527,6 @@
                     showToast('Erro: ' + error.message, 'error');
                 }
             })();
-        }
-
-        // Funções de gastos
-        function abrirNovoGasto() {
-            let { mes, ano } = getMesAnoAtual();
-            let diaPadrao = App.selectedDay || new Date().getDate();
-            
-            let categoriasHtml = CONFIG.categoriasGastos.map(c => 
-                `<option value="${c.id}">${c.nome}</option>`
-            ).join('');
-
-            let conteudo = `
-                <div class="form-group">
-                    <label class="form-label"><i class="fas fa-heading"></i> Descrição</label>
-                    <input type="text" id="gastoDescricao" class="form-input" placeholder="Ex: Compras mercado...">
-                </div>
-                <div class="form-group">
-                    <label class="form-label"><i class="fas fa-dollar-sign"></i> Valor</label>
-                    <input type="text" id="gastoValor" class="form-input" placeholder="0,00" inputmode="decimal" onkeyup="this.value = this.value.replace(/[^0-9,]/g, '')">
-                </div>
-                <div class="form-group">
-                    <label class="form-label"><i class="fas fa-tag"></i> Categoria</label>
-                    <select id="gastoCategoria" class="form-select" onchange="if(this.value==='outros') document.getElementById('gastoOutrosDiv').style.display='block'; else document.getElementById('gastoOutrosDiv').style.display='none'">
-                        ${categoriasHtml}
-                    </select>
-                </div>
-                <div id="gastoOutrosDiv" style="display:none" class="form-group">
-                    <label class="form-label">Especifique a categoria</label>
-                    <input type="text" id="gastoOutrosTexto" class="form-input" placeholder="Ex: Roupas, Presentes...">
-                </div>
-                <div class="form-group">
-                    <label class="form-label"><i class="fas fa-calendar-day"></i> Dia</label>
-                    <input type="number" id="gastoDia" class="form-input" min="1" max="31" value="${diaPadrao}" inputmode="numeric">
-                </div>
-                <div class="form-group">
-                    <label class="form-label"><i class="fas fa-calendar-alt"></i> Mês/Ano</label>
-                    <div style="display:flex;gap:8px">
-                        <select id="gastoMes" class="form-select">
-                            ${CONFIG.meses.map((m, i) => `<option value="${i + 1}" ${i + 1 === mes ? 'selected' : ''}>${m}</option>`).join('')}
-                        </select>
-                        <input type="number" id="gastoAno" class="form-input" value="${ano}" inputmode="numeric">
-                    </div>
-                </div>
-                <div class="btn-group" style="margin-top:20px">
-                    <button class="btn btn-primary" onclick="salvarNovoGasto()" style="flex:2"><i class="fas fa-save"></i> Salvar</button>
-                    <button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button>
-                </div>
-            `;
-            abrirModal('Novo Gasto', 'fa-shopping-bag', conteudo);
-        }
-
-        async function salvarNovoGasto() {
-            let desc = document.getElementById('gastoDescricao')?.value.trim();
-            let valor = parseCurrency(document.getElementById('gastoValor')?.value);
-            let dia = parseInt(document.getElementById('gastoDia')?.value);
-            let mes = parseInt(document.getElementById('gastoMes')?.value);
-            let ano = parseInt(document.getElementById('gastoAno')?.value);
-            let cat = document.getElementById('gastoCategoria')?.value;
-            let catCustom = null;
-
-            if (cat === 'outros') {
-                catCustom = document.getElementById('gastoOutrosTexto')?.value.trim();
-                if (!catCustom) {
-                    showToast('Especifique a categoria', 'warning');
-                    return;
-                }
-            }
-
-            if (!desc || !valor || !dia || !mes || !ano) {
-                showToast('Preencha todos os campos', 'warning');
-                return;
-            }
-
-            if (!dataValida(ano, mes, dia)) {
-                showToast('Dia inválido para o mês selecionado', 'warning');
-                return;
-            }
-
-            let diaAjustado = dia;
-            let data = dataParaString(ano, mes, diaAjustado);
-
-            try {
-                let gastoData = {
-                    user_id: App.currentUser.id,
-                    descricao: desc,
-                    valor: valor,
-                    categoria: cat || 'outros',
-                    dia: diaAjustado,
-                    mes: mes,
-                    ano: ano,
-                    data: data,
-                    added_by: App.usuarioAtual || 'desconhecido'
-                };
-                if (cat === 'outros' && catCustom) gastoData.categoria_customizada = catCustom;
-
-                await App.supabase.from('gastos').insert(gastoData);
-
-                if (App.saldoCentral.id) {
-                    let { data: saldoAtual } = await App.supabase.from('saldos').select('valor').eq('id', App.saldoCentral.id).single();
-                    if (saldoAtual) {
-                        let novoValor = saldoAtual.valor - valor;
-                        await App.supabase.from('saldos').update({ valor: novoValor, data: new Date().toISOString() }).eq('id', App.saldoCentral.id);
-                        App.saldoCentral.valor = novoValor;
-                        atualizarSaldoHeader();
-                    }
-                }
-
-                verificarNotificacoes({ descricao: desc, valor }, 'gastos');
-                await registrarHistorico('criacao_gasto', `Gasto: ${desc}`, { desc, valor, cat, usuario: App.usuarioAtual });
-                showToast('Gasto registrado!', 'success');
-                fecharModal();
-                await carregarDados(true);
-                await atualizarCalendario();
-                await mostrarConteudo();
-            } catch (error) {
-                console.error('Erro ao salvar gasto:', error);
-                showToast('Erro: ' + error.message, 'error');
-            }
-        }
-
-        function cancelarGasto(id, desc, valor) {
-            if (confirm(`Cancelar gasto ${desc} de ${formatCurrency(valor)}?`)) {
-                (async () => {
-                    try {
-                        await App.supabase.from('gastos').delete().eq('id', id);
-
-                        if (App.saldoCentral.id) {
-                            let { data: saldoAtual } = await App.supabase.from('saldos').select('valor').eq('id', App.saldoCentral.id).single();
-                            if (saldoAtual) {
-                                let novoValor = saldoAtual.valor + valor;
-                                await App.supabase.from('saldos').update({ valor: novoValor }).eq('id', App.saldoCentral.id);
-                                App.saldoCentral.valor = novoValor;
-                                atualizarSaldoHeader();
-                            }
-                        }
-
-                        await registrarHistorico('cancelamento_gasto', `Gasto cancelado: ${desc}`, { id, valor, usuario: App.usuarioAtual });
-                        showToast('Gasto cancelado!', 'success');
-                        await carregarDados(true);
-                        await mostrarConteudo();
-                    } catch (error) {
-                        console.error('Erro ao cancelar gasto:', error);
-                        showToast('Erro: ' + error.message, 'error');
-                    }
-                })();
-            }
-        }
-
-        function deletarGasto(id) {
-            if (confirm('Tem certeza que deseja excluir este gasto permanentemente?')) {
-                (async () => {
-                    try {
-                        await App.supabase.from('gastos').delete().eq('id', id);
-                        showToast('Gasto excluído!', 'success');
-                        await carregarDados(true);
-                        await mostrarConteudo();
-                    } catch (error) {
-                        console.error('Erro ao excluir gasto:', error);
-                        showToast('Erro: ' + error.message, 'error');
-                    }
-                })();
-            }
-        }
-
-        function editarGasto(id) {
-            let gasto = App.dataCache.gastos.find(g => g.id === id);
-            if (!gasto) return;
-            
-            let categoriasHtml = CONFIG.categoriasGastos.map(c => 
-                `<option value="${c.id}" ${gasto.categoria === c.id ? 'selected' : ''}>${c.nome}</option>`
-            ).join('');
-
-            let conteudo = `
-                <div class="form-group">
-                    <label class="form-label"><i class="fas fa-heading"></i> Descrição</label>
-                    <input type="text" id="gastoDescricaoEdit" class="form-input" value="${gasto.descricao}">
-                </div>
-                <div class="form-group">
-                    <label class="form-label"><i class="fas fa-dollar-sign"></i> Valor</label>
-                    <input type="text" id="gastoValorEdit" class="form-input" value="${gasto.valor.toFixed(2).replace('.', ',')}" inputmode="decimal" onkeyup="this.value = this.value.replace(/[^0-9,]/g, '')">
-                </div>
-                <div class="form-group">
-                    <label class="form-label"><i class="fas fa-tag"></i> Categoria</label>
-                    <select id="gastoCategoriaEdit" class="form-select">
-                        ${categoriasHtml}
-                    </select>
-                </div>
-                <div class="btn-group" style="margin-top:20px">
-                    <button class="btn btn-primary" onclick="salvarEdicaoGasto('${id}')" style="flex:2"><i class="fas fa-save"></i> Salvar</button>
-                    <button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button>
-                </div>
-            `;
-            abrirModal('Editar Gasto', 'fa-edit', conteudo);
-        }
-
-        async function salvarEdicaoGasto(id) {
-            let desc = document.getElementById('gastoDescricaoEdit')?.value.trim();
-            let valor = parseCurrency(document.getElementById('gastoValorEdit')?.value);
-            let cat = document.getElementById('gastoCategoriaEdit')?.value;
-
-            if (!desc || !valor) {
-                showToast('Preencha todos os campos', 'warning');
-                return;
-            }
-
-            try {
-                await App.supabase.from('gastos').update({
-                    descricao: desc,
-                    valor: valor,
-                    categoria: cat
-                }).eq('id', id);
-
-                showToast('Gasto atualizado!', 'success');
-                fecharModal();
-                await carregarDados(true);
-                await mostrarConteudo();
-            } catch (error) {
-                console.error('Erro ao editar gasto:', error);
-                showToast('Erro: ' + error.message, 'error');
-            }
-        }
-
-        // Funções de lista de compras
-        function abrirNovoItemLista() {
-            let conteudo = `
-                <div class="form-group">
-                    <label class="form-label"><i class="fas fa-sort-numeric-up"></i> Quantidade</label>
-                    <input type="number" id="itemQuantidade" class="form-input" min="1" value="1" inputmode="numeric">
-                </div>
-                <div class="form-group">
-                    <label class="form-label"><i class="fas fa-heading"></i> Descrição</label>
-                    <input type="text" id="itemDescricao" class="form-input" placeholder="Ex: Arroz, Feijão...">
-                </div>
-                <div class="btn-group" style="margin-top:20px">
-                    <button class="btn btn-primary" onclick="salvarNovoItemLista()" style="flex:2"><i class="fas fa-save"></i> Adicionar</button>
-                    <button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button>
-                </div>
-            `;
-            abrirModal('Novo Item na Lista', 'fa-shopping-cart', conteudo);
-        }
-
-        async function salvarNovoItemLista() {
-            let qtd = parseInt(document.getElementById('itemQuantidade')?.value);
-            let desc = document.getElementById('itemDescricao')?.value.trim();
-
-            if (!qtd || !desc) {
-                showToast('Preencha quantidade e descrição', 'warning');
-                return;
-            }
-
-            try {
-                await App.supabase.from('lista_compras').insert({
-                    user_id: App.currentUser.id,
-                    quantidade: qtd,
-                    descricao: desc,
-                    comprado: false,
-                    added_by: App.usuarioAtual || 'desconhecido'
-                });
-
-                verificarNotificacoes({ descricao: desc }, 'lista');
-                await registrarHistorico('criacao_lista', `Item adicionado: ${desc}`, { qtd, desc, usuario: App.usuarioAtual });
-                showToast('Item adicionado!', 'success');
-                fecharModal();
-                await carregarDados(true);
-                await mostrarConteudo();
-            } catch (error) {
-                console.error('Erro:', error);
-                showToast('Erro: ' + error.message, 'error');
-            }
-        }
-
-        function alternarComprado(id) {
-            (async () => {
-                try {
-                    let item = App.dataCache.lista.find(i => i.id === id);
-                    if (item) {
-                        await App.supabase.from('lista_compras').update({
-                            comprado: !item.comprado
-                        }).eq('id', id);
-
-                        await registrarHistorico('alternar_lista', `Item ${item.comprado ? 'desmarcado' : 'marcado'}: ${item.descricao}`, { id, usuario: App.usuarioAtual });
-                        await carregarDados(true);
-                        await mostrarConteudo();
-                    }
-                } catch (error) {
-                    console.error('Erro ao alternar item:', error);
-                    showToast('Erro: ' + error.message, 'error');
-                }
-            })();
-        }
-
-        function deletarItemLista(id) {
-            if (confirm('Remover item da lista?')) {
-                (async () => {
-                    try {
-                        await App.supabase.from('lista_compras').delete().eq('id', id);
-                        await registrarHistorico('exclusao_lista', `Item removido da lista`, { id, usuario: App.usuarioAtual });
-                        showToast('Item removido!', 'success');
-                        await carregarDados(true);
-                        await mostrarConteudo();
-                    } catch (error) {
-                        console.error('Erro ao remover item:', error);
-                        showToast('Erro: ' + error.message, 'error');
-                    }
-                })();
-            }
-        }
-
-        // Funções de giro
-        function abrirNovoGiro() {
-            let conteudo = `
-                <div class="form-group">
-                    <label class="form-label"><i class="fas fa-heading"></i> Descrição</label>
-                    <input type="text" id="giroDescricao" class="form-input" placeholder="Ex: Empréstimo para João">
-                </div>
-                <div class="form-group">
-                    <label class="form-label"><i class="fas fa-dollar-sign"></i> Valor Inicial</label>
-                    <input type="text" id="giroValor" class="form-input" placeholder="0,00" inputmode="decimal" onkeyup="this.value = this.value.replace(/[^0-9,]/g, '')">
-                </div>
-                <div class="form-group">
-                    <label class="form-label"><i class="fas fa-user"></i> Pessoa</label>
-                    <input type="text" id="giroPessoa" class="form-input" placeholder="Nome da pessoa">
-                </div>
-                <div class="btn-group" style="margin-top:20px">
-                    <button class="btn btn-primary" onclick="salvarNovoGiro()" style="flex:2"><i class="fas fa-save"></i> Salvar</button>
-                    <button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button>
-                </div>
-            `;
-            abrirModal('Novo Giro', 'fa-hand-holding-usd', conteudo);
-        }
-
-        async function salvarNovoGiro() {
-            let desc = document.getElementById('giroDescricao')?.value.trim();
-            let valor = parseCurrency(document.getElementById('giroValor')?.value);
-            let pessoa = document.getElementById('giroPessoa')?.value.trim();
-
-            if (!desc || !valor || !pessoa) {
-                showToast('Preencha todos os campos', 'warning');
-                return;
-            }
-
-            try {
-                await App.supabase.from('giros').insert({
-                    user_id: App.currentUser.id,
-                    descricao: desc,
-                    valor_inicial: valor,
-                    pessoa: pessoa,
-                    added_by: App.usuarioAtual || 'desconhecido'
-                });
-
-                await registrarHistorico('criacao_giro', `Giro criado: ${desc}`, { desc, valor, pessoa, usuario: App.usuarioAtual });
-                showToast('Giro salvo!', 'success');
-                fecharModal();
-                await carregarDados(true);
-                await mostrarConteudo();
-            } catch (error) {
-                console.error('Erro ao salvar giro:', error);
-                showToast('Erro: ' + error.message, 'error');
-            }
-        }
-
-        function abrirPagamentoGiro(id, desc) {
-            let conteudo = `
-                <div class="form-group">
-                    <label class="form-label"><i class="fas fa-dollar-sign"></i> Valor do Pagamento</label>
-                    <input type="text" id="pagamentoValor" class="form-input" placeholder="0,00" inputmode="decimal" onkeyup="this.value = this.value.replace(/[^0-9,]/g, '')">
-                </div>
-                <div class="form-group">
-                    <label class="form-label"><i class="fas fa-align-left"></i> Descrição (opcional)</label>
-                    <input type="text" id="pagamentoDescricao" class="form-input" placeholder="Ex: Parcela 1">
-                </div>
-                <div class="btn-group" style="margin-top:20px">
-                    <button class="btn btn-success" onclick="salvarPagamentoGiro('${id}','${desc}')" style="flex:2"><i class="fas fa-check"></i> Confirmar</button>
-                    <button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button>
-                </div>
-            `;
-            abrirModal(`Pagar ${desc}`, 'fa-arrow-down', conteudo);
-        }
-
-        async function salvarPagamentoGiro(id, desc) {
-            let valor = parseCurrency(document.getElementById('pagamentoValor')?.value);
-            let descricao = document.getElementById('pagamentoDescricao')?.value.trim();
-
-            if (!valor) {
-                showToast('Digite o valor', 'warning');
-                return;
-            }
-
-            try {
-                await App.supabase.from('movimentacoes_giro').insert({
-                    user_id: App.currentUser.id,
-                    giro_id: id,
-                    tipo: 'pagamento',
-                    valor: valor,
-                    descricao: descricao || `Pagamento para ${desc}`,
-                    data: new Date().toISOString(),
-                    added_by: App.usuarioAtual || 'desconhecido'
-                });
-
-                await registrarHistorico('pagamento_giro', `Pagamento de ${formatCurrency(valor)} para ${desc}`, { id, valor, usuario: App.usuarioAtual });
-                showToast('Pagamento registrado!', 'success');
-                fecharModal();
-                await carregarDados(true);
-                await mostrarConteudo();
-            } catch (error) {
-                console.error('Erro ao registrar pagamento:', error);
-                showToast('Erro: ' + error.message, 'error');
-            }
-        }
-
-        function abrirRecebimentoGiro(id, desc) {
-            let conteudo = `
-                <div class="form-group">
-                    <label class="form-label"><i class="fas fa-dollar-sign"></i> Valor do Recebimento</label>
-                    <input type="text" id="recebimentoValor" class="form-input" placeholder="0,00" inputmode="decimal" onkeyup="this.value = this.value.replace(/[^0-9,]/g, '')">
-                </div>
-                <div class="form-group">
-                    <label class="form-label"><i class="fas fa-align-left"></i> Descrição (opcional)</label>
-                    <input type="text" id="recebimentoDescricao" class="form-input" placeholder="Ex: Parcela 1">
-                </div>
-                <div class="btn-group" style="margin-top:20px">
-                    <button class="btn btn-warning" onclick="salvarRecebimentoGiro('${id}','${desc}')" style="flex:2"><i class="fas fa-check"></i> Confirmar</button>
-                    <button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button>
-                </div>
-            `;
-            abrirModal(`Receber ${desc}`, 'fa-arrow-up', conteudo);
-        }
-
-        async function salvarRecebimentoGiro(id, desc) {
-            let valor = parseCurrency(document.getElementById('recebimentoValor')?.value);
-            let descricao = document.getElementById('recebimentoDescricao')?.value.trim();
-
-            if (!valor) {
-                showToast('Digite o valor', 'warning');
-                return;
-            }
-
-            try {
-                await App.supabase.from('movimentacoes_giro').insert({
-                    user_id: App.currentUser.id,
-                    giro_id: id,
-                    tipo: 'recebimento',
-                    valor: valor,
-                    descricao: descricao || `Recebimento de ${desc}`,
-                    data: new Date().toISOString(),
-                    added_by: App.usuarioAtual || 'desconhecido'
-                });
-
-                await registrarHistorico('recebimento_giro', `Recebimento de ${formatCurrency(valor)} de ${desc}`, { id, valor, usuario: App.usuarioAtual });
-                showToast('Recebimento registrado!', 'success');
-                fecharModal();
-                await carregarDados(true);
-                await mostrarConteudo();
-            } catch (error) {
-                console.error('Erro ao registrar recebimento:', error);
-                showToast('Erro: ' + error.message, 'error');
-            }
-        }
-
-        function editarGiro(id) {
-            let giro = App.dataCache.giros.find(g => g.id === id);
-            if (!giro) return;
-
-            let conteudo = `
-                <div class="form-group">
-                    <label class="form-label"><i class="fas fa-heading"></i> Descrição</label>
-                    <input type="text" id="giroDescricaoEdit" class="form-input" value="${giro.descricao}">
-                </div>
-                <div class="form-group">
-                    <label class="form-label"><i class="fas fa-user"></i> Pessoa</label>
-                    <input type="text" id="giroPessoaEdit" class="form-input" value="${giro.pessoa || ''}">
-                </div>
-                <div class="btn-group" style="margin-top:20px">
-                    <button class="btn btn-primary" onclick="salvarEdicaoGiro('${id}')" style="flex:2"><i class="fas fa-save"></i> Salvar</button>
-                    <button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button>
-                </div>
-            `;
-            abrirModal('Editar Giro', 'fa-edit', conteudo);
-        }
-
-        async function salvarEdicaoGiro(id) {
-            let desc = document.getElementById('giroDescricaoEdit')?.value.trim();
-            let pessoa = document.getElementById('giroPessoaEdit')?.value.trim();
-
-            if (!desc || !pessoa) {
-                showToast('Preencha todos os campos', 'warning');
-                return;
-            }
-
-            try {
-                await App.supabase.from('giros').update({
-                    descricao: desc,
-                    pessoa: pessoa
-                }).eq('id', id);
-
-                await registrarHistorico('edicao_giro', `Giro editado: ${desc}`, { id, usuario: App.usuarioAtual });
-                showToast('Giro atualizado!', 'success');
-                fecharModal();
-                await carregarDados(true);
-                await mostrarConteudo();
-            } catch (error) {
-                console.error('Erro ao editar giro:', error);
-                showToast('Erro: ' + error.message, 'error');
-            }
-        }
-
-        function deletarGiro(id) {
-            if (confirm('Tem certeza que deseja excluir este giro?')) {
-                (async () => {
-                    try {
-                        await App.supabase.from('movimentacoes_giro').delete().eq('giro_id', id);
-                        await App.supabase.from('giros').delete().eq('id', id);
-                        await registrarHistorico('exclusao_giro', `Giro excluído`, { id, usuario: App.usuarioAtual });
-                        showToast('Giro excluído!', 'success');
-                        await carregarDados(true);
-                        await mostrarConteudo();
-                    } catch (error) {
-                        console.error('Erro ao excluir giro:', error);
-                        showToast('Erro: ' + error.message, 'error');
-                    }
-                })();
-            }
-        }
-
-        // Funções de saldo
-        function abrirAdicionarValorSaldo(id) {
-            let conteudo = `
-                <div class="form-group">
-                    <label class="form-label"><i class="fas fa-dollar-sign"></i> Valor para Adicionar</label>
-                    <input type="text" id="saldoValor" class="form-input" placeholder="0,00" inputmode="decimal" onkeyup="this.value = this.value.replace(/[^0-9,]/g, '')">
-                </div>
-                <div class="btn-group" style="margin-top:20px">
-                    <button class="btn btn-success" onclick="confirmarAdicionarSaldo('${id}')" style="flex:2"><i class="fas fa-plus"></i> Adicionar</button>
-                    <button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button>
-                </div>
-            `;
-            abrirModal('Adicionar ao Saldo', 'fa-plus-circle', conteudo);
-        }
-
-        async function confirmarAdicionarSaldo(id) {
-            let valor = parseCurrency(document.getElementById('saldoValor')?.value);
-            if (!valor) {
-                showToast('Digite um valor', 'warning');
-                return;
-            }
-
-            try {
-                let { data: saldoAtual } = await App.supabase.from('saldos').select('valor').eq('id', id).single();
-                if (saldoAtual) {
-                    let novoValor = saldoAtual.valor + valor;
-                    await App.supabase.from('saldos').update({ valor: novoValor }).eq('id', id);
-                    if (id === App.saldoCentral.id) {
-                        App.saldoCentral.valor = novoValor;
-                        atualizarSaldoHeader();
-                    }
-                }
-
-                await registrarHistorico('adicao_saldo', `Adicionado ${formatCurrency(valor)} ao saldo`, { id, valor, usuario: App.usuarioAtual });
-                showToast('Saldo atualizado!', 'success');
-                fecharModal();
-                await carregarDados(true);
-                await mostrarConteudo();
-            } catch (error) {
-                console.error('Erro ao adicionar saldo:', error);
-                showToast('Erro: ' + error.message, 'error');
-            }
-        }
-
-        function abrirRetirarValorSaldo(id) {
-            let conteudo = `
-                <div class="form-group">
-                    <label class="form-label"><i class="fas fa-dollar-sign"></i> Valor para Retirar</label>
-                    <input type="text" id="saldoValor" class="form-input" placeholder="0,00" inputmode="decimal" onkeyup="this.value = this.value.replace(/[^0-9,]/g, '')">
-                </div>
-                <div class="btn-group" style="margin-top:20px">
-                    <button class="btn btn-warning" onclick="confirmarRetirarSaldo('${id}')" style="flex:2"><i class="fas fa-minus"></i> Retirar</button>
-                    <button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button>
-                </div>
-            `;
-            abrirModal('Retirar do Saldo', 'fa-minus-circle', conteudo);
-        }
-
-        async function confirmarRetirarSaldo(id) {
-            let valor = parseCurrency(document.getElementById('saldoValor')?.value);
-            if (!valor) {
-                showToast('Digite um valor', 'warning');
-                return;
-            }
-
-            try {
-                let { data: saldoAtual } = await App.supabase.from('saldos').select('valor').eq('id', id).single();
-                if (saldoAtual) {
-                    let novoValor = saldoAtual.valor - valor;
-                    await App.supabase.from('saldos').update({ valor: novoValor }).eq('id', id);
-                    if (id === App.saldoCentral.id) {
-                        App.saldoCentral.valor = novoValor;
-                        atualizarSaldoHeader();
-                    }
-                }
-
-                await registrarHistorico('retirada_saldo', `Retirado ${formatCurrency(valor)} do saldo`, { id, valor, usuario: App.usuarioAtual });
-                showToast('Saldo atualizado!', 'success');
-                fecharModal();
-                await carregarDados(true);
-                await mostrarConteudo();
-            } catch (error) {
-                console.error('Erro ao retirar saldo:', error);
-                showToast('Erro: ' + error.message, 'error');
-            }
-        }
-
-        function abrirAtualizarValorSaldo(id) {
-            let saldo = App.dataCache.saldos.find(s => s.id === id);
-            if (!saldo) return;
-
-            let conteudo = `
-                <div class="form-group">
-                    <label class="form-label"><i class="fas fa-dollar-sign"></i> Novo Valor</label>
-                    <input type="text" id="saldoValor" class="form-input" value="${saldo.valor.toFixed(2).replace('.', ',')}" inputmode="decimal" onkeyup="this.value = this.value.replace(/[^0-9,]/g, '')">
-                </div>
-                <div class="btn-group" style="margin-top:20px">
-                    <button class="btn btn-primary" onclick="confirmarAtualizarSaldo('${id}')" style="flex:2"><i class="fas fa-save"></i> Atualizar</button>
-                    <button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button>
-                </div>
-            `;
-            abrirModal('Atualizar Saldo', 'fa-sync-alt', conteudo);
-        }
-
-        async function confirmarAtualizarSaldo(id) {
-            let valor = parseCurrency(document.getElementById('saldoValor')?.value);
-            if (valor === undefined) {
-                showToast('Digite um valor válido', 'warning');
-                return;
-            }
-
-            try {
-                await App.supabase.from('saldos').update({ valor: valor }).eq('id', id);
-                if (id === App.saldoCentral.id) {
-                    App.saldoCentral.valor = valor;
-                    atualizarSaldoHeader();
-                }
-
-                await registrarHistorico('atualizacao_saldo', `Saldo atualizado para ${formatCurrency(valor)}`, { id, valor, usuario: App.usuarioAtual });
-                showToast('Saldo atualizado!', 'success');
-                fecharModal();
-                await carregarDados(true);
-                await mostrarConteudo();
-            } catch (error) {
-                console.error('Erro ao atualizar saldo:', error);
-                showToast('Erro: ' + error.message, 'error');
-            }
-        }
-
-        function editarSaldo(id) {
-            let saldo = App.dataCache.saldos.find(s => s.id === id);
-            if (!saldo) return;
-
-            let conteudo = `
-                <div class="form-group">
-                    <label class="form-label"><i class="fas fa-heading"></i> Nome do Saldo</label>
-                    <input type="text" id="saldoNomeEdit" class="form-input" value="${saldo.nome || ''}">
-                </div>
-                <div class="btn-group" style="margin-top:20px">
-                    <button class="btn btn-primary" onclick="salvarEdicaoSaldo('${id}')" style="flex:2"><i class="fas fa-save"></i> Salvar</button>
-                    <button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button>
-                </div>
-            `;
-            abrirModal('Editar Saldo', 'fa-edit', conteudo);
-        }
-
-        async function salvarEdicaoSaldo(id) {
-            let nome = document.getElementById('saldoNomeEdit')?.value.trim();
-
-            try {
-                await App.supabase.from('saldos').update({ nome: nome }).eq('id', id);
-                await registrarHistorico('edicao_saldo', `Saldo renomeado para ${nome}`, { id, usuario: App.usuarioAtual });
-                showToast('Saldo atualizado!', 'success');
-                fecharModal();
-                await carregarDados(true);
-                await mostrarConteudo();
-            } catch (error) {
-                console.error('Erro ao editar saldo:', error);
-                showToast('Erro: ' + error.message, 'error');
-            }
-        }
-
-        function deletarSaldo(id) {
-            if (confirm('Tem certeza que deseja excluir este saldo?')) {
-                (async () => {
-                    try {
-                        await App.supabase.from('saldos').delete().eq('id', id);
-                        await registrarHistorico('exclusao_saldo', `Saldo excluído`, { id, usuario: App.usuarioAtual });
-                        showToast('Saldo excluído!', 'success');
-                        await carregarDados(true);
-                        await mostrarConteudo();
-                    } catch (error) {
-                        console.error('Erro ao excluir saldo:', error);
-                        showToast('Erro: ' + error.message, 'error');
-                    }
-                })();
-            }
-        }
-
-        function abrirNovoSaldo() {
-            let conteudo = `
-                <div class="form-group">
-                    <label class="form-label"><i class="fas fa-heading"></i> Nome do Saldo</label>
-                    <input type="text" id="saldoNome" class="form-input" placeholder="Ex: Poupança, Carteira...">
-                </div>
-                <div class="form-group">
-                    <label class="form-label"><i class="fas fa-dollar-sign"></i> Valor Inicial</label>
-                    <input type="text" id="saldoValor" class="form-input" placeholder="0,00" inputmode="decimal" onkeyup="this.value = this.value.replace(/[^0-9,]/g, '')">
-                </div>
-                <div class="form-group">
-                    <label class="form-label"><i class="fas fa-check-circle"></i> Saldo Central?</label>
-                    <select id="saldoCentral" class="form-select">
-                        <option value="false">Não</option>
-                        <option value="true">Sim</option>
-                    </select>
-                </div>
-                <div class="btn-group" style="margin-top:20px">
-                    <button class="btn btn-primary" onclick="salvarNovoSaldo()" style="flex:2"><i class="fas fa-save"></i> Salvar</button>
-                    <button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button>
-                </div>
-            `;
-            abrirModal('Novo Saldo', 'fa-wallet', conteudo);
-        }
-
-        async function salvarNovoSaldo() {
-            let nome = document.getElementById('saldoNome')?.value.trim();
-            let valor = parseCurrency(document.getElementById('saldoValor')?.value);
-            let isCentral = document.getElementById('saldoCentral')?.value === 'true';
-
-            if (!nome || !valor) {
-                showToast('Preencha todos os campos', 'warning');
-                return;
-            }
-
-            try {
-                if (isCentral) {
-                    let centralExistente = App.dataCache.saldos.find(s => s.is_central);
-                    if (centralExistente) {
-                        showToast('Já existe um saldo central', 'warning');
-                        return;
-                    }
-                }
-
-                await App.supabase.from('saldos').insert({
-                    user_id: App.currentUser.id,
-                    nome: nome,
-                    valor: valor,
-                    is_central: isCentral,
-                    added_by: App.usuarioAtual || 'desconhecido'
-                });
-
-                await registrarHistorico('criacao_saldo', `Saldo criado: ${nome}`, { nome, valor, isCentral, usuario: App.usuarioAtual });
-                showToast('Saldo criado!', 'success');
-                fecharModal();
-                await carregarDados(true);
-                await mostrarConteudo();
-            } catch (error) {
-                console.error('Erro ao criar saldo:', error);
-                showToast('Erro: ' + error.message, 'error');
-            }
-        }
-
-        function abrirExtratoSaldo(id) {
-            let saldo = App.dataCache.saldos.find(s => s.id === id);
-            if (!saldo) return;
-
-            let tresMesesAtras = new Date();
-            tresMesesAtras.setMonth(tresMesesAtras.getMonth() - 3);
-            tresMesesAtras.setHours(0, 0, 0, 0);
-
-            let movimentacoes = [];
-
-            App.dataCache.contas.forEach(c => {
-                if (c.data_pagamento && new Date(c.data_pagamento) >= tresMesesAtras) {
-                    movimentacoes.push({
-                        data: c.data_pagamento,
-                        tipo: 'pagamento_conta',
-                        descricao: `Pagamento: ${c.descricao}`,
-                        valor: -c.valor_pago,
-                        usuario: c.added_by || 'desconhecido'
-                    });
-                }
-            });
-
-            App.dataCache.gastos.forEach(g => {
-                let dataGasto = new Date(g.ano, g.mes - 1, g.dia, 12, 0, 0);
-                if (dataGasto >= tresMesesAtras) {
-                    movimentacoes.push({
-                        data: dataGasto,
-                        tipo: 'gasto',
-                        descricao: `Gasto: ${g.descricao}`,
-                        valor: -g.valor,
-                        usuario: g.added_by || 'desconhecido'
-                    });
-                }
-            });
-
-            App.dataCache.historico.forEach(h => {
-                let dataHist = new Date(h.data);
-                if (dataHist >= tresMesesAtras) {
-                    movimentacoes.push({
-                        data: dataHist,
-                        tipo: 'outro',
-                        descricao: h.descricao,
-                        valor: 0,
-                        usuario: h.usuario || 'desconhecido'
-                    });
-                }
-            });
-
-            movimentacoes.sort((a, b) => new Date(b.data) - new Date(a.data));
-
-            if (movimentacoes.length === 0) {
-                abrirModal(`Extrato de ${saldo.nome || 'Saldo'}`, 'fa-history', '<div class="empty-state"><p>Nenhuma movimentação nos últimos 3 meses</p></div>');
-                return;
-            }
-
-            let html = `<div class="items-list">`;
-            movimentacoes.forEach(m => {
-                let data = new Date(m.data).toLocaleDateString('pt-BR');
-                let classe = m.valor < 0 ? 'extrato-tipo pagamento' : m.valor > 0 ? 'extrato-tipo recebimento' : '';
-                html += `<div class="extrato-item">
-                    <div class="extrato-header">
-                        <span>${data}</span>
-                        <span class="${classe}">${m.valor !== 0 ? formatCurrency(Math.abs(m.valor)) : ''}</span>
-                    </div>
-                    <div class="extrato-detalhes">${m.descricao}</div>
-                    <div style="font-size:0.8em; color:var(--gray)">${m.usuario}</div>
-                </div>`;
-            });
-            html += '</div>';
-            abrirModal(`Extrato de ${saldo.nome || 'Saldo'} (3 meses)`, 'fa-history', html);
-        }
-
-        function autenticarSaldos() {
-            let senha = prompt('Senha de 4 dígitos:');
-            if (senha === App.saldoSenha) {
-                App.saldoAutenticado = true;
-                App.currentFilter = 'saldos';
-                mostrarConteudo();
-            } else if (senha) showToast('Senha incorreta', 'error');
         }
 
         function abrirMenuRelatorio() {
@@ -5686,9 +4877,8 @@
                     
                     <div style="margin-bottom:20px">
                         <h4 style="color:var(--purple-dark);margin-bottom:8px"><i class="fas fa-wallet"></i> Saldo e Gastos</h4>
-                        <p><strong>Saldo:</strong> Acesse a área de Saldos clicando no valor no menu superior. É protegido por senha (padrão: 1234).</p>
+                        <p><strong>Saldo:</strong> Acesse a área de Saldos clicando no valor no menu superior. É protegido por senha (padrão: 1234). Você pode ocultar/mostrar o saldo do cabeçalho.</p>
                         <p><strong>Gastos:</strong> No botão "Gastos" na barra inferior, registre seus gastos diários com categorias. Eles são automaticamente debitados do saldo central.</p>
-                        <p><strong>Dados mantidos:</strong> Apenas os últimos 3 meses são mantidos no sistema.</p>
                     </div>
                     
                     <div style="margin-bottom:20px">
@@ -5724,7 +4914,803 @@
             abrirModal('Manual de Instruções', 'fa-book', conteudo);
         }
 
-        // Funções de navegação
+        function abrirNovoGasto() {
+            let { mes, ano } = getMesAnoAtual();
+            let diaPadrao = App.selectedDay || new Date().getDate();
+            
+            let categoriasHtml = CONFIG.categoriasGastos.map(c => 
+                `<option value="${c.id}">${c.nome}</option>`
+            ).join('');
+
+            let conteudo = `
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-heading"></i> Descrição</label>
+                    <input type="text" id="gastoDescricao" class="form-input" placeholder="Ex: Compras mercado...">
+                </div>
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-dollar-sign"></i> Valor</label>
+                    <input type="text" id="gastoValor" class="form-input" placeholder="0,00" inputmode="decimal" onkeyup="this.value = this.value.replace(/[^0-9,]/g, '')">
+                </div>
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-tag"></i> Categoria</label>
+                    <select id="gastoCategoria" class="form-select" onchange="if(this.value==='outros') document.getElementById('gastoOutrosDiv').style.display='block'; else document.getElementById('gastoOutrosDiv').style.display='none'">
+                        ${categoriasHtml}
+                    </select>
+                </div>
+                <div id="gastoOutrosDiv" style="display:none" class="form-group">
+                    <label class="form-label">Especifique a categoria</label>
+                    <input type="text" id="gastoOutrosTexto" class="form-input" placeholder="Ex: Roupas, Presentes...">
+                </div>
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-calendar-day"></i> Dia</label>
+                    <input type="number" id="gastoDia" class="form-input" min="1" max="31" value="${diaPadrao}" inputmode="numeric">
+                </div>
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-calendar-alt"></i> Mês/Ano</label>
+                    <div style="display:flex;gap:8px">
+                        <select id="gastoMes" class="form-select">
+                            ${CONFIG.meses.map((m, i) => `<option value="${i + 1}" ${i + 1 === mes ? 'selected' : ''}>${m}</option>`).join('')}
+                        </select>
+                        <input type="number" id="gastoAno" class="form-input" value="${ano}" inputmode="numeric">
+                    </div>
+                </div>
+                <div class="btn-group" style="margin-top:20px">
+                    <button class="btn btn-primary" onclick="salvarNovoGasto()" style="flex:2"><i class="fas fa-save"></i> Salvar</button>
+                    <button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button>
+                </div>
+            `;
+            abrirModal('Novo Gasto', 'fa-shopping-bag', conteudo);
+        }
+
+        async function salvarNovoGasto() {
+            let desc = document.getElementById('gastoDescricao')?.value.trim();
+            let valor = parseCurrency(document.getElementById('gastoValor')?.value);
+            let dia = parseInt(document.getElementById('gastoDia')?.value);
+            let mes = parseInt(document.getElementById('gastoMes')?.value);
+            let ano = parseInt(document.getElementById('gastoAno')?.value);
+            let cat = document.getElementById('gastoCategoria')?.value;
+            let catCustom = null;
+
+            if (cat === 'outros') {
+                catCustom = document.getElementById('gastoOutrosTexto')?.value.trim();
+                if (!catCustom) {
+                    showToast('Especifique a categoria', 'warning');
+                    return;
+                }
+            }
+
+            if (!desc || !valor || !dia || !mes || !ano) {
+                showToast('Preencha todos os campos', 'warning');
+                return;
+            }
+
+            if (!dataValida(ano, mes, dia)) {
+                showToast('Dia inválido para o mês selecionado', 'warning');
+                return;
+            }
+
+            let diaAjustado = dia;
+            let data = dataParaString(ano, mes, diaAjustado);
+
+            try {
+                let gastoData = {
+                    user_id: App.currentUser.id,
+                    descricao: desc,
+                    valor: valor,
+                    categoria: cat || 'outros',
+                    dia: diaAjustado,
+                    mes: mes,
+                    ano: ano,
+                    data: data,
+                    added_by: App.usuarioAtual || 'desconhecido'
+                };
+                if (cat === 'outros' && catCustom) gastoData.categoria_customizada = catCustom;
+
+                await App.supabase.from('gastos').insert(gastoData);
+
+                if (App.saldoCentral.id) {
+                    let { data: saldoAtual } = await App.supabase.from('saldos').select('valor').eq('id', App.saldoCentral.id).single();
+                    if (saldoAtual) {
+                        let novoValor = saldoAtual.valor - valor;
+                        await App.supabase.from('saldos').update({ valor: novoValor, data: new Date().toISOString() }).eq('id', App.saldoCentral.id);
+                        App.saldoCentral.valor = novoValor;
+                        atualizarSaldoHeader();
+                    }
+                }
+
+                verificarNotificacoes({ descricao: desc, valor }, 'gastos');
+                await registrarHistorico('criacao_gasto', `Gasto: ${desc}`, { desc, valor, cat, usuario: App.usuarioAtual });
+                showToast('Gasto registrado!', 'success');
+                fecharModal();
+                await carregarDados(true);
+                await atualizarCalendario();
+                await mostrarConteudo();
+            } catch (error) {
+                console.error('Erro ao salvar gasto:', error);
+                showToast('Erro: ' + error.message, 'error');
+            }
+        }
+
+        function editarGasto(id) {
+            let gasto = App.dataCache.gastos.find(g => g.id === id);
+            if (!gasto) return;
+            
+            let categoriasHtml = CONFIG.categoriasGastos.map(c => 
+                `<option value="${c.id}" ${gasto.categoria === c.id ? 'selected' : ''}>${c.nome}</option>`
+            ).join('');
+
+            let conteudo = `
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-heading"></i> Descrição</label>
+                    <input type="text" id="gastoDescricaoEdit" class="form-input" value="${gasto.descricao}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-dollar-sign"></i> Valor</label>
+                    <input type="text" id="gastoValorEdit" class="form-input" value="${gasto.valor.toFixed(2).replace('.', ',')}" inputmode="decimal" onkeyup="this.value = this.value.replace(/[^0-9,]/g, '')">
+                </div>
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-tag"></i> Categoria</label>
+                    <select id="gastoCategoriaEdit" class="form-select">
+                        ${categoriasHtml}
+                    </select>
+                </div>
+                <div class="btn-group" style="margin-top:20px">
+                    <button class="btn btn-primary" onclick="salvarEdicaoGasto('${id}')" style="flex:2"><i class="fas fa-save"></i> Salvar</button>
+                    <button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button>
+                </div>
+            `;
+            abrirModal('Editar Gasto', 'fa-edit', conteudo);
+        }
+
+        async function salvarEdicaoGasto(id) {
+            let desc = document.getElementById('gastoDescricaoEdit')?.value.trim();
+            let valor = parseCurrency(document.getElementById('gastoValorEdit')?.value);
+            let cat = document.getElementById('gastoCategoriaEdit')?.value;
+
+            if (!desc || !valor) {
+                showToast('Preencha todos os campos', 'warning');
+                return;
+            }
+
+            try {
+                await App.supabase.from('gastos').update({
+                    descricao: desc,
+                    valor: valor,
+                    categoria: cat
+                }).eq('id', id);
+
+                showToast('Gasto atualizado!', 'success');
+                fecharModal();
+                await carregarDados(true);
+                await mostrarConteudo();
+            } catch (error) {
+                console.error('Erro ao editar gasto:', error);
+                showToast('Erro: ' + error.message, 'error');
+            }
+        }
+
+        function abrirNovoItemLista() {
+            let conteudo = `
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-sort-numeric-up"></i> Quantidade</label>
+                    <input type="number" id="itemQuantidade" class="form-input" min="1" value="1" inputmode="numeric">
+                </div>
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-heading"></i> Descrição</label>
+                    <input type="text" id="itemDescricao" class="form-input" placeholder="Ex: Arroz, Feijão...">
+                </div>
+                <div class="btn-group" style="margin-top:20px">
+                    <button class="btn btn-primary" onclick="salvarNovoItemLista()" style="flex:2"><i class="fas fa-save"></i> Adicionar</button>
+                    <button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button>
+                </div>
+            `;
+            abrirModal('Novo Item na Lista', 'fa-shopping-cart', conteudo);
+        }
+
+        async function salvarNovoItemLista() {
+            let qtd = parseInt(document.getElementById('itemQuantidade')?.value);
+            let desc = document.getElementById('itemDescricao')?.value.trim();
+
+            if (!qtd || !desc) {
+                showToast('Preencha quantidade e descrição', 'warning');
+                return;
+            }
+
+            try {
+                await App.supabase.from('lista_compras').insert({
+                    user_id: App.currentUser.id,
+                    quantidade: qtd,
+                    descricao: desc,
+                    comprado: false,
+                    added_by: App.usuarioAtual || 'desconhecido'
+                });
+
+                verificarNotificacoes({ descricao: desc }, 'lista');
+                await registrarHistorico('criacao_lista', `Item adicionado: ${desc}`, { qtd, desc, usuario: App.usuarioAtual });
+                showToast('Item adicionado!', 'success');
+                fecharModal();
+                await carregarDados(true);
+                await mostrarConteudo();
+            } catch (error) {
+                console.error('Erro:', error);
+                showToast('Erro: ' + error.message, 'error');
+            }
+        }
+
+        function alternarComprado(id) {
+            (async () => {
+                try {
+                    let item = App.dataCache.lista.find(i => i.id === id);
+                    if (item) {
+                        await App.supabase.from('lista_compras').update({
+                            comprado: !item.comprado
+                        }).eq('id', id);
+
+                        await registrarHistorico('alternar_lista', `Item ${item.comprado ? 'desmarcado' : 'marcado'}: ${item.descricao}`, { id, usuario: App.usuarioAtual });
+                        await carregarDados(true);
+                        await mostrarConteudo();
+                    }
+                } catch (error) {
+                    console.error('Erro ao alternar item:', error);
+                    showToast('Erro: ' + error.message, 'error');
+                }
+            })();
+        }
+
+        function deletarItemLista(id) {
+            if (confirm('Remover item da lista?')) {
+                (async () => {
+                    try {
+                        await App.supabase.from('lista_compras').delete().eq('id', id);
+                        await registrarHistorico('exclusao_lista', `Item removido da lista`, { id, usuario: App.usuarioAtual });
+                        showToast('Item removido!', 'success');
+                        await carregarDados(true);
+                        await mostrarConteudo();
+                    } catch (error) {
+                        console.error('Erro ao remover item:', error);
+                        showToast('Erro: ' + error.message, 'error');
+                    }
+                })();
+            }
+        }
+
+        function abrirNovoGiro() {
+            let conteudo = `
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-heading"></i> Descrição</label>
+                    <input type="text" id="giroDescricao" class="form-input" placeholder="Ex: Empréstimo para João">
+                </div>
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-dollar-sign"></i> Valor Inicial</label>
+                    <input type="text" id="giroValor" class="form-input" placeholder="0,00" inputmode="decimal" onkeyup="this.value = this.value.replace(/[^0-9,]/g, '')">
+                </div>
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-user"></i> Pessoa</label>
+                    <input type="text" id="giroPessoa" class="form-input" placeholder="Nome da pessoa">
+                </div>
+                <div class="btn-group" style="margin-top:20px">
+                    <button class="btn btn-primary" onclick="salvarNovoGiro()" style="flex:2"><i class="fas fa-save"></i> Salvar</button>
+                    <button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button>
+                </div>
+            `;
+            abrirModal('Novo Giro', 'fa-hand-holding-usd', conteudo);
+        }
+
+        async function salvarNovoGiro() {
+            let desc = document.getElementById('giroDescricao')?.value.trim();
+            let valor = parseCurrency(document.getElementById('giroValor')?.value);
+            let pessoa = document.getElementById('giroPessoa')?.value.trim();
+
+            if (!desc || !valor || !pessoa) {
+                showToast('Preencha todos os campos', 'warning');
+                return;
+            }
+
+            try {
+                await App.supabase.from('giros').insert({
+                    user_id: App.currentUser.id,
+                    descricao: desc,
+                    valor_inicial: valor,
+                    pessoa: pessoa,
+                    added_by: App.usuarioAtual || 'desconhecido'
+                });
+
+                await registrarHistorico('criacao_giro', `Giro criado: ${desc}`, { desc, valor, pessoa, usuario: App.usuarioAtual });
+                showToast('Giro salvo!', 'success');
+                fecharModal();
+                await carregarDados(true);
+                await mostrarConteudo();
+            } catch (error) {
+                console.error('Erro ao salvar giro:', error);
+                showToast('Erro: ' + error.message, 'error');
+            }
+        }
+
+        function abrirPagamentoGiro(id, desc) {
+            let conteudo = `
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-dollar-sign"></i> Valor do Pagamento</label>
+                    <input type="text" id="pagamentoValor" class="form-input" placeholder="0,00" inputmode="decimal" onkeyup="this.value = this.value.replace(/[^0-9,]/g, '')">
+                </div>
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-align-left"></i> Descrição (opcional)</label>
+                    <input type="text" id="pagamentoDescricao" class="form-input" placeholder="Ex: Parcela 1">
+                </div>
+                <div class="btn-group" style="margin-top:20px">
+                    <button class="btn btn-success" onclick="salvarPagamentoGiro('${id}','${desc}')" style="flex:2"><i class="fas fa-check"></i> Confirmar</button>
+                    <button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button>
+                </div>
+            `;
+            abrirModal(`Pagar ${desc}`, 'fa-arrow-down', conteudo);
+        }
+
+        async function salvarPagamentoGiro(id, desc) {
+            let valor = parseCurrency(document.getElementById('pagamentoValor')?.value);
+            let descricao = document.getElementById('pagamentoDescricao')?.value.trim();
+
+            if (!valor) {
+                showToast('Digite o valor', 'warning');
+                return;
+            }
+
+            try {
+                await App.supabase.from('movimentacoes_giro').insert({
+                    user_id: App.currentUser.id,
+                    giro_id: id,
+                    tipo: 'pagamento',
+                    valor: valor,
+                    descricao: descricao || `Pagamento para ${desc}`,
+                    data: new Date().toISOString(),
+                    added_by: App.usuarioAtual || 'desconhecido'
+                });
+
+                await registrarHistorico('pagamento_giro', `Pagamento de ${formatCurrency(valor)} para ${desc}`, { id, valor, usuario: App.usuarioAtual });
+                showToast('Pagamento registrado!', 'success');
+                fecharModal();
+                await carregarDados(true);
+                await mostrarConteudo();
+            } catch (error) {
+                console.error('Erro ao registrar pagamento:', error);
+                showToast('Erro: ' + error.message, 'error');
+            }
+        }
+
+        function abrirRecebimentoGiro(id, desc) {
+            let conteudo = `
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-dollar-sign"></i> Valor do Recebimento</label>
+                    <input type="text" id="recebimentoValor" class="form-input" placeholder="0,00" inputmode="decimal" onkeyup="this.value = this.value.replace(/[^0-9,]/g, '')">
+                </div>
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-align-left"></i> Descrição (opcional)</label>
+                    <input type="text" id="recebimentoDescricao" class="form-input" placeholder="Ex: Parcela 1">
+                </div>
+                <div class="btn-group" style="margin-top:20px">
+                    <button class="btn btn-warning" onclick="salvarRecebimentoGiro('${id}','${desc}')" style="flex:2"><i class="fas fa-check"></i> Confirmar</button>
+                    <button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button>
+                </div>
+            `;
+            abrirModal(`Receber ${desc}`, 'fa-arrow-up', conteudo);
+        }
+
+        async function salvarRecebimentoGiro(id, desc) {
+            let valor = parseCurrency(document.getElementById('recebimentoValor')?.value);
+            let descricao = document.getElementById('recebimentoDescricao')?.value.trim();
+
+            if (!valor) {
+                showToast('Digite o valor', 'warning');
+                return;
+            }
+
+            try {
+                await App.supabase.from('movimentacoes_giro').insert({
+                    user_id: App.currentUser.id,
+                    giro_id: id,
+                    tipo: 'recebimento',
+                    valor: valor,
+                    descricao: descricao || `Recebimento de ${desc}`,
+                    data: new Date().toISOString(),
+                    added_by: App.usuarioAtual || 'desconhecido'
+                });
+
+                await registrarHistorico('recebimento_giro', `Recebimento de ${formatCurrency(valor)} de ${desc}`, { id, valor, usuario: App.usuarioAtual });
+                showToast('Recebimento registrado!', 'success');
+                fecharModal();
+                await carregarDados(true);
+                await mostrarConteudo();
+            } catch (error) {
+                console.error('Erro ao registrar recebimento:', error);
+                showToast('Erro: ' + error.message, 'error');
+            }
+        }
+
+        function editarGiro(id) {
+            let giro = App.dataCache.giros.find(g => g.id === id);
+            if (!giro) return;
+
+            let conteudo = `
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-heading"></i> Descrição</label>
+                    <input type="text" id="giroDescricaoEdit" class="form-input" value="${giro.descricao}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-user"></i> Pessoa</label>
+                    <input type="text" id="giroPessoaEdit" class="form-input" value="${giro.pessoa || ''}">
+                </div>
+                <div class="btn-group" style="margin-top:20px">
+                    <button class="btn btn-primary" onclick="salvarEdicaoGiro('${id}')" style="flex:2"><i class="fas fa-save"></i> Salvar</button>
+                    <button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button>
+                </div>
+            `;
+            abrirModal('Editar Giro', 'fa-edit', conteudo);
+        }
+
+        async function salvarEdicaoGiro(id) {
+            let desc = document.getElementById('giroDescricaoEdit')?.value.trim();
+            let pessoa = document.getElementById('giroPessoaEdit')?.value.trim();
+
+            if (!desc || !pessoa) {
+                showToast('Preencha todos os campos', 'warning');
+                return;
+            }
+
+            try {
+                await App.supabase.from('giros').update({
+                    descricao: desc,
+                    pessoa: pessoa
+                }).eq('id', id);
+
+                await registrarHistorico('edicao_giro', `Giro editado: ${desc}`, { id, usuario: App.usuarioAtual });
+                showToast('Giro atualizado!', 'success');
+                fecharModal();
+                await carregarDados(true);
+                await mostrarConteudo();
+            } catch (error) {
+                console.error('Erro ao editar giro:', error);
+                showToast('Erro: ' + error.message, 'error');
+            }
+        }
+
+        function deletarGiro(id) {
+            if (confirm('Tem certeza que deseja excluir este giro?')) {
+                (async () => {
+                    try {
+                        await App.supabase.from('movimentacoes_giro').delete().eq('giro_id', id);
+                        await App.supabase.from('giros').delete().eq('id', id);
+                        await registrarHistorico('exclusao_giro', `Giro excluído`, { id, usuario: App.usuarioAtual });
+                        showToast('Giro excluído!', 'success');
+                        await carregarDados(true);
+                        await mostrarConteudo();
+                    } catch (error) {
+                        console.error('Erro ao excluir giro:', error);
+                        showToast('Erro: ' + error.message, 'error');
+                    }
+                })();
+            }
+        }
+
+        function abrirAdicionarValorSaldo(id) {
+            let conteudo = `
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-dollar-sign"></i> Valor para Adicionar</label>
+                    <input type="text" id="saldoValor" class="form-input" placeholder="0,00" inputmode="decimal" onkeyup="this.value = this.value.replace(/[^0-9,]/g, '')">
+                </div>
+                <div class="btn-group" style="margin-top:20px">
+                    <button class="btn btn-success" onclick="confirmarAdicionarSaldo('${id}')" style="flex:2"><i class="fas fa-plus"></i> Adicionar</button>
+                    <button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button>
+                </div>
+            `;
+            abrirModal('Adicionar ao Saldo', 'fa-plus-circle', conteudo);
+        }
+
+        async function confirmarAdicionarSaldo(id) {
+            let valor = parseCurrency(document.getElementById('saldoValor')?.value);
+            if (!valor) {
+                showToast('Digite um valor', 'warning');
+                return;
+            }
+
+            try {
+                let { data: saldoAtual } = await App.supabase.from('saldos').select('valor').eq('id', id).single();
+                if (saldoAtual) {
+                    let novoValor = saldoAtual.valor + valor;
+                    await App.supabase.from('saldos').update({ valor: novoValor }).eq('id', id);
+                    if (id === App.saldoCentral.id) {
+                        App.saldoCentral.valor = novoValor;
+                        atualizarSaldoHeader();
+                    }
+                }
+
+                await registrarHistorico('adicao_saldo', `Adicionado ${formatCurrency(valor)} ao saldo`, { id, valor, usuario: App.usuarioAtual });
+                showToast('Saldo atualizado!', 'success');
+                fecharModal();
+                await carregarDados(true);
+                await mostrarConteudo();
+            } catch (error) {
+                console.error('Erro ao adicionar saldo:', error);
+                showToast('Erro: ' + error.message, 'error');
+            }
+        }
+
+        function abrirRetirarValorSaldo(id) {
+            let conteudo = `
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-dollar-sign"></i> Valor para Retirar</label>
+                    <input type="text" id="saldoValor" class="form-input" placeholder="0,00" inputmode="decimal" onkeyup="this.value = this.value.replace(/[^0-9,]/g, '')">
+                </div>
+                <div class="btn-group" style="margin-top:20px">
+                    <button class="btn btn-warning" onclick="confirmarRetirarSaldo('${id}')" style="flex:2"><i class="fas fa-minus"></i> Retirar</button>
+                    <button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button>
+                </div>
+            `;
+            abrirModal('Retirar do Saldo', 'fa-minus-circle', conteudo);
+        }
+
+        async function confirmarRetirarSaldo(id) {
+            let valor = parseCurrency(document.getElementById('saldoValor')?.value);
+            if (!valor) {
+                showToast('Digite um valor', 'warning');
+                return;
+            }
+
+            try {
+                let { data: saldoAtual } = await App.supabase.from('saldos').select('valor').eq('id', id).single();
+                if (saldoAtual) {
+                    let novoValor = saldoAtual.valor - valor;
+                    await App.supabase.from('saldos').update({ valor: novoValor }).eq('id', id);
+                    if (id === App.saldoCentral.id) {
+                        App.saldoCentral.valor = novoValor;
+                        atualizarSaldoHeader();
+                    }
+                }
+
+                await registrarHistorico('retirada_saldo', `Retirado ${formatCurrency(valor)} do saldo`, { id, valor, usuario: App.usuarioAtual });
+                showToast('Saldo atualizado!', 'success');
+                fecharModal();
+                await carregarDados(true);
+                await mostrarConteudo();
+            } catch (error) {
+                console.error('Erro ao retirar saldo:', error);
+                showToast('Erro: ' + error.message, 'error');
+            }
+        }
+
+        function abrirAtualizarValorSaldo(id) {
+            let saldo = App.dataCache.saldos.find(s => s.id === id);
+            if (!saldo) return;
+
+            let conteudo = `
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-dollar-sign"></i> Novo Valor</label>
+                    <input type="text" id="saldoValor" class="form-input" value="${saldo.valor.toFixed(2).replace('.', ',')}" inputmode="decimal" onkeyup="this.value = this.value.replace(/[^0-9,]/g, '')">
+                </div>
+                <div class="btn-group" style="margin-top:20px">
+                    <button class="btn btn-primary" onclick="confirmarAtualizarSaldo('${id}')" style="flex:2"><i class="fas fa-save"></i> Atualizar</button>
+                    <button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button>
+                </div>
+            `;
+            abrirModal('Atualizar Saldo', 'fa-sync-alt', conteudo);
+        }
+
+        async function confirmarAtualizarSaldo(id) {
+            let valor = parseCurrency(document.getElementById('saldoValor')?.value);
+            if (valor === undefined) {
+                showToast('Digite um valor válido', 'warning');
+                return;
+            }
+
+            try {
+                await App.supabase.from('saldos').update({ valor: valor }).eq('id', id);
+                if (id === App.saldoCentral.id) {
+                    App.saldoCentral.valor = valor;
+                    atualizarSaldoHeader();
+                }
+
+                await registrarHistorico('atualizacao_saldo', `Saldo atualizado para ${formatCurrency(valor)}`, { id, valor, usuario: App.usuarioAtual });
+                showToast('Saldo atualizado!', 'success');
+                fecharModal();
+                await carregarDados(true);
+                await mostrarConteudo();
+            } catch (error) {
+                console.error('Erro ao atualizar saldo:', error);
+                showToast('Erro: ' + error.message, 'error');
+            }
+        }
+
+        function editarSaldo(id) {
+            let saldo = App.dataCache.saldos.find(s => s.id === id);
+            if (!saldo) return;
+
+            let conteudo = `
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-heading"></i> Nome do Saldo</label>
+                    <input type="text" id="saldoNomeEdit" class="form-input" value="${saldo.nome || ''}">
+                </div>
+                <div class="btn-group" style="margin-top:20px">
+                    <button class="btn btn-primary" onclick="salvarEdicaoSaldo('${id}')" style="flex:2"><i class="fas fa-save"></i> Salvar</button>
+                    <button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button>
+                </div>
+            `;
+            abrirModal('Editar Saldo', 'fa-edit', conteudo);
+        }
+
+        async function salvarEdicaoSaldo(id) {
+            let nome = document.getElementById('saldoNomeEdit')?.value.trim();
+
+            try {
+                await App.supabase.from('saldos').update({ nome: nome }).eq('id', id);
+                await registrarHistorico('edicao_saldo', `Saldo renomeado para ${nome}`, { id, usuario: App.usuarioAtual });
+                showToast('Saldo atualizado!', 'success');
+                fecharModal();
+                await carregarDados(true);
+                await mostrarConteudo();
+            } catch (error) {
+                console.error('Erro ao editar saldo:', error);
+                showToast('Erro: ' + error.message, 'error');
+            }
+        }
+
+        function deletarSaldo(id) {
+            if (confirm('Tem certeza que deseja excluir este saldo?')) {
+                (async () => {
+                    try {
+                        await App.supabase.from('saldos').delete().eq('id', id);
+                        await registrarHistorico('exclusao_saldo', `Saldo excluído`, { id, usuario: App.usuarioAtual });
+                        showToast('Saldo excluído!', 'success');
+                        await carregarDados(true);
+                        await mostrarConteudo();
+                    } catch (error) {
+                        console.error('Erro ao excluir saldo:', error);
+                        showToast('Erro: ' + error.message, 'error');
+                    }
+                })();
+            }
+        }
+
+        function abrirNovoSaldo() {
+            let conteudo = `
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-heading"></i> Nome do Saldo</label>
+                    <input type="text" id="saldoNome" class="form-input" placeholder="Ex: Poupança, Carteira...">
+                </div>
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-dollar-sign"></i> Valor Inicial</label>
+                    <input type="text" id="saldoValor" class="form-input" placeholder="0,00" inputmode="decimal" onkeyup="this.value = this.value.replace(/[^0-9,]/g, '')">
+                </div>
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-check-circle"></i> Saldo Central?</label>
+                    <select id="saldoCentral" class="form-select">
+                        <option value="false">Não</option>
+                        <option value="true">Sim</option>
+                    </select>
+                </div>
+                <div class="btn-group" style="margin-top:20px">
+                    <button class="btn btn-primary" onclick="salvarNovoSaldo()" style="flex:2"><i class="fas fa-save"></i> Salvar</button>
+                    <button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button>
+                </div>
+            `;
+            abrirModal('Novo Saldo', 'fa-wallet', conteudo);
+        }
+
+        async function salvarNovoSaldo() {
+            let nome = document.getElementById('saldoNome')?.value.trim();
+            let valor = parseCurrency(document.getElementById('saldoValor')?.value);
+            let isCentral = document.getElementById('saldoCentral')?.value === 'true';
+
+            if (!nome || !valor) {
+                showToast('Preencha todos os campos', 'warning');
+                return;
+            }
+
+            try {
+                if (isCentral) {
+                    let centralExistente = App.dataCache.saldos.find(s => s.is_central);
+                    if (centralExistente) {
+                        showToast('Já existe um saldo central', 'warning');
+                        return;
+                    }
+                }
+
+                await App.supabase.from('saldos').insert({
+                    user_id: App.currentUser.id,
+                    nome: nome,
+                    valor: valor,
+                    is_central: isCentral,
+                    added_by: App.usuarioAtual || 'desconhecido'
+                });
+
+                await registrarHistorico('criacao_saldo', `Saldo criado: ${nome}`, { nome, valor, isCentral, usuario: App.usuarioAtual });
+                showToast('Saldo criado!', 'success');
+                fecharModal();
+                await carregarDados(true);
+                await mostrarConteudo();
+            } catch (error) {
+                console.error('Erro ao criar saldo:', error);
+                showToast('Erro: ' + error.message, 'error');
+            }
+        }
+
+        function abrirExtratoSaldo(id) {
+            let saldo = App.dataCache.saldos.find(s => s.id === id);
+            if (!saldo) return;
+
+            let tresMesesAtras = new Date();
+            tresMesesAtras.setMonth(tresMesesAtras.getMonth() - 3);
+            tresMesesAtras.setHours(0, 0, 0, 0);
+
+            let movimentacoes = [];
+
+            App.dataCache.contas.forEach(c => {
+                if (c.data_pagamento && new Date(c.data_pagamento) >= tresMesesAtras) {
+                    movimentacoes.push({
+                        data: c.data_pagamento,
+                        tipo: 'pagamento_conta',
+                        descricao: `Pagamento: ${c.descricao}`,
+                        valor: -c.valor_pago,
+                        usuario: c.added_by || 'desconhecido'
+                    });
+                }
+            });
+
+            App.dataCache.gastos.forEach(g => {
+                let dataGasto = new Date(g.ano, g.mes - 1, g.dia, 12, 0, 0);
+                if (dataGasto >= tresMesesAtras) {
+                    movimentacoes.push({
+                        data: dataGasto,
+                        tipo: 'gasto',
+                        descricao: `Gasto: ${g.descricao}`,
+                        valor: -g.valor,
+                        usuario: g.added_by || 'desconhecido'
+                    });
+                }
+            });
+
+            App.dataCache.historico.forEach(h => {
+                let dataHist = new Date(h.data);
+                if (dataHist >= tresMesesAtras) {
+                    movimentacoes.push({
+                        data: dataHist,
+                        tipo: 'outro',
+                        descricao: h.descricao,
+                        valor: 0,
+                        usuario: h.usuario || 'desconhecido'
+                    });
+                }
+            });
+
+            movimentacoes.sort((a, b) => new Date(b.data) - new Date(a.data));
+
+            if (movimentacoes.length === 0) {
+                abrirModal(`Extrato de ${saldo.nome || 'Saldo'}`, 'fa-history', '<div class="empty-state"><p>Nenhuma movimentação nos últimos 3 meses</p></div>');
+                return;
+            }
+
+            let html = `<div class="items-list">`;
+            movimentacoes.forEach(m => {
+                let data = new Date(m.data).toLocaleDateString('pt-BR');
+                let classe = m.valor < 0 ? 'extrato-tipo pagamento' : m.valor > 0 ? 'extrato-tipo recebimento' : '';
+                html += `<div class="extrato-item">
+                    <div class="extrato-header">
+                        <span>${data}</span>
+                        <span class="${classe}">${m.valor !== 0 ? formatCurrency(Math.abs(m.valor)) : ''}</span>
+                    </div>
+                    <div class="extrato-detalhes">${m.descricao}</div>
+                    <div style="font-size:0.8em; color:var(--gray)">${m.usuario}</div>
+                </div>`;
+            });
+            html += '</div>';
+            abrirModal(`Extrato de ${saldo.nome || 'Saldo'} (3 meses)`, 'fa-history', html);
+        }
+
+        function autenticarSaldos() {
+            let senha = prompt('Senha de 4 dígitos:');
+            if (senha === App.saldoSenha) {
+                App.saldoAutenticado = true;
+                App.currentFilter = 'saldos';
+                mostrarConteudo();
+            } else if (senha) showToast('Senha incorreta', 'error');
+        }
+
         function resetarParaHoje() {
             let hoje = new Date();
             App.currentMonthOffset = 0;
@@ -5769,12 +5755,7 @@
                 };
                 if (config.saldoSenha) App.saldoSenha = config.saldoSenha;
                 if (config.acessoNovaSenha) App.acessoNovaSenha = config.acessoNovaSenha;
-                
-                // Carregar preferência de exibição do saldo
-                const saldoExibirPref = localStorage.getItem(`saldo_exibir_${App.currentUser.id}`);
-                if (saldoExibirPref !== null) {
-                    App.saldoExibirHeader = saldoExibirPref === 'true';
-                }
+                if (config.exibirSaldoHeader !== undefined) App.exibirSaldoHeader = config.exibirSaldoHeader;
             } catch (e) { }
         }
 
@@ -5784,14 +5765,11 @@
             localStorage.setItem(key, JSON.stringify({
                 notificacoes: App.notificacoesConfig,
                 saldoSenha: App.saldoSenha,
-                acessoNovaSenha: App.acessoNovaSenha
+                acessoNovaSenha: App.acessoNovaSenha,
+                exibirSaldoHeader: App.exibirSaldoHeader
             }));
-            
-            // Salvar preferência de exibição do saldo
-            localStorage.setItem(`saldo_exibir_${App.currentUser.id}`, App.saldoExibirHeader ? 'true' : 'false');
         }
 
-        // Funções de modal
         function abrirModal(titulo, icone, conteudo) {
             let modal = document.getElementById('modalContent');
             modal.innerHTML = `
@@ -5810,7 +5788,6 @@
             App.modalHasChanges = false;
         }
 
-        // Inicialização
         async function init() {
             try {
                 App.supabase = window.supabase.createClient(CONFIG.supabase.url, CONFIG.supabase.anonKey);
@@ -5845,7 +5822,6 @@
                         await atualizarCalendario();
                         await mostrarConteudo();
                         
-                        // Carregar dados atualizados em segundo plano
                         carregarDados(true);
                     } else {
                         await carregarDados(true);
@@ -5870,7 +5846,6 @@
                     document.getElementById('authContainer').style.display = 'flex';
                 }
 
-                // Event listeners
                 document.getElementById('btnLogin').addEventListener('click', async () => {
                     let email = document.getElementById('loginEmail').value.trim();
                     let pass = document.getElementById('loginPassword').value;
@@ -5969,9 +5944,11 @@
                     mostrarConteudo();
                 });
 
-                document.getElementById('toggleSaldoBtn').addEventListener('click', toggleSaldoHeader);
-
                 document.getElementById('btnSaldoHeader').addEventListener('click', () => {
+                    if (!App.exibirSaldoHeader) {
+                        showToast('Saldo oculto no cabeçalho', 'info');
+                        return;
+                    }
                     let senha = prompt('Senha de 4 dígitos:');
                     if (senha === App.saldoSenha) {
                         App.saldoAutenticado = true;

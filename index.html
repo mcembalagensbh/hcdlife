@@ -2460,7 +2460,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } catch (e) { }
         }
 
-       async function carregarAssinatura() {
+     async function carregarAssinatura() {
     if (!App.currentUser) return;
     
     try {
@@ -2471,9 +2471,8 @@ document.addEventListener('DOMContentLoaded', function() {
             .maybeSingle();
 
         if (data && data.status === 'ativo') {
-            // Guarda os dados da assinatura
             App.dataExpiracao = new Date(data.data_expiracao);
-            App.plano = data.plano || 'gratis'; // 'gratis', 'mensal' ou 'anual'
+            App.plano = data.plano || 'gratis';
             
             let hoje = new Date();
             hoje.setHours(0, 0, 0, 0);
@@ -2485,13 +2484,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 App.assinaturaAtiva = true;
             } else {
                 App.assinaturaAtiva = false;
-                App.plano = 'gratis'; // Se expirou, volta pra gratis
+                App.plano = 'gratis';
             }
         } else {
             App.assinaturaAtiva = false;
             App.dataExpiracao = null;
             App.plano = 'gratis';
         }
+        
+        // ✅ FORÇA A ATUALIZAÇÃO DO MENU
+        atualizarStatusAssinaturaMenu();
+        
+    } catch (error) {
+        console.error('Erro ao carregar assinatura:', error);
+        App.assinaturaAtiva = false;
+        App.plano = 'gratis';
+    }
+}
         
         atualizarStatusAssinaturaMenu();
     } catch (error) {

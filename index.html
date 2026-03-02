@@ -1813,6 +1813,26 @@
 .fa-eye:hover, .fa-eye-slash:hover {
     color: var(--purple);
 }
+
+
+/* Garantia para o modal do Iphone */
+#modalIphone {
+    display: none !important;
+}
+
+#modalIphone[style*="display: flex"] {
+    display: flex !important;
+}
+
+
+/* Garantia para o modal do Iphone fechar */
+#modalIphone {
+    display: none !important;
+}
+
+#modalIphone[style*="display: flex"] {
+    display: flex !important;
+}
         
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -1910,15 +1930,21 @@
     </div>
 </div>
             <div class="side-menu-content">
-                <div class="side-menu-item" onclick="abrirMenuRelatorio();fecharSideMenu()"><i class="fas fa-chart-line"></i> Relatório</div>
-                <div class="side-menu-item" onclick="abrirNotificacoes();fecharSideMenu()"><i class="fas fa-bell"></i> Notificações</div>
-                <div class="side-menu-item" onclick="abrirMenuSeguranca();fecharSideMenu()"><i class="fas fa-lock"></i> Segurança</div>
-                <div class="side-menu-item" onclick="abrirUltimasAcoes();fecharSideMenu()"><i class="fas fa-history"></i> Últimas Ações</div>
-                <div class="side-menu-item" onclick="abrirPoliticasTermos();fecharSideMenu()"><i class="fas fa-file-contract"></i> Políticas e Termos</div>
-                <div class="side-menu-item" onclick="abrirManual();fecharSideMenu()"><i class="fas fa-book"></i> Manual</div>
-                <div class="side-menu-item" onclick="abrirModalAssinatura();fecharSideMenu()"><i class="fas fa-crown"></i> <span id="menuAssinaturaStatus">Premium</span></div>
-                <div class="side-menu-item" onclick="window.location.href='mailto:hcdtec.mylife@gmail.com'"><i class="fas fa-question-circle"></i> Ajuda</div>
-            </div>
+    <div class="side-menu-item" onclick="abrirMenuRelatorio();fecharSideMenu()"><i class="fas fa-chart-line"></i> Relatório</div>
+    <div class="side-menu-item" onclick="abrirNotificacoes();fecharSideMenu()"><i class="fas fa-bell"></i> Notificações</div>
+    <div class="side-menu-item" onclick="abrirMenuSeguranca();fecharSideMenu()"><i class="fas fa-lock"></i> Segurança</div>
+    <div class="side-menu-item" onclick="abrirUltimasAcoes();fecharSideMenu()"><i class="fas fa-history"></i> Últimas Ações</div>
+    <div class="side-menu-item" onclick="abrirPoliticasTermos();fecharSideMenu()"><i class="fas fa-file-contract"></i> Políticas e Termos</div>
+    <div class="side-menu-item" onclick="abrirManual();fecharSideMenu()"><i class="fas fa-book"></i> Manual</div>
+    <div class="side-menu-item" onclick="abrirModalAssinatura();fecharSideMenu()"><i class="fas fa-crown"></i> <span id="menuAssinaturaStatus">Premium</span></div>
+    
+    <!-- 🔴 NOVO ITEM: QUER USAR NO IPHONE? -->
+    <div class="side-menu-item" onclick="abrirModalIphone();fecharSideMenu()">
+        <i class="fab fa-apple"></i> Quer usar no Iphone?
+    </div>
+    
+    <div class="side-menu-item" onclick="window.location.href='mailto:hcdtec.mylife@gmail.com'"><i class="fas fa-question-circle"></i> Ajuda</div>
+</div>
            <div class="side-menu-footer">
     <!-- CARROSSEL DE BANNERS COM IMAGENS -->
     <div class="banner-carrossel" id="bannerCarrossel">
@@ -4836,7 +4862,7 @@ function abrirExtratoCompleto(id) {
             mostrarConteudo();
         }
 
-        async function renderizarGiros(content) {
+       async function renderizarGiros(content) {
     let giros = App.dataCache.giros || [];
     let podeEditar = App.assinaturaAtiva;
     
@@ -4880,10 +4906,20 @@ function abrirExtratoCompleto(id) {
             </div>
             ${podeEditar ? `
             <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
-                <button class="btn btn-sm btn-success" onclick="abrirPagamentoGiro('${g.id}','${g.descricao}')"><i class="fas fa-arrow-down"></i> Pagar</button>
-                <button class="btn btn-sm btn-warning" onclick="abrirRecebimentoGiro('${g.id}','${g.descricao}')"><i class="fas fa-arrow-up"></i> Receber</button>
+                <!-- 🔴 BOTÃO PAGAR (abate do saldo) -->
+                <button class="btn btn-sm btn-danger" onclick="abrirPagamentoGiro('${g.id}','${g.descricao}')" title="Pagar (diminuir saldo)">
+                    <i class="fas fa-arrow-down"></i> Pagar
+                </button>
                 
-                <button class="btn btn-sm btn-danger" onclick="deletarGiro('${g.id}')"><i class="fas fa-trash"></i></button>
+                <!-- 🔴 BOTÃO ADICIONAR (aumenta saldo) -->
+                <button class="btn btn-sm btn-success" onclick="abrirAdicionarGiro('${g.id}','${g.descricao}')" title="Adicionar valor (aumentar saldo)">
+                    <i class="fas fa-arrow-up"></i> Adicionar
+                </button>
+                
+                <!-- 🔴 BOTÃO DELETAR (remove giro) -->
+                <button class="btn btn-sm btn-danger" onclick="deletarGiro('${g.id}')" title="Excluir giro">
+                    <i class="fas fa-trash"></i> Deletar
+                </button>
             </div>
             ` : ''}`;
 
@@ -4892,8 +4928,9 @@ function abrirExtratoCompleto(id) {
             movimentacoes.slice(0, 10).forEach(m => {
                 let data = new Date(m.data).toLocaleDateString('pt-BR');
                 let tipoIcon = m.tipo === 'pagamento' ? 'fa-arrow-down' : 'fa-arrow-up';
+                let corIcone = m.tipo === 'pagamento' ? 'var(--danger)' : 'var(--success)';
                 html += `<div class="giro-linha">
-                    <span><i class="fas ${tipoIcon}" style="color:${m.tipo === 'pagamento' ? 'var(--danger)' : 'var(--success)'}"></i> ${data} - ${m.descricao || ''}</span>
+                    <span><i class="fas ${tipoIcon}" style="color:${corIcone}"></i> ${data} - ${m.descricao || ''}</span>
                     <span>${formatCurrency(m.valor)}</span>
                 </div>`;
             });
@@ -4906,6 +4943,62 @@ function abrirExtratoCompleto(id) {
     html += '</div>';
     content.innerHTML = html;
 }
+
+// ============================================
+// FUNÇÃO PARA ADICIONAR VALOR AO GIRO (AUMENTAR SALDO)
+// ============================================
+function abrirAdicionarGiro(id, desc) {
+    let conteudo = `
+        <div class="form-group">
+            <label class="form-label"><i class="fas fa-dollar-sign"></i> Valor para Adicionar</label>
+            <input type="text" id="adicionarValor" class="form-input" placeholder="0,00" inputmode="decimal" onkeyup="this.value = this.value.replace(/[^0-9,]/g, '')">
+        </div>
+        <div class="form-group">
+            <label class="form-label"><i class="fas fa-align-left"></i> Descrição (opcional)</label>
+            <input type="text" id="adicionarDescricao" class="form-input" placeholder="Ex: Depósito, acréscimo...">
+        </div>
+        <div class="btn-group" style="margin-top:20px">
+            <button class="btn btn-success" onclick="confirmarAdicionarGiro('${id}','${desc}')" style="flex:2"><i class="fas fa-check"></i> Confirmar Adição</button>
+            <button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button>
+        </div>
+    `;
+    abrirModal(`Adicionar a ${desc}`, 'fa-arrow-up', conteudo);
+}
+
+// ============================================
+// FUNÇÃO PARA CONFIRMAR ADIÇÃO DE VALOR AO GIRO
+// ============================================
+async function confirmarAdicionarGiro(id, desc) {
+    let valor = parseCurrency(document.getElementById('adicionarValor')?.value);
+    let descricao = document.getElementById('adicionarDescricao')?.value.trim();
+
+    if (!valor) {
+        showToast('Digite o valor', 'warning');
+        return;
+    }
+
+    try {
+        await App.supabase.from('movimentacoes_giro').insert({
+            user_id: App.currentUser.id,
+            giro_id: id,
+            tipo: 'recebimento', // MESMO TIPO DO RECEBIMENTO (aumenta saldo)
+            valor: valor,
+            descricao: descricao || `Adicionado a ${desc}`,
+            data: new Date().toISOString(),
+            added_by: App.usuarioAtual || 'desconhecido'
+        });
+
+        await registrarHistorico('adicao_giro', `Adicionado ${formatCurrency(valor)} a ${desc}`, { id, valor, usuario: App.usuarioAtual });
+        showToast('Valor adicionado com sucesso!', 'success');
+        fecharModal();
+        await carregarDados(true);
+        await mostrarConteudo();
+    } catch (error) {
+        console.error('Erro ao adicionar:', error);
+        showToast('Erro: ' + error.message, 'error');
+    }
+}
+
 
         function carregarUsuarioLocal() {
             if (!App.currentUser) return;
@@ -6516,6 +6609,43 @@ function atualizarTipoFimEvento() {
         showToast('Erro: ' + error.message, 'error');
     }
 }
+
+
+
+
+        // ============================================
+// FUNÇÕES DO MODAL IPHONE
+// ============================================
+function abrirModalIphone() {
+    document.getElementById('modalIphone').style.display = 'flex';
+}
+
+function compartilharIphone() {
+    // Monta a mensagem para compartilhar
+    const mensagem = `*My Life - Gestor Doméstico para Iphone* 🏠
+
+🔗 Link de acesso: mylife.app.br
+
+📱 *Instruções:*
+1. Abra o Safari no seu Iphone
+2. Digite o link acima
+3. Solicite ao titular da assinatura o email e senha
+4. Pronto! Você terá acesso aos mesmos dados em tempo real`;
+
+    // Codifica a mensagem para URL
+    const mensagemCodificada = encodeURIComponent(mensagem);
+    
+    // Abre o WhatsApp com a mensagem pronta
+    window.open(`https://wa.me/?text=${mensagemCodificada}`, '_blank');
+    
+    // Fecha o modal após compartilhar
+    setTimeout(() => {
+        fecharModal('modalIphone');
+    }, 500);
+}
+
+
+
 
         function editarEvento(id, isRecorrente, regraId, isIndividual, individualId, dia, mes, ano) {
             if (!App.dataCache || (!App.dataCache.eventos && !App.dataCache.regrasEventos && !App.dataCache.eventosIndividuais)) {
@@ -9377,6 +9507,16 @@ function iniciarCarrosselBanners() {
         indiceAtual = indice;
         console.log('Mostrando banner:', indice);
     }
+
+    // Função para fechar modais
+function fecharModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+// Função específica para fechar o modal do Iphone
+function fecharModalIphone() {
+    document.getElementById('modalIphone').style.display = 'none';
+}
     
     // Função para próximo banner
     function proximoBanner() {
@@ -9432,45 +9572,57 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<!-- Modal Informativo - Conta Familiar -->
-<div class="modal-overlay" id="modalInfoFamiliar" style="display: none;">
-    <div class="modal-content" style="max-width: 400px; text-align: center;">
-        <div class="modal-header" style="border-bottom: none; padding-bottom: 0;">
-            <h2 style="color: var(--primary-dark); margin: 0 auto; display: flex; align-items: center; gap: 10px;">
-                <i class="fas fa-users" style="color: var(--primary);"></i> 
-                Conta Familiar
-            </h2>
-            <button class="close-modal" onclick="fecharModalInfo()" style="position: absolute; top: 15px; right: 15px;">&times;</button>
+<!-- Modal Iphone -->
+<div class="modal-overlay" id="modalIphone" style="display: none;">
+    <div class="modal-content" style="max-width: 500px; position: relative;">
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid var(--light);">
+            <h2 style="margin: 0;"><i class="fab fa-apple" style="color: #000;"></i> Usar no Iphone</h2>
+            <!-- 🔴 BOTÃO X COM FUNÇÃO DIRETA -->
+            <button class="close-modal" onclick="document.getElementById('modalIphone').style.display='none';" style="background: none; border: none; font-size: 28px; cursor: pointer; color: var(--gray);">&times;</button>
         </div>
         
         <div class="modal-body" style="padding: 20px;">
-            <div style="background: linear-gradient(135deg, #667eea10, #764ba210); width: 100px; height: 100px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
-                <i class="fas fa-home" style="font-size: 50px; color: var(--primary);"></i>
-            </div>
-            
-            <h3 style="margin-bottom: 15px; color: var(--dark);">Uma única conta para toda família</h3>
-            
-            <div style="background: #e8f4fd; border-radius: 8px; padding: 20px; margin-bottom: 20px; text-align: left;">
-                <p style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
-                    <i class="fas fa-check-circle" style="color: var(--success); font-size: 20px;"></i>
-                    <span>O <strong>mesmo e-mail e senha</strong> serão utilizados em todos os celulares ou computadores da sua família.</span>
+            <div style="background: linear-gradient(135deg, #f8f9fa, #ffffff); padding: 25px; border-radius: 12px; text-align: center;">
+                <div style="background: #000; width: 80px; height: 80px; border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                    <i class="fab fa-apple" style="color: white; font-size: 48px;"></i>
+                </div>
+                
+                <h3 style="margin-bottom: 10px;">Acesse pelo Safari</h3>
+                
+                <p style="margin-bottom: 20px; color: var(--gray);">
+                    No Iphone, você pode usar o My Life diretamente pelo navegador Safari, sem precisar instalar nada!
                 </p>
-                <p style="display: flex; align-items: center; gap: 10px;">
-                    <i class="fas fa-sync-alt" style="color: var(--primary); font-size: 20px;"></i>
-                    <span>Todos terão acesso aos <strong>mesmos dados</strong> (contas, eventos, gastos) em tempo real.</span>
+                
+                <div style="background: #e8f4fd; border: 2px dashed var(--primary); border-radius: 12px; padding: 15px; margin-bottom: 20px;">
+                    <div style="font-size: 1.2em; font-weight: 600; color: var(--primary); margin-bottom: 10px;">
+                        🔗 Link de acesso:
+                    </div>
+                    <div style="background: white; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 1.1em; word-break: break-all;">
+                        mylife.app.br
+                    </div>
+                </div>
+                
+                <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; border-radius: 6px; margin-bottom: 20px; text-align: left;">
+                    <i class="fas fa-info-circle" style="color: #856404;"></i>
+                    <strong style="color: #856404;"> Importante:</strong>
+                    <p style="color: #856404; margin: 5px 0 0 20px;">
+                        Solicite ao titular da assinatura o email e senha para você ter acesso aos mesmos dados em tempo real.
+                    </p>
+                </div>
+                
+                <!-- Botão de Compartilhar -->
+                <button class="btn btn-success" onclick="compartilharIphone()" style="width: 100%; padding: 15px; font-size: 1.1em;">
+                    <i class="fas fa-share-alt"></i> Compartilhar no WhatsApp
+                </button>
+                
+                <p style="margin-top: 15px; font-size: 12px; color: var(--gray);">
+                    Ao compartilhar, você enviará o link e as instruções para o Iphone
                 </p>
             </div>
-            
-            <button class="btn btn-primary" onclick="fecharModalInfoEConfirmar()" style="width: 100%; padding: 15px; font-size: 16px;">
-                <i class="fas fa-check"></i> Entendi, continuar
-            </button>
-            
-            <p style="margin-top: 15px; color: var(--gray); font-size: 12px;">
-                Ao clicar em "Entendi", você confirma que leu e entendeu como funciona a conta familiar.
-            </p>
         </div>
     </div>
 </div>
+
 </body>
 </html>
 

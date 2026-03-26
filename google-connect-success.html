@@ -177,6 +177,21 @@
             color: #6c757d;
             text-align: center;
         }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.6s linear infinite;
+            margin-right: 8px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -236,8 +251,8 @@
                 <p style="font-size: 0.75rem; color: #6c757d; margin-top: 8px;">Você pode ativar/desativar cada tipo no menu Configurações.</p>
             </div>
             
-            <button class="btn" onclick="irParaApp()">
-                <i class="fas fa-home"></i> Ir para o My Life
+            <button id="btnFechar" class="btn" onclick="fecharEVoltar()">
+                <i class="fas fa-home"></i> Voltar para o My Life
             </button>
             
             <div class="note">
@@ -272,9 +287,22 @@
             localStorage.setItem('google_connected', 'true');
         }
         
-        function irParaApp() {
+        function fecharEVoltar() {
+            // Tentar fechar a janela atual (se foi aberta como popup)
+            if (window.opener) {
+                // Notificar a janela principal
+                window.opener.postMessage({ type: 'GOOGLE_CONNECT_SUCCESS', success: true }, '*');
+                // Fechar a janela atual
+                window.close();
+            }
+            // Redirecionar para o app
             window.location.href = 'https://mcembalagensbh.github.io/mylife/';
         }
+        
+        // 🔴 FECHAR AUTOMATICAMENTE APÓS 3 SEGUNDOS
+        setTimeout(() => {
+            fecharEVoltar();
+        }, 3000);
     </script>
 </body>
 </html>

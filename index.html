@@ -536,31 +536,52 @@
             cursor: pointer;
         }
 
-        .calendar-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px
-        }
+       .calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    gap: 10px;
+}
 
-        .calendar-title {
-            font-weight: 600;
-            font-size: 1em;
-            background: linear-gradient(135deg, var(--purple), var(--purple-dark));
-            color: #fff;
-            padding: 4px 12px;
-            border-radius: 16px;
-            cursor: pointer
-        }
+.calendar-title {
+    font-weight: 600;
+    font-size: 1em;
+    background: linear-gradient(135deg, var(--purple), var(--purple-dark));
+    color: #fff;
+    padding: 4px 12px;
+    border-radius: 16px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
 
-        .calendar-nav button {
-            background: 0 0;
-            border: 0;
-            color: var(--purple);
-            font-size: 1.1em;
-            cursor: pointer;
-            padding: 2px 6px
-        }
+.calendar-nav {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.calendar-nav button {
+    background: 0 0;
+    border: 0;
+    color: var(--purple);
+    font-size: 1.1em;
+    cursor: pointer;
+    padding: 2px 6px;
+}
+
+#nomeGrupoHeader {
+    flex: 1;
+    text-align: center;
+    font-size: 0.85em;
+    color: #aaa;
+    font-weight: normal;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0 8px;
+}
 
         .calendar-grid {
             display: grid;
@@ -1151,6 +1172,20 @@
                 border-radius: 20px 20px 0 0;
             }
         }
+
+
+        /* Estilo para a informação da próxima data */
+.item-details .badge-recorrente {
+    background: #3498db;
+    color: #fff;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 8px;
+}
 
         .nav-item {
             flex: 1;
@@ -2857,6 +2892,238 @@ function atualizarSaldoHeader() {
     }
 }
 
+
+
+// ============================================
+// GERENCIAMENTO DE MÚLTIPLAS CONTAS
+// ============================================
+
+function salvarContaNoLocalStorage(email, password, nomeGrupo, userId) {
+    try {
+        const saved = localStorage.getItem('mylife_accounts');
+        let accounts = saved ? JSON.parse(saved) : { accounts: [], ultimaConta: null };
+        
+        const existingIndex = accounts.accounts.findIndex(acc => acc.email === email);
+        
+        const contaData = {
+            email: email,
+            password: password,
+            nomeGrupo: nomeGrupo || 'Minha Família',
+            ultimoAcesso: new Date().toISOString(),
+            userId: userId
+        };
+        
+        if (existingIndex !== -1) {
+            accounts.accounts[existingIndex] = contaData;
+        } else {
+            accounts.accounts.push(contaData);
+        }
+        
+        accounts.ultimaConta = email;
+        localStorage.setItem('mylife_accounts', JSON.stringify(accounts));
+        return true;
+    } catch (error) {
+        console.error('Erro ao salvar conta:', error);
+        return false;
+    }
+}
+
+function getContasSalvas() {
+    try {
+        const saved = localStorage.getItem('mylife_accounts');
+        return saved ? JSON.parse(saved) : { accounts: [], ultimaConta: null };
+    } catch (error) {
+        console.error('Erro ao ler contas:', error);
+        return { accounts: [], ultimaConta: null };
+    }
+}
+
+function removerContaDoLocalStorage(email) {
+    try {
+        const saved = localStorage.getItem('mylife_accounts');
+        if (!saved) return;
+        
+        let accounts = JSON.parse(saved);
+        accounts.accounts = accounts.accounts.filter(acc => acc.email !== email);
+        
+        if (accounts.accounts.length > 0) {
+            accounts.ultimaConta = accounts.accounts[0].email;
+        } else {
+            accounts.ultimaConta = null;
+        }
+        
+        localStorage.setItem('mylife_accounts', JSON.stringify(accounts));
+    } catch (error) {
+        console.error('Erro ao remover conta:', error);
+    }
+}
+
+function atualizarNomeGrupoNasContas(email, nomeGrupo) {
+    try {
+        const saved = localStorage.getItem('mylife_accounts');
+        if (!saved) return;
+        
+        let accounts = JSON.parse(saved);
+        const account = accounts.accounts.find(acc => acc.email === email);
+        if (account) {
+            account.nomeGrupo = nomeGrupo;
+            localStorage.setItem('mylife_accounts', JSON.stringify(accounts));
+        }
+    } catch (error) {
+        console.error('Erro ao atualizar nome do grupo:', error);
+    }
+}
+
+
+// Função para abrir o menu de alternar contas
+function abrirMenuContas() {
+    const contas = getContasSalvas();
+    const contasAtivas = contas.accounts;
+    
+    let contasHtml = '';
+    if (contasAtivas.length > 0) {
+        contasHtml = `
+            <div style="margin-bottom: 16px;">
+                <label class="form-label"><i class="fas fa-exchange-alt"></i> Alternar para:</label>
+                <div style="max-height: 300px; overflow-y: auto;">
+                    ${contasAtivas.map(conta => `
+                        <div onclick="alternarConta('${conta.email}')" 
+                             style="padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; gap: 12px;"
+                             onmouseover="this.style.background='#f8f9fa'"
+                             onmouseout="this.style.background='white'">
+                            <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff;">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600;">${conta.nomeGrupo || 'Sem grupo'}</div>
+                                <div style="font-size: 11px; color: var(--gray);">${conta.email}</div>
+                                <div style="font-size: 10px; color: var(--gray);">Último acesso: ${new Date(conta.ultimoAcesso).toLocaleDateString('pt-BR')}</div>
+                            </div>
+                            <button onclick="event.stopPropagation(); removerContaSalva('${conta.email}')" 
+                                    style="background: none; border: none; color: var(--danger); cursor: pointer; padding: 8px;" 
+                                    title="Remover esta conta">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    } else {
+        contasHtml = '<p style="text-align: center; color: var(--gray); padding: 20px;">Nenhuma conta salva</p>';
+    }
+    
+    let conteudo = `
+        <div style="padding: 0;">
+            <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 15px; text-align: center;">
+                <i class="fas fa-exchange-alt" style="font-size: 32px; color: #fff;"></i>
+                <h3 style="margin: 5px 0 0 0; color: #fff;">Gerenciar Contas</h3>
+            </div>
+            <div style="padding: 16px;">
+                ${contasHtml}
+                
+                <hr style="margin: 16px 0;">
+                
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="sairCompleto()" class="btn btn-danger" style="flex: 1;">
+                        <i class="fas fa-sign-out-alt"></i> Sair do App
+                    </button>
+                    <button onclick="fecharModal()" class="btn" style="flex: 1; background: var(--gray); color: #fff;">
+                        Cancelar
+                    </button>
+                </div>
+                
+                <div style="margin-top: 16px; padding: 10px; background: #e8f4fd; border-radius: 8px; font-size: 11px;">
+                    <i class="fas fa-info-circle"></i> 
+                    As contas salvas ficam armazenadas apenas neste navegador/dispositivo. 
+                    Ao "Sair do App" você será desconectado e precisará fazer login novamente.
+                </div>
+            </div>
+        </div>
+    `;
+    
+    abrirModal('Alternar Conta', 'fa-exchange-alt', conteudo);
+}
+
+// Função para alternar para outra conta
+async function alternarConta(email) {
+    const contas = getContasSalvas();
+    const conta = contas.accounts.find(acc => acc.email === email);
+    
+    if (!conta) {
+        showToast('Conta não encontrada', 'error');
+        return;
+    }
+    
+    try {
+        showToast(`🔄 Alternando para ${conta.nomeGrupo || email}...`, 'info');
+        
+        const { data, error } = await App.supabase.auth.signInWithPassword({
+            email: conta.email,
+            password: conta.password
+        });
+        
+        if (error) throw error;
+        
+        conta.ultimoAcesso = new Date().toISOString();
+        contas.ultimaConta = email;
+        localStorage.setItem('mylife_accounts', JSON.stringify(contas));
+        
+        App.currentUser = data.user;
+        atualizarEmailMenu();
+        
+        await carregarDados(true);
+        carregarUsuarioLocal();
+        
+        if (conta.nomeGrupo) {
+            atualizarNomeGrupoHeader(conta.nomeGrupo);
+        }
+        
+        resetarParaHoje();
+        fecharModal();
+        showToast(`✅ Conectado como ${conta.nomeGrupo || conta.email}`, 'success');
+        
+    } catch (error) {
+        console.error('Erro ao alternar conta:', error);
+        showToast('Erro ao alternar: ' + error.message, 'error');
+        
+        if (confirm('Falha ao conectar. Deseja remover esta conta dos salvos?')) {
+            removerContaDoLocalStorage(email);
+            fecharModal();
+            abrirMenuContas();
+        }
+    }
+}
+
+// Função para remover conta salva
+function removerContaSalva(email) {
+    if (confirm(`Tem certeza que deseja remover a conta ${email} dos seus logins salvos?`)) {
+        removerContaDoLocalStorage(email);
+        showToast('Conta removida!', 'success');
+        fecharModal();
+        abrirMenuContas();
+    }
+}
+
+// Função para sair completamente
+function sairCompleto() {
+    if (confirm('Deseja realmente sair do aplicativo? Você precisará fazer login novamente.')) {
+        App.supabase.auth.signOut();
+        App.currentUser = null;
+        App.usuarioAtual = null;
+        App.dataCache = { contas: [], regrasContas: [], eventos: [], eventosIndividuais: [], regrasEventos: [], gastos: [], lista: [], saldos: [], historico: [], excecoesRecorrencia: [], giros: [], movimentacoesGiro: [], notas: [], usuariosFamilia: [], tarefas: [], configuracoesSync: {}, calendariosAssinados: [], eventosImportados: [] };
+        
+        document.getElementById('authContainer').style.display = 'flex';
+        document.getElementById('mainContainer').style.display = 'none';
+        
+        document.getElementById('loginEmail').value = '';
+        document.getElementById('loginPassword').value = '';
+        
+        fecharModal();
+        showToast('Desconectado!', 'info');
+    }
+}
+
 // ============================================
 // EXPLICAR SALDO PARA USUÁRIOS GRÁTIS
 // ============================================
@@ -4307,8 +4574,8 @@ function atualizarEmailMenu() {
                 App.supabase.from('usuarios_familia').select('*').eq('user_id', App.currentUser.id),
                 App.supabase.from('tarefas').select('*').eq('user_id', App.currentUser.id),
                 App.supabase.from('configuracoes_sync').select('*').eq('user_id', App.currentUser.id).maybeSingle(),
-                App.supabase.from('calendarios_assinados').select('*').eq('user_id', App.currentUser.id),  // 🔴 NOVO
-                App.supabase.from('eventos_importados').select('*').eq('user_id', App.currentUser.id)    // 🔴 NOVO
+                App.supabase.from('calendarios_assinados').select('*').eq('user_id', App.currentUser.id),
+                App.supabase.from('eventos_importados').select('*').eq('user_id', App.currentUser.id)
             ];
 
             const results = await Promise.allSettled(promises);
@@ -4329,8 +4596,8 @@ function atualizarEmailMenu() {
             const usuariosFamilia = results[13].status === 'fulfilled' ? results[13].value.data : [];
             const tarefas = results[14].status === 'fulfilled' ? results[14].value.data : [];
             const configuracoesSync = results[15].status === 'fulfilled' ? results[15].value.data : {};
-            const calendariosAssinados = results[16].status === 'fulfilled' ? results[16].value.data : [];  // 🔴 NOVO
-            const eventosImportados = results[17].status === 'fulfilled' ? results[17].value.data : [];    // 🔴 NOVO
+            const calendariosAssinados = results[16].status === 'fulfilled' ? results[16].value.data : [];
+            const eventosImportados = results[17].status === 'fulfilled' ? results[17].value.data : [];
 
             let excecoesRecorrencia = [];
             try {
@@ -4367,8 +4634,8 @@ function atualizarEmailMenu() {
                 excecoesRecorrencia: excecoesRecorrencia, giros: giros || [], movimentacoesGiro: movimentacoes || [],
                 notas: notas || [], usuariosFamilia: usuariosFamilia || [], tarefas: tarefas || [],
                 configuracoesSync: configuracoesSync || {},
-                calendariosAssinados: calendariosAssinados || [],   // 🔴 NOVO
-                eventosImportados: eventosImportados || []          // 🔴 NOVO
+                calendariosAssinados: calendariosAssinados || [],
+                eventosImportados: eventosImportados || []
             };
 
             salvarCacheLocal();
@@ -4380,6 +4647,19 @@ function atualizarEmailMenu() {
             atualizarListaBadge();
             atualizarTarefaBadge();
             atualizarSaldoHeader();
+            
+            // 🔴 ATUALIZAR O NOME DO GRUPO NO CABEÇALHO DO CALENDÁRIO
+            if (usuariosFamilia && usuariosFamilia.length > 0 && usuariosFamilia[0].nome_grupo) {
+                atualizarNomeGrupoHeader(usuariosFamilia[0].nome_grupo);
+            } else {
+                // Verificar se tem nome salvo no localStorage
+                if (App.currentUser) {
+                    const saved = localStorage.getItem(`mylife_nome_grupo_${App.currentUser.id}`);
+                    if (saved) {
+                        atualizarNomeGrupoHeader(saved);
+                    }
+                }
+            }
             
             document.getElementById('loadingState').style.display = 'none';
         } catch (error) {
@@ -4437,75 +4717,121 @@ function atualizarTarefaBadge() {
 
 
         async function atualizarCalendario() {
-            let { mes, ano } = getMesAnoAtual();
-            App.selectedMonth = mes;
-            App.selectedYear = ano;
-            document.getElementById('calendarTitle').textContent = `${getNomeMes(mes)} ${ano}`;
-
-            let grid = document.getElementById('calendarGrid');
-            grid.innerHTML = '';
-            CONFIG.diasSemana.forEach(dia => {
-                let h = document.createElement('div');
-                h.className = 'calendar-day-header';
-                h.textContent = dia;
-                grid.appendChild(h);
-            });
-
-            let primeiroDia = new Date(ano, mes - 1, 1).getDay();
-            let diasNoMes = getDiasNoMes(ano, mes);
-
-            for (let i = 0; i < primeiroDia; i++) {
-                let e = document.createElement('div');
-                e.className = 'calendar-day empty';
-                grid.appendChild(e);
-            }
-
-            let todasContas = combinarContasDoMes(mes, ano);
-            let todosEventos = combinarEventosDoMes(mes, ano);
-
-            let hoje = new Date();
-            hoje.setHours(0, 0, 0, 0);
-
-            for (let dia = 1; dia <= diasNoMes; dia++) {
-                let isToday = dia === hoje.getDate() && mes === hoje.getMonth() + 1 && ano === hoje.getFullYear() && App.currentMonthOffset === 0;
-
-                let contasHoje = todasContas.filter(c => c.dia === dia);
-                let eventosHoje = todosEventos.filter(e => e.dia === dia);
-
-                let contasPendentes = contasHoje.filter(c => c.valor_pago === 0 && c.status !== 'paga');
-                let contasVencidas = contasPendentes.filter(c => {
-                    let d = criarData(ano, mes, c.dia);
-                    return d < hoje;
-                });
-                let contasNormais = contasPendentes.filter(c => {
-                    let d = criarData(ano, mes, c.dia);
-                    return d >= hoje;
-                });
-
-                let cell = document.createElement('div');
-                cell.className = `calendar-day ${isToday ? 'today' : ''} ${App.selectedDay === dia ? 'selected' : ''}`;
-                cell.onclick = (e) => {
-                    e.stopPropagation();
-                    selecionarDia(dia);
-                };
-
-                let contasBadgesHtml = '<div class="contas-badges-line">';
-                if (contasVencidas.length > 0) contasBadgesHtml += `<span class="day-badge badge-conta-vencida" title="${contasVencidas.length} conta(s) vencida(s)">${contasVencidas.length}</span>`;
-                if (contasNormais.length > 0) contasBadgesHtml += `<span class="day-badge badge-conta" title="${contasNormais.length} conta(s) a pagar">${contasNormais.length}</span>`;
-                contasBadgesHtml += '</div>';
-
-                let eventosEmojisHtml = '<div class="eventos-emojis-line">';
-                eventosHoje.forEach(e => {
-                    let icone = e.icone || 'fa-star';
-                    let cor = e.cor_icone || '#ffd700';
-                    eventosEmojisHtml += `<span class="event-emoji-calendar" title="${e.titulo}"><i class="fas ${icone}" style="color:${cor}"></i></span>`;
-                });
-                eventosEmojisHtml += '</div>';
-
-                cell.innerHTML = `<div class="day-number">${dia}</div>${contasBadgesHtml}${eventosEmojisHtml}`;
-                grid.appendChild(cell);
+    let { mes, ano } = getMesAnoAtual();
+    App.selectedMonth = mes;
+    App.selectedYear = ano;
+    
+    // 🔴 BUSCAR O NOME DO GRUPO
+    let nomeGrupo = '';
+    let usuarios = App.dataCache.usuariosFamilia || [];
+    
+    // Tentar buscar do cache primeiro
+    if (usuarios.length > 0 && usuarios[0].nome_grupo) {
+        nomeGrupo = usuarios[0].nome_grupo;
+    } else {
+        // Tentar buscar do localStorage
+        if (App.currentUser) {
+            const saved = localStorage.getItem(`mylife_nome_grupo_${App.currentUser.id}`);
+            if (saved) nomeGrupo = saved;
+        }
+    }
+    
+    // Se ainda estiver vazio, usar padrão
+    if (!nomeGrupo) nomeGrupo = 'Minha Família';
+    
+    // Limitar a 25 caracteres para não quebrar o layout
+    if (nomeGrupo.length > 25) nomeGrupo = nomeGrupo.substring(0, 25);
+    
+    // 🔴 TÍTULO DO CALENDÁRIO (APENAS MÊS/ANO NO BALÃO ROXO)
+    document.getElementById('calendarTitle').innerHTML = `${getNomeMes(mes)} ${ano}`;
+    
+    // 🔴 ADICIONAR O NOME DO GRUPO NO ESPAÇO ENTRE O BALÃO E AS SETAS
+    const calendarHeader = document.querySelector('.calendar-header');
+    if (calendarHeader) {
+        // Verificar se já existe o elemento do nome do grupo
+        let nomeGrupoElement = document.getElementById('nomeGrupoHeader');
+        if (!nomeGrupoElement) {
+            // Criar o elemento se não existir
+            nomeGrupoElement = document.createElement('div');
+            nomeGrupoElement.id = 'nomeGrupoHeader';
+            nomeGrupoElement.style.cssText = 'flex: 1; text-align: center; font-size: 0.85em; color: #aaa; font-weight: normal;';
+            
+            // Inserir entre o calendar-title e o calendar-nav
+            const calendarNav = document.querySelector('.calendar-nav');
+            if (calendarNav) {
+                calendarHeader.insertBefore(nomeGrupoElement, calendarNav);
+            } else {
+                calendarHeader.appendChild(nomeGrupoElement);
             }
         }
+        nomeGrupoElement.innerHTML = nomeGrupo;
+        nomeGrupoElement.title = nomeGrupo; // Tooltip com o nome completo
+    }
+
+    let grid = document.getElementById('calendarGrid');
+    grid.innerHTML = '';
+    CONFIG.diasSemana.forEach(dia => {
+        let h = document.createElement('div');
+        h.className = 'calendar-day-header';
+        h.textContent = dia;
+        grid.appendChild(h);
+    });
+
+    let primeiroDia = new Date(ano, mes - 1, 1).getDay();
+    let diasNoMes = getDiasNoMes(ano, mes);
+
+    for (let i = 0; i < primeiroDia; i++) {
+        let e = document.createElement('div');
+        e.className = 'calendar-day empty';
+        grid.appendChild(e);
+    }
+
+    let todasContas = combinarContasDoMes(mes, ano);
+    let todosEventos = combinarEventosDoMes(mes, ano);
+
+    let hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    for (let dia = 1; dia <= diasNoMes; dia++) {
+        let isToday = dia === hoje.getDate() && mes === hoje.getMonth() + 1 && ano === hoje.getFullYear() && App.currentMonthOffset === 0;
+
+        let contasHoje = todasContas.filter(c => c.dia === dia);
+        let eventosHoje = todosEventos.filter(e => e.dia === dia);
+
+        let contasPendentes = contasHoje.filter(c => c.valor_pago === 0 && c.status !== 'paga');
+        let contasVencidas = contasPendentes.filter(c => {
+            let d = criarData(ano, mes, c.dia);
+            return d < hoje;
+        });
+        let contasNormais = contasPendentes.filter(c => {
+            let d = criarData(ano, mes, c.dia);
+            return d >= hoje;
+        });
+
+        let cell = document.createElement('div');
+        cell.className = `calendar-day ${isToday ? 'today' : ''} ${App.selectedDay === dia ? 'selected' : ''}`;
+        cell.onclick = (e) => {
+            e.stopPropagation();
+            selecionarDia(dia);
+        };
+
+        let contasBadgesHtml = '<div class="contas-badges-line">';
+        if (contasVencidas.length > 0) contasBadgesHtml += `<span class="day-badge badge-conta-vencida" title="${contasVencidas.length} conta(s) vencida(s)">${contasVencidas.length}</span>`;
+        if (contasNormais.length > 0) contasBadgesHtml += `<span class="day-badge badge-conta" title="${contasNormais.length} conta(s) a pagar">${contasNormais.length}</span>`;
+        contasBadgesHtml += '</div>';
+
+        let eventosEmojisHtml = '<div class="eventos-emojis-line">';
+        eventosHoje.forEach(e => {
+            let icone = e.icone || 'fa-star';
+            let cor = e.cor_icone || '#ffd700';
+            eventosEmojisHtml += `<span class="event-emoji-calendar" title="${e.titulo}"><i class="fas ${icone}" style="color:${cor}"></i></span>`;
+        });
+        eventosEmojisHtml += '</div>';
+
+        cell.innerHTML = `<div class="day-number">${dia}</div>${contasBadgesHtml}${eventosEmojisHtml}`;
+        grid.appendChild(cell);
+    }
+}
 
         function selecionarDia(dia) {
             App.selectedDay = App.selectedDay === dia ? null : dia;
@@ -4579,7 +4905,73 @@ function atualizarTarefaBadge() {
             content.innerHTML = html;
         }
 
-       function renderizarItemCard(item, mes, ano) {
+
+// Calcular a ÚLTIMA DATA (data do fim) de uma conta recorrente
+function calcularUltimaDataConta(regra) {
+    if (!regra || !regra.data_inicio) return null;
+    
+    // Se não tem data_fim e não tem num_parcelas, é indeterminada
+    if (!regra.data_fim && !regra.num_parcelas) return null;
+    
+    let dataInicio = new Date(regra.data_inicio + 'T12:00:00');
+    let diaReferencia = regra.dia_vencimento;
+    
+    // Caso 1: Tem data_fim específica
+    if (regra.data_fim) {
+        let dataFim = new Date(regra.data_fim + 'T12:00:00');
+        return dataFim;
+    }
+    
+    // Caso 2: Tem número de parcelas definido
+    if (regra.num_parcelas && regra.num_parcelas > 0) {
+        let dataAtual = new Date(dataInicio);
+        let parcelasRestantes = regra.num_parcelas - 1; // -1 porque a primeira já é a atual
+        
+        for (let i = 0; i < parcelasRestantes; i++) {
+            switch (regra.frequencia) {
+                case 'semanal':
+                    dataAtual.setDate(dataAtual.getDate() + 7);
+                    break;
+                case 'quinzenal':
+                    dataAtual.setDate(dataAtual.getDate() + 14);
+                    break;
+                case 'mensal':
+                    dataAtual.setMonth(dataAtual.getMonth() + 1);
+                    let ultimoDia = getDiasNoMes(dataAtual.getFullYear(), dataAtual.getMonth() + 1);
+                    dataAtual.setDate(Math.min(diaReferencia, ultimoDia));
+                    break;
+                case 'semestral':
+                    dataAtual.setMonth(dataAtual.getMonth() + 6);
+                    ultimoDia = getDiasNoMes(dataAtual.getFullYear(), dataAtual.getMonth() + 1);
+                    dataAtual.setDate(Math.min(diaReferencia, ultimoDia));
+                    break;
+                case 'anual':
+                    dataAtual.setFullYear(dataAtual.getFullYear() + 1);
+                    ultimoDia = getDiasNoMes(dataAtual.getFullYear(), dataAtual.getMonth() + 1);
+                    dataAtual.setDate(Math.min(diaReferencia, ultimoDia));
+                    break;
+            }
+        }
+        return dataAtual;
+    }
+    
+    return null;
+}
+
+// Calcular a ÚLTIMA DATA (data do fim) de um evento recorrente
+function calcularUltimaDataEvento(regra) {
+    if (!regra || !regra.data_inicio) return null;
+    
+    // Se não tem data_fim, é indeterminado
+    if (!regra.data_fim) return null;
+    
+    let dataFim = new Date(regra.data_fim + 'T12:00:00');
+    return dataFim;
+}
+
+
+
+     function renderizarItemCard(item, mes, ano) {
     if (!item) return '';
     let hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
@@ -4609,8 +5001,28 @@ function atualizarTarefaBadge() {
         }
 
         titulo = item.descricao || 'Conta sem descrição';
-        if (item.frequencia && item.frequencia !== 'unico') titulo += ` <span class="item-badge badge-recorrente">${item.frequencia}</span>`;
-        detalhes = `Vence ${item.dia || item.dia_vencimento} ${getNomeMes(item.mes || mes)}/${item.ano || ano}`;
+        
+        // 🔴 ADICIONAR INFORMAÇÃO DA ÚLTIMA DATA PARA CONTAS RECORRENTES (de forma discreta)
+        let infoUltimaData = '';
+        if (item.isRecorrente && item.regra_id) {
+            let regra = App.dataCache.regrasContas?.find(r => r.id == item.regra_id);
+            if (regra) {
+                let ultimaData = calcularUltimaDataConta(regra);
+                if (ultimaData) {
+                    let dataFormatada = ultimaData.toLocaleDateString('pt-BR');
+                    infoUltimaData = `<span style="font-size: 10px; color: #888; margin-left: 6px;">(Termina em: ${dataFormatada})</span>`;
+                } else {
+                    // Se for indeterminada, mostrar "(sem previsão de término)"
+                    infoUltimaData = `<span style="font-size: 10px; color: #888; margin-left: 6px;"></span>`;
+                }
+            }
+        }
+        
+        if (item.frequencia && item.frequencia !== 'unico') {
+            titulo += ` <span class="item-badge badge-recorrente">${item.frequencia}</span>`;
+        }
+        
+        detalhes = `Vence ${item.dia || item.dia_vencimento} ${getNomeMes(item.mes || mes)}/${item.ano || ano} ${infoUltimaData}`;
         
         let valorExibicao = item.valor_pago > 0 ? item.valor_pago : (item.valor_original || item.valor || 0);
         valor = formatCurrency(valorExibicao);
@@ -4637,18 +5049,36 @@ function atualizarTarefaBadge() {
                 ${botoes}
             </div>
         </div>`;
+        
     } else if (item.tipo === 'evento') {
         let dataEv = criarData(item.ano, item.mes, item.dia);
         classe = dataEv < hoje ? 'paga' : 'pendente';
         let iconeEvento = item.icone || 'fa-star';
         let corIcone = item.cor_icone || '#ffd700';
         titulo = item.titulo || 'Evento sem título';
+        
+        // 🔴 ADICIONAR INFORMAÇÃO DA ÚLTIMA DATA PARA EVENTOS RECORRENTES (de forma discreta)
+        let infoUltimaDataEvento = '';
+        if (item.isRecorrente && item.regra_id) {
+            let regra = App.dataCache.regrasEventos?.find(r => r.id == item.regra_id);
+            if (regra) {
+                let ultimaData = calcularUltimaDataEvento(regra);
+                if (ultimaData) {
+                    let dataFormatada = ultimaData.toLocaleDateString('pt-BR');
+                    infoUltimaDataEvento = `<span style="font-size: 10px; color: #888; margin-left: 6px;">(Termina em: ${dataFormatada})</span>`;
+                } else {
+                    infoUltimaDataEvento = `<span style="font-size: 10px; color: #888; margin-left: 6px;"></span>`; 
+                }
+            }
+        }
+        
         if (item.frequencia && item.frequencia !== 'unico') {
             titulo += ` <span class="item-badge badge-recorrente">${item.frequencia}</span>`;
         }
         detalhes = `${item.dia} ${getNomeMes(item.mes)}/${item.ano}`;
         if (item.hora) detalhes += ` | ${item.hora}`;
         if (item.local) detalhes += ` | ${item.local}`;
+        detalhes += infoUltimaDataEvento;
 
         if (podeEditar) {
             botoes = `
@@ -10218,7 +10648,7 @@ function fecharModalInfoEConfirmar() {
             });
         }
 
-       async function confirmarPagamento(id, desc, valor, regraId, dia, mes, ano, isRecorrente, codigoPagamento) {
+      async function confirmarPagamento(id, desc, regraId, dia, mes, ano, isRecorrente) {
     if (App.processandoPagamento) {
         showToast('Processando pagamento, aguarde...', 'warning');
         return;
@@ -10226,8 +10656,14 @@ function fecharModalInfoEConfirmar() {
     
     let valorPago = parseCurrency(document.getElementById('pagamentoValorConta')?.value);
     
+    if (isNaN(valorPago)) {
+        showToast('Digite um valor válido', 'warning');
+        return;
+    }
+    
     const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
     
+    // Se for R$ 0,00, apenas marcar como paga sem alterar saldo
     if (valorPago === 0) {
         const confirmar = confirm(
             '⚠️ ATENÇÃO: Você está pagando R$ 0,00.\n\n' +
@@ -10240,86 +10676,170 @@ function fecharModalInfoEConfirmar() {
         }
         
         try {
-            if (isRecorrente && regraId) {
-                await App.supabase.from('excecoes_recorrencia').insert({
-                    user_id: App.currentUser.id,
-                    regra_id: regraId,
-                    data_excecao: dataParaString(ano, mes, dia),
-                    acao: 'pagar',
-                    added_by: nomeUsuario
-                });
+            App.processandoPagamento = true;
+            
+            if (isRecorrente && regraId && regraId !== 'undefined') {
+                // Para conta recorrente: criar exceção de pagamento
+                const dataExcecao = `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+                
+                console.log('🔵 Criando exceção de pagamento:', { regraId, dataExcecao, valor: 0 });
+                
+                const { error } = await App.supabase
+                    .from('excecoes_recorrencia')
+                    .insert({
+                        user_id: App.currentUser.id,
+                        regra_id: parseInt(regraId),
+                        data_excecao: dataExcecao,
+                        acao: 'pagar',
+                        added_by: nomeUsuario
+                    });
+                
+                if (error) {
+                    console.error('❌ Erro ao criar exceção:', error);
+                    showToast('Erro: ' + error.message, 'error');
+                    return;
+                }
+                
+                console.log('✅ Exceção criada com sucesso');
+                
             } else {
-                await App.supabase.from('contas').update({
-                    valor_pago: 0,
-                    status: 'paga',
-                    data_pagamento: new Date().toISOString()
-                }).eq('id', id);
+                // Conta única
+                const { error } = await App.supabase
+                    .from('contas')
+                    .update({
+                        valor_pago: 0,
+                        status: 'paga',
+                        data_pagamento: new Date().toISOString()
+                    })
+                    .eq('id', id);
+                
+                if (error) throw error;
             }
             
-            await registrarHistorico('pagamento_conta_zero', `Conta marcada como paga (R$ 0,00): ${desc}`, { id, usuario: nomeUsuario });
+            await registrarHistorico('pagamento_conta_zero', 
+                `Conta marcada como paga (R$ 0,00): ${desc}`, 
+                { id, usuario: nomeUsuario });
+            
             showToast('✅ Conta marcada como paga! (Saldo não alterado)', 'success');
             
-            // 🔴 SINCRONIZAÇÃO AUTOMÁTICA
-            await sincronizarGoogleAutomatico();
-            
-            fecharModal();
+            // Recarregar dados
             await carregarDados(true);
             await atualizarCalendario();
             await mostrarConteudo();
-            return;
+            
+            fecharModal();
+            
         } catch (error) {
             console.error('Erro ao marcar como paga:', error);
             showToast('Erro: ' + error.message, 'error');
+        } finally {
             App.processandoPagamento = false;
-            return;
         }
+        return;
     }
     
+    // Pagamento normal (valor > 0)
     App.processandoPagamento = true;
     
     try {
-        if (isRecorrente && regraId) {
-            await App.supabase.from('excecoes_recorrencia').insert({
-                user_id: App.currentUser.id,
-                regra_id: regraId,
-                data_excecao: dataParaString(ano, mes, dia),
-                acao: 'pagar',
-                added_by: nomeUsuario
-            });
+        // 1. Registrar o pagamento
+        if (isRecorrente && regraId && regraId !== 'undefined') {
+            // Conta recorrente: criar exceção
+            const dataExcecao = `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+            
+            console.log('🔵 Criando exceção de pagamento (valor > 0):', { regraId, dataExcecao, valorPago });
+            
+            // Verificar se já existe exceção para esta data
+            const { data: existente } = await App.supabase
+                .from('excecoes_recorrencia')
+                .select('id')
+                .eq('regra_id', parseInt(regraId))
+                .eq('data_excecao', dataExcecao)
+                .maybeSingle();
+            
+            if (existente) {
+                // Atualizar exceção existente
+                const { error } = await App.supabase
+                    .from('excecoes_recorrencia')
+                    .update({ acao: 'pagar' })
+                    .eq('id', existente.id);
+                
+                if (error) throw error;
+            } else {
+                // Criar nova exceção
+                const { error } = await App.supabase
+                    .from('excecoes_recorrencia')
+                    .insert({
+                        user_id: App.currentUser.id,
+                        regra_id: parseInt(regraId),
+                        data_excecao: dataExcecao,
+                        acao: 'pagar',
+                        added_by: nomeUsuario
+                    });
+                
+                if (error) throw error;
+            }
+            
         } else {
-            await App.supabase.from('contas').update({
-                valor_pago: valorPago,
-                status: 'paga',
-                data_pagamento: new Date().toISOString()
-            }).eq('id', id);
+            // Conta única
+            const { error } = await App.supabase
+                .from('contas')
+                .update({
+                    valor_pago: valorPago,
+                    status: 'paga',
+                    data_pagamento: new Date().toISOString()
+                })
+                .eq('id', id);
+            
+            if (error) throw error;
         }
-
+        
+        // 2. Atualizar o saldo central
         if (App.saldoCentral.id && valorPago > 0) {
-            let { data: saldoAtual, error: saldoError } = await App.supabase.from('saldos').select('valor').eq('id', App.saldoCentral.id).single();
-            if (saldoAtual && !saldoError) {
-                let novoValor = saldoAtual.valor - valorPago;
-                await App.supabase.from('saldos').update({ valor: novoValor }).eq('id', App.saldoCentral.id);
+            const { data: saldoAtual, error: saldoError } = await App.supabase
+                .from('saldos')
+                .select('valor')
+                .eq('id', App.saldoCentral.id)
+                .single();
+            
+            if (!saldoError && saldoAtual) {
+                const novoValor = saldoAtual.valor - valorPago;
+                await App.supabase
+                    .from('saldos')
+                    .update({ valor: novoValor })
+                    .eq('id', App.saldoCentral.id);
                 App.saldoCentral.valor = novoValor;
                 atualizarSaldoHeader();
             }
         }
-
-        await registrarHistorico('pagamento_conta', `Conta paga: ${desc}`, { id, valor: valorPago, usuario: nomeUsuario });
         
+        // 3. Registrar histórico
+        await registrarHistorico('pagamento_conta', 
+            `Conta paga: ${desc} - Valor: ${formatCurrency(valorPago)}`, 
+            { id, valor: valorPago, usuario: nomeUsuario, isRecorrente });
+        
+        // 4. Notificação
         verificarNotificacoes({ descricao: 'Pagamento confirmado', valor: valorPago }, 'contas');
         
-        showToast('Pagamento confirmado!', 'success');
+        showToast(`✅ Pagamento de ${formatCurrency(valorPago)} confirmado!`, 'success');
         
-        // 🔴 SINCRONIZAÇÃO AUTOMÁTICA
-        await sincronizarGoogleAutomatico();
-        
+        // 5. Fechar modal e recarregar dados
         fecharModal();
         await carregarDados(true);
         await atualizarCalendario();
         await mostrarConteudo();
+        
+        // 6. Sincronizar com Google (opcional, tratar erro separadamente)
+        try {
+            await sincronizarGoogleAutomatico();
+        } catch (syncError) {
+            console.warn('Erro na sincronização automática:', syncError);
+            // Não mostrar erro para o usuário, apenas log
+        }
+        
     } catch (error) {
         console.error('Erro ao pagar conta:', error);
-        showToast('Erro: ' + error.message, 'error');
+        showToast('Erro ao processar pagamento: ' + error.message, 'error');
     } finally {
         App.processandoPagamento = false;
     }
@@ -10930,6 +11450,14 @@ function abrirModalAssinaturaBloqueio() {
 function abrirUsuariosFamilia() {
     let usuarios = App.dataCache.usuariosFamilia || [];
     
+    // Buscar o nome do grupo (qualquer usuário serve, pois é o mesmo para todos)
+    let nomeGrupo = '';
+    if (usuarios.length > 0 && usuarios[0].nome_grupo) {
+        nomeGrupo = usuarios[0].nome_grupo;
+    } else {
+        nomeGrupo = 'Minha Família';
+    }
+    
     let listaUsuariosHtml = '';
     if (usuarios.length > 0) {
         listaUsuariosHtml = `
@@ -10960,12 +11488,26 @@ function abrirUsuariosFamilia() {
                 <h3 style="margin: 0; color: #fff;"><i class="fas fa-users"></i> Membros da Família</h3>
             </div>
             <div style="padding: 16px;">
-                ${listaUsuariosHtml}
-                <div style="margin-top: 16px;">
-                    <button class="btn btn-primary" onclick="abrirCadastroUsuarioRapido()" style="width: 100%;">
-                        <i class="fas fa-plus"></i> Adicionar Novo Usuário
+                <!-- 🔴 CAMPO PARA NOME DO GRUPO -->
+                <div style="background: #e8f4fd; border-radius: 12px; padding: 12px; margin-bottom: 20px;">
+                    <label class="form-label" style="margin-bottom: 5px;"><i class="fas fa-users"></i> Nome do Grupo</label>
+                    <input type="text" id="nomeGrupoInput" class="form-input" maxlength="25" value="${nomeGrupo}" placeholder="Ex: Família Silva, Casa, etc." style="font-size: 14px;">
+                    <small style="color: var(--gray); font-size: 11px;">Este nome aparecerá no cabeçalho do calendário (máx. 25 caracteres)</small>
+                    <button class="btn btn-sm btn-primary" onclick="salvarNomeGrupo()" style="margin-top: 8px; width: 100%;">
+                        <i class="fas fa-save"></i> Salvar Nome do Grupo
                     </button>
                 </div>
+                
+                <div style="margin-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <label class="form-label" style="margin-bottom: 0;"><i class="fas fa-list"></i> Usuários cadastrados</label>
+                        <button class="btn btn-sm btn-primary" onclick="abrirCadastroUsuarioRapido()" style="padding: 4px 12px;">
+                            <i class="fas fa-plus"></i> Adicionar
+                        </button>
+                    </div>
+                    ${listaUsuariosHtml}
+                </div>
+                
                 <div style="margin-top: 12px; padding: 12px; background: #e8f4fd; border-radius: 8px;">
                     <small><i class="fas fa-info-circle"></i> Cada usuário terá um código de acesso único. Use o código para identificar quem está usando o app em cada dispositivo.</small>
                 </div>
@@ -10979,6 +11521,73 @@ function abrirUsuariosFamilia() {
     abrirModal('Usuários da Família', 'fa-users', conteudo);
 }
 
+
+async function salvarNomeGrupo() {
+    let nomeGrupo = document.getElementById('nomeGrupoInput')?.value.trim();
+    
+    if (!nomeGrupo) {
+        showToast('Digite um nome para o grupo', 'warning');
+        return;
+    }
+    
+    if (nomeGrupo.length > 25) {
+        showToast('O nome deve ter no máximo 25 caracteres', 'warning');
+        return;
+    }
+    
+    try {
+        // Atualizar todos os usuários da família com o mesmo nome de grupo
+        const { error } = await App.supabase
+            .from('usuarios_familia')
+            .update({ nome_grupo: nomeGrupo })
+            .eq('user_id', App.currentUser.id);
+        
+        if (error) throw error;
+        
+        // Atualizar o cache local
+        if (App.dataCache.usuariosFamilia) {
+            App.dataCache.usuariosFamilia.forEach(u => {
+                u.nome_grupo = nomeGrupo;
+            });
+        }
+        
+        // 🔴 ATUALIZAR O NOME DO GRUPO NAS CONTAS SALVAS
+        if (App.currentUser) {
+            atualizarNomeGrupoNasContas(App.currentUser.email, nomeGrupo);
+        }
+        
+        // Atualizar o cabeçalho do calendário
+        atualizarNomeGrupoHeader(nomeGrupo);
+        
+        showToast('✅ Nome do grupo atualizado!', 'success');
+        
+        // Recarregar dados para garantir
+        await carregarDados(true);
+        
+        // Fechar o modal se estiver aberto
+        fecharModal();
+        
+    } catch (error) {
+        console.error('Erro ao salvar nome do grupo:', error);
+        showToast('Erro: ' + error.message, 'error');
+    }
+}
+
+
+function atualizarNomeGrupoHeader(nomeGrupo) {
+    // Buscar o elemento do título do calendário
+    const calendarTitle = document.getElementById('calendarTitle');
+    if (!calendarTitle) return;
+    
+    // Salvar o nome do grupo no localStorage para persistência
+    if (App.currentUser) {
+        localStorage.setItem(`mylife_nome_grupo_${App.currentUser.id}`, nomeGrupo);
+    }
+    
+    // Não precisa modificar o HTML aqui, pois o calendário será recarregado
+    // Apenas forçar atualização do calendário para mostrar o novo nome
+    atualizarCalendario();
+}
 
 
         function alterarSenhas() {
@@ -13986,6 +14595,12 @@ async function salvarNovoUsuarioFamilia() {
             return;
         }
         
+        // Buscar o nome do grupo atual (se existir)
+        let nomeGrupo = 'Minha Família';
+        if (App.dataCache.usuariosFamilia && App.dataCache.usuariosFamilia.length > 0 && App.dataCache.usuariosFamilia[0].nome_grupo) {
+            nomeGrupo = App.dataCache.usuariosFamilia[0].nome_grupo;
+        }
+        
         const codigoAcesso = telefone.slice(-6);
         
         const { data, error } = await App.supabase
@@ -13996,6 +14611,7 @@ async function salvarNovoUsuarioFamilia() {
                 telefone: telefone,
                 apelido: apelido,
                 codigo_acesso: codigoAcesso,
+                nome_grupo: nomeGrupo,  // 🔴 PROPAGAR O NOME DO GRUPO
                 ultimo_acesso: new Date().toISOString(),
                 added_by: App.usuarioAtual?.apelido || 'sistema'
             })
@@ -14764,46 +15380,58 @@ async function init() {
         }
 
         document.getElementById('btnLogin').addEventListener('click', async () => {
-            let email = document.getElementById('loginEmail').value.trim();
-            let pass = document.getElementById('loginPassword').value;
+    let email = document.getElementById('loginEmail').value.trim();
+    let pass = document.getElementById('loginPassword').value;
 
-            if (!email || !pass) {
-                showToast('Preencha email e senha', 'warning');
-                return;
+    if (!email || !pass) {
+        showToast('Preencha email e senha', 'warning');
+        return;
+    }
+
+    try {
+        let { data, error } = await App.supabase.auth.signInWithPassword({ email, password: pass });
+        if (error) showToast(error.message, 'error');
+        else {
+            App.currentUser = data.user;
+            atualizarEmailMenu();
+            document.getElementById('authContainer').style.display = 'none';
+            document.getElementById('mainContainer').style.display = 'block';
+            carregarUsuarioLocal();
+            carregarConfigLocal();
+            await carregarDados(true);
+            resetarParaHoje();
+            showToast('Login realizado!', 'success');
+            
+            // 🔴 SALVAR CONTA NO LOCALSTORAGE APÓS LOGIN
+            let nomeGrupo = 'Minha Família';
+            if (App.dataCache.usuariosFamilia && App.dataCache.usuariosFamilia.length > 0 && App.dataCache.usuariosFamilia[0].nome_grupo) {
+                nomeGrupo = App.dataCache.usuariosFamilia[0].nome_grupo;
             }
-
-            try {
-                let { data, error } = await App.supabase.auth.signInWithPassword({ email, password: pass });
-                if (error) showToast(error.message, 'error');
-                else {
-                    App.currentUser = data.user;
-                    atualizarEmailMenu();
-                    document.getElementById('authContainer').style.display = 'none';
-                    document.getElementById('mainContainer').style.display = 'block';
-                    carregarUsuarioLocal();
-                    carregarConfigLocal();
-                    await carregarDados(true);
-                    resetarParaHoje();
-                    showToast('Login realizado!', 'success');
-                    
-                    // VERIFICAR USUÁRIO EM SEGUNDO PLANO
-                    setTimeout(async () => {
-                        if (!App.usuarioAtual) {
-                            const usuarioDefinido = await verificarEObrigarUsuario();
-                            if (!usuarioDefinido) {
-                                await verificarEObrigarUsuario();
-                            }
-                        }
-                    }, 1000);
-                    
-                    criarIndicadorConexao();
-                    atualizarIndicadorConexao();
-                    iniciarPollingGoogle();
+            salvarContaNoLocalStorage(email, pass, nomeGrupo, data.user.id);
+            
+            // VERIFICAR USUÁRIO EM SEGUNDO PLANO
+            setTimeout(async () => {
+                if (!App.usuarioAtual) {
+                    const usuarioDefinido = await verificarEObrigarUsuario();
+                    if (!usuarioDefinido) {
+                        await verificarEObrigarUsuario();
+                    }
                 }
-            } catch (e) {
-                showToast('Erro no login', 'error');
-            }
-        });
+                // Atualizar nome do grupo novamente após definir usuário
+                if (App.dataCache.usuariosFamilia && App.dataCache.usuariosFamilia.length > 0 && App.dataCache.usuariosFamilia[0].nome_grupo) {
+                    atualizarNomeGrupoHeader(App.dataCache.usuariosFamilia[0].nome_grupo);
+                    atualizarNomeGrupoNasContas(email, App.dataCache.usuariosFamilia[0].nome_grupo);
+                }
+            }, 1000);
+            
+            criarIndicadorConexao();
+            atualizarIndicadorConexao();
+            iniciarPollingGoogle();
+        }
+    } catch (e) {
+        showToast('Erro no login', 'error');
+    }
+});
 
         document.getElementById('btnRegister').addEventListener('click', async () => {
             const nome = document.getElementById('registerName').value.trim();
@@ -14879,14 +15507,8 @@ async function init() {
         });
         
         document.getElementById('btnLogout').addEventListener('click', () => {
-            if (confirm('Deseja realmente sair?')) {
-                App.supabase.auth.signOut();
-                App.currentUser = null;
-                App.usuarioAtual = null;
-                document.getElementById('authContainer').style.display = 'flex';
-                document.getElementById('mainContainer').style.display = 'none';
-            }
-        });
+    abrirMenuContas();
+});
 
         document.getElementById('linkRegister').addEventListener('click', () => {
             document.getElementById('loginForm').style.display = 'none';
@@ -15482,12 +16104,67 @@ function irParaGiros() {
 }
 
 
+
+
+
+// Calcular a próxima data de um evento recorrente
+function calcularProximaDataEvento(regra, aPartirDe) {
+    if (!regra || !regra.data_inicio) return null;
+    
+    let dataReferencia = new Date(aPartirDe);
+    let dataAtual = new Date(regra.data_inicio + 'T12:00:00');
+    let diaReferencia = regra.dia;
+    
+    let contador = 0;
+    let ultimaData = null;
+    let dataAnterior = null;
+    
+    while (dataAtual <= dataReferencia && contador < 100) {
+        dataAnterior = new Date(dataAtual);
+        
+        switch (regra.frequencia) {
+            case 'semanal':
+                dataAtual.setDate(dataAtual.getDate() + 7);
+                break;
+            case 'quinzenal':
+                dataAtual.setDate(dataAtual.getDate() + 14);
+                break;
+            case 'mensal':
+                dataAtual.setMonth(dataAtual.getMonth() + 1);
+                let ultimoDia = getDiasNoMes(dataAtual.getFullYear(), dataAtual.getMonth() + 1);
+                dataAtual.setDate(Math.min(diaReferencia, ultimoDia));
+                break;
+            case 'semestral':
+                dataAtual.setMonth(dataAtual.getMonth() + 6);
+                ultimoDia = getDiasNoMes(dataAtual.getFullYear(), dataAtual.getMonth() + 1);
+                dataAtual.setDate(Math.min(diaReferencia, ultimoDia));
+                break;
+            case 'anual':
+                dataAtual.setFullYear(dataAtual.getFullYear() + 1);
+                ultimoDia = getDiasNoMes(dataAtual.getFullYear(), dataAtual.getMonth() + 1);
+                dataAtual.setDate(Math.min(diaReferencia, ultimoDia));
+                break;
+            default:
+                return dataAnterior;
+        }
+        contador++;
+    }
+    
+    if (regra.data_fim) {
+        let dataFim = new Date(regra.data_fim + 'T12:00:00');
+        if (dataAnterior > dataFim) return null;
+    }
+    
+    return dataAnterior;
+}
+
+
 // ============================================
 // FUNÇÃO DE SINCRONIZAÇÃO AUTOMÁTICA
 // ============================================
 
 // ============================================
-// FUNÇÃO DE SINCRONIZAÇÃO AUTOMÁTICA (EM SEGUNDO PLANO)
+// FUNÇÃO DE SINCRONIZAÇÃO AUTOMÁTICA (EM SEGUNDO PLANO)  AQUI ESTA TUDO OK  
 // ============================================
 
 async function sincronizarGoogleAutomatico() {

@@ -2977,6 +2977,7 @@ function atualizarNomeGrupoNasContas(email, nomeGrupo) {
 
 // Função para abrir o menu de alternar contas
 function abrirMenuContas() {
+    // 🔴 RECARREGAR AS CONTAS DO LOCALSTORAGE PARA GARANTIR DADOS ATUALIZADOS
     const contas = getContasSalvas();
     const contasAtivas = contas.accounts;
     
@@ -3018,6 +3019,7 @@ function abrirMenuContas() {
             <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 15px; text-align: center;">
                 <i class="fas fa-exchange-alt" style="font-size: 32px; color: #fff;"></i>
                 <h3 style="margin: 5px 0 0 0; color: #fff;">Gerenciar Contas</h3>
+                <p style="margin: 5px 0 0 0; font-size: 11px; color: rgba(255,255,255,0.8);">Conta atual: <strong>${App.currentUser?.email || 'Nenhuma'}</strong></p>
             </div>
             <div style="padding: 16px;">
                 ${contasHtml}
@@ -3065,23 +3067,36 @@ async function alternarConta(email) {
         
         if (error) throw error;
         
+        // Atualizar o último acesso
         conta.ultimoAcesso = new Date().toISOString();
         contas.ultimaConta = email;
-        localStorage.setItem('mylife_accounts', JSON.stringify(contas));
         
+        // 🔴 ATUALIZAR O NOME DO GRUPO BUSCANDO DO BANCO DE DADOS
         App.currentUser = data.user;
         atualizarEmailMenu();
         
+        // Carregar dados para obter o nome do grupo atualizado
         await carregarDados(true);
+        
+        // Buscar o nome do grupo atualizado do cache
+        let nomeGrupoAtualizado = 'Minha Família';
+        if (App.dataCache.usuariosFamilia && App.dataCache.usuariosFamilia.length > 0 && App.dataCache.usuariosFamilia[0].nome_grupo) {
+            nomeGrupoAtualizado = App.dataCache.usuariosFamilia[0].nome_grupo;
+        }
+        
+        // Atualizar o nome do grupo na lista de contas salvas
+        conta.nomeGrupo = nomeGrupoAtualizado;
+        localStorage.setItem('mylife_accounts', JSON.stringify(contas));
+        
+        // Carregar usuário salvo
         carregarUsuarioLocal();
         
-        if (conta.nomeGrupo) {
-            atualizarNomeGrupoHeader(conta.nomeGrupo);
-        }
+        // Atualizar nome do grupo no header
+        atualizarNomeGrupoHeader(nomeGrupoAtualizado);
         
         resetarParaHoje();
         fecharModal();
-        showToast(`✅ Conectado como ${conta.nomeGrupo || conta.email}`, 'success');
+        showToast(`✅ Conectado como ${nomeGrupoAtualizado} (${conta.email})`, 'success');
         
     } catch (error) {
         console.error('Erro ao alternar conta:', error);
@@ -3307,9 +3322,11 @@ function toggleSubmenuPoliticas() {
             .eq('user_id', App.currentUser.id)
             .maybeSingle();
 
+        console.log('🔵 Dados da assinatura do banco:', data);
+
         if (data && data.status === 'ativo') {
             App.dataExpiracao = new Date(data.data_expiracao);
-            App.plano = data.plano || 'gratis';
+            let planoDB = data.plano || 'gratis';
             
             let hoje = new Date();
             hoje.setHours(0, 0, 0, 0);
@@ -3317,26 +3334,56 @@ function toggleSubmenuPoliticas() {
             let dataExp = new Date(data.data_expiracao);
             dataExp.setHours(0, 0, 0, 0);
             
+            // Calcular dias restantes (sem limite máximo)
+            let diffMs = dataExp.getTime() - hoje.getTime();
+            let diasRestantes = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            
+            console.log('🔵 Dias restantes:', diasRestantes);
+            
+            // Verificar se NÃO está expirado (dataExp >= hoje)
             if (dataExp >= hoje) {
                 App.assinaturaAtiva = true;
+                
+                // REGRA: Definir o plano baseado no plano do banco
+                if (planoDB === 'mensal') {
+                    App.plano = 'mensal';
+                } else if (planoDB === 'anual') {
+                    App.plano = 'anual';
+                } else if (planoDB === 'teste') {
+                    App.plano = 'teste';
+                } else if (planoDB === 'gratis' && diasRestantes > 0) {
+                    // Se é gratis mas tem dias restantes, é período de teste
+                    App.plano = 'teste';
+                } else if (planoDB === 'não definido' && diasRestantes > 0) {
+                    // Se é "não definido" mas tem dias restantes, é período de teste
+                    App.plano = 'teste';
+                } else {
+                    App.plano = 'gratis';
+                }
             } else {
+                // Expirado: muda para gratis
                 App.assinaturaAtiva = false;
                 App.plano = 'gratis';
             }
         } else {
+            // Sem assinatura no banco
             App.assinaturaAtiva = false;
             App.dataExpiracao = null;
             App.plano = 'gratis';
         }
         
+        console.log('🔵 Plano final definido:', App.plano);
+        console.log('🔵 Assinatura ativa:', App.assinaturaAtiva);
+        
+        // FORÇAR ATUALIZAÇÃO DO MENU
         atualizarStatusAssinaturaMenu();
-        atualizarFooterAssinatura();  // 🔴 ESTA LINHA É IMPORTANTE
+        atualizarFooterAssinatura();
         
     } catch (error) {
         console.error('Erro ao carregar assinatura:', error);
         App.assinaturaAtiva = false;
         App.plano = 'gratis';
-        atualizarFooterAssinatura();  // 🔴 ESTA LINHA TAMBÉM
+        atualizarFooterAssinatura();
     }
 }
 
@@ -3347,34 +3394,32 @@ function toggleSubmenuPoliticas() {
     if (!menuItem) return;
     
     let plano = App.plano || 'gratis';
+    let diasRestantes = 0;
     
-    if (plano === 'gratis') {
-        if (App.assinaturaAtiva && App.dataExpiracao) {
-            let hoje = new Date();
-            hoje.setHours(0, 0, 0, 0);
-            
-            let dataExp = new Date(App.dataExpiracao);
-            dataExp.setHours(0, 0, 0, 0);
-            
-            let diffMs = dataExp.getTime() - hoje.getTime();
-            let diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-            let diasRestantes = diffDias; // ✅ SEM SUBTRAÇÃO!
-            
-            if (diasRestantes < 0) {
-                menuItem.innerHTML = `Premium <span class="assinatura-badge assinatura-expirada">Expirada</span>`;
-            } else if (diasRestantes === 0) {
-                menuItem.innerHTML = `Premium <span class="assinatura-badge">Hoje</span>`;
-            } else {
-                menuItem.innerHTML = `Premium <span class="assinatura-badge">${diasRestantes} dias</span>`;
-            }
+    if (App.dataExpiracao) {
+        let hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+        let dataExp = new Date(App.dataExpiracao);
+        dataExp.setHours(0, 0, 0, 0);
+        let diffMs = dataExp.getTime() - hoje.getTime();
+        diasRestantes = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    }
+    
+    if (plano === 'teste') {
+        if (diasRestantes > 0) {
+            menuItem.innerHTML = `Premium <span class="assinatura-badge" style="background: #2ecc71; font-weight:600">${diasRestantes} dias de teste</span>`;
         } else {
-            menuItem.innerHTML = `Premium <span class="assinatura-badge assinatura-expirada">Expirada</span>`;
+            menuItem.innerHTML = `Premium <span class="assinatura-badge assinatura-expirada">Grátis</span>`;
         }
+    } else if (plano === 'gratis') {
+        menuItem.innerHTML = `Premium <span class="assinatura-badge assinatura-expirada">Grátis</span>`;
     } else if (plano === 'mensal') {
         menuItem.innerHTML = `Premium <span class="assinatura-badge" style="background:#3498db; font-weight:600">Mensal</span>`;
     } else if (plano === 'anual') {
         menuItem.innerHTML = `Premium <span class="assinatura-badge" style="background:#f39c12; font-weight:600">Anual</span>`;
     }
+    
+    atualizarFooterAssinatura();
 }
 
 
@@ -3407,22 +3452,65 @@ function atualizarStatusAssinaturaMenu() {
 function atualizarFooterAssinatura() {
     const headerGratis = document.getElementById('menuHeaderPremiumLink');
     const headerAssinante = document.getElementById('menuHeaderPremiumAssinante');
+    const avisoTeste = document.getElementById('avisoTesteMenu');
     
     const isAssinante = App.plano === 'mensal' || App.plano === 'anual';
+    const isTeste = App.plano === 'teste';
     
-    if (headerGratis && headerAssinante) {
+    console.log('🔵 Atualizando footer - Plano:', App.plano, 'isTeste:', isTeste, 'isAssinante:', isAssinante);
+    
+    // Calcular dias restantes para o teste
+    let diasTeste = 0;
+    if (isTeste && App.dataExpiracao) {
+        let hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+        let dataExp = new Date(App.dataExpiracao);
+        dataExp.setHours(0, 0, 0, 0);
+        let diffMs = dataExp.getTime() - hoje.getTime();
+        diasTeste = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        console.log('🔵 Dias de teste restantes:', diasTeste);
+    }
+    
+    if (headerGratis && headerAssinante && avisoTeste) {
         if (isAssinante) {
             headerGratis.style.display = 'none';
             headerAssinante.style.display = 'block';
+            avisoTeste.style.display = 'none';
+            console.log('🔵 Mostrando banner ASSINANTE');
+        } else if (isTeste) {
+            headerGratis.style.display = 'none';
+            headerAssinante.style.display = 'none';
+            avisoTeste.style.display = 'block';
+            const diasSpan = document.getElementById('diasTesteMenu');
+            if (diasSpan) diasSpan.textContent = diasTeste;
+            console.log('🔵 Mostrando banner TESTE');
         } else {
             headerGratis.style.display = 'block';
             headerAssinante.style.display = 'none';
+            avisoTeste.style.display = 'none';
+            console.log('🔵 Mostrando banner GRÁTIS');
         }
+    } else {
+        console.log('🔵 Elementos não encontrados:', {
+            headerGratis: !!headerGratis,
+            headerAssinante: !!headerAssinante,
+            avisoTeste: !!avisoTeste
+        });
     }
 }
 
 
 function podeExecutarAcao() {
+    // Usuários em teste (plano = 'teste') têm acesso Premium
+    if (App.plano === 'teste') {
+        return true;
+    }
+    
+    // Usuários com planos pagos têm acesso Premium
+    if (App.plano === 'mensal' || App.plano === 'anual') {
+        return true;
+    }
+    
     // Se não tem assinatura ativa, não pode executar ações
     if (!App.assinaturaAtiva) {
         return false;
@@ -3523,8 +3611,79 @@ function executarAcao(acao) {
     }
 }
 
+
+function abrirModalAssinaturaTeste() {
+    let diasRestantes = 0;
+    if (App.dataExpiracao) {
+        let hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+        let dataExp = new Date(App.dataExpiracao);
+        dataExp.setHours(0, 0, 0, 0);
+        let diffMs = dataExp.getTime() - hoje.getTime();
+        diasRestantes = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    }
+    
+    let conteudo = `
+        <div style="padding: 0;">
+            <div style="background: linear-gradient(135deg, #2ecc71, #27ae60); padding: 20px; text-align: center;">
+                <div style="background: rgba(255,255,255,0.2); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px;">
+                    <i class="fas fa-gift" style="font-size: 28px; color: #ffd700;"></i>
+                </div>
+                <h2 style="margin: 0; color: #fff; font-size: 1.5rem;">Período de Teste</h2>
+                <p style="margin: 5px 0 0 0; color: rgba(255,255,255,0.9); font-size: 1.2rem;">
+                    Você tem <strong>${diasRestantes} dias</strong> de teste grátis!
+                </p>
+            </div>
+            
+            <div style="padding: 20px;">
+                <div style="background: #e8f5e9; border-radius: 12px; padding: 15px; margin-bottom: 20px;">
+                    <i class="fas fa-check-circle" style="color: #2e7d32;"></i>
+                    <strong style="color: #2e7d32;">Você está no período de testes</strong>
+                    <p style="margin-top: 8px; font-size: 13px;">Todas as funcionalidades Premium estão liberadas durante o teste.</p>
+                </div>
+                
+                <!-- PLANOS LADO A LADO -->
+                <div style="display: flex; gap: 12px; margin-bottom: 20px;">
+                    <div onclick="gerarLinkPagamento('mensal')" style="flex: 1; background: #fff; border: 2px solid #e9ecef; border-radius: 12px; padding: 12px; text-align: center; cursor: pointer;">
+                        <i class="fas fa-crown" style="font-size: 24px; color: #3498db;"></i>
+                        <div style="font-weight: 600; margin-top: 5px;">Mensal</div>
+                        <div style="font-size: 1.1rem; font-weight: 700; color: #3498db;">R$ 17,90</div>
+                        <button style="width: 100%; padding: 8px; background: #3498db; color: #fff; border: none; border-radius: 30px; margin-top: 8px; cursor: pointer;">Assinar</button>
+                    </div>
+                    
+                    <div onclick="gerarLinkPagamento('anual')" style="flex: 1; background: #fff; border: 2px solid #ffc107; border-radius: 12px; padding: 12px; text-align: center; cursor: pointer; position: relative;">
+                        <div style="position: absolute; top: -8px; right: -8px; background: #dc3545; color: #fff; padding: 2px 10px; font-size: 0.6rem; font-weight: 700; border-radius: 20px;">-12%</div>
+                        <i class="fas fa-star" style="font-size: 24px; color: #f39c12;"></i>
+                        <div style="font-weight: 600; margin-top: 5px;">Anual</div>
+                        <div style="font-size: 1.1rem; font-weight: 700; color: #f39c12;">R$ 189,90</div>
+                        <button style="width: 100%; padding: 8px; background: #f39c12; color: #fff; border: none; border-radius: 30px; margin-top: 8px; cursor: pointer;">Assinar</button>
+                    </div>
+                </div>
+                
+                <button onclick="abrirSuporteWhatsApp()" style="width: 100%; padding: 12px; background: #25D366; color: #fff; border: none; border-radius: 30px; margin-bottom: 10px; cursor: pointer;">
+                    <i class="fab fa-whatsapp"></i> Dúvidas?
+                </button>
+                
+                <button onclick="fecharModal()" style="width: 100%; padding: 12px; background: #6c757d; color: #fff; border: none; border-radius: 30px; cursor: pointer;">
+                    Fechar
+                </button>
+            </div>
+        </div>
+    `;
+    
+    abrirModal('Período de Teste', 'fa-gift', conteudo);
+}
+
+
 function abrirModalAssinatura() {
     let plano = App.plano || 'gratis';
+    
+    // Se estiver em período de teste, mostrar modal específico
+    if (plano === 'teste') {
+        abrirModalAssinaturaTeste();
+        return;
+    }
+    
     let isAssinante = plano === 'mensal' || plano === 'anual';
     
     let dataExpiracao = App.dataExpiracao ? App.dataExpiracao.toLocaleDateString('pt-BR') : 'Não assinado';
@@ -6572,7 +6731,7 @@ function carregarUsuarioLocal() {
     };
 }
 
-        async function salvarUsuarioSelecao(aposAcao = false, acao = null) {
+       async function salvarUsuarioSelecao(aposAcao = false, acao = null) {
     let nome = document.getElementById('novoUsuarioNome')?.value.trim();
     let telefone = document.getElementById('novoUsuarioTelefone')?.value.trim();
     let apelido = document.getElementById('novoUsuarioApelido')?.value.trim();
@@ -6590,7 +6749,7 @@ function carregarUsuarioLocal() {
     }
     
     try {
-        // Verificar se já existe este telefone
+        // Verifica APENAS dentro da mesma conta (mesmo user_id)
         let usuarioExistente = App.dataCache.usuariosFamilia?.find(u => u.telefone === telefone);
         
         if (usuarioExistente) {
@@ -6612,8 +6771,10 @@ function carregarUsuarioLocal() {
             showToast(`Bem-vindo de volta, ${apelido}!`, 'success');
             
         } else {
-            // Criar novo usuário
-            const codigoAcesso = telefone.slice(-6);
+            // Criar novo usuário com código único
+            const timestamp = Date.now().toString().slice(-6);
+            const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+            const codigoAcesso = (telefone.slice(-4) + timestamp + random).slice(0, 8);
             
             const { data, error } = await App.supabase
                 .from('usuarios_familia')
@@ -11448,7 +11609,8 @@ function abrirModalAssinaturaBloqueio() {
 
 
 function abrirUsuariosFamilia() {
-    let usuarios = App.dataCache.usuariosFamilia || [];
+    // 🔴 GARANTIR QUE OS DADOS ESTEJAM ATUALIZADOS ANTES DE ABRIR
+    const usuarios = App.dataCache.usuariosFamilia || [];
     
     // Buscar o nome do grupo (qualquer usuário serve, pois é o mesmo para todos)
     let nomeGrupo = '';
@@ -11479,7 +11641,7 @@ function abrirUsuariosFamilia() {
             </div>
         `;
     } else {
-        listaUsuariosHtml = '<p style="text-align: center; color: var(--gray);">Nenhum usuário cadastrado</p>';
+        listaUsuariosHtml = '<p style="text-align: center; color: var(--gray); padding: 20px;">Nenhum usuário cadastrado</p>';
     }
     
     let conteudo = `
@@ -11488,10 +11650,10 @@ function abrirUsuariosFamilia() {
                 <h3 style="margin: 0; color: #fff;"><i class="fas fa-users"></i> Membros da Família</h3>
             </div>
             <div style="padding: 16px;">
-                <!-- 🔴 CAMPO PARA NOME DO GRUPO -->
+                <!-- CAMPO PARA NOME DO GRUPO -->
                 <div style="background: #e8f4fd; border-radius: 12px; padding: 12px; margin-bottom: 20px;">
                     <label class="form-label" style="margin-bottom: 5px;"><i class="fas fa-users"></i> Nome do Grupo</label>
-                    <input type="text" id="nomeGrupoInput" class="form-input" maxlength="25" value="${nomeGrupo}" placeholder="Ex: Família Silva, Casa, etc." style="font-size: 14px;">
+                    <input type="text" id="nomeGrupoInput" class="form-input" maxlength="25" value="${nomeGrupo.replace(/"/g, '&quot;')}" placeholder="Ex: Família Silva, Casa, etc." style="font-size: 14px;">
                     <small style="color: var(--gray); font-size: 11px;">Este nome aparecerá no cabeçalho do calendário (máx. 25 caracteres)</small>
                     <button class="btn btn-sm btn-primary" onclick="salvarNomeGrupo()" style="margin-top: 8px; width: 100%;">
                         <i class="fas fa-save"></i> Salvar Nome do Grupo
@@ -11501,7 +11663,7 @@ function abrirUsuariosFamilia() {
                 <div style="margin-bottom: 16px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                         <label class="form-label" style="margin-bottom: 0;"><i class="fas fa-list"></i> Usuários cadastrados</label>
-                        <button class="btn btn-sm btn-primary" onclick="abrirCadastroUsuarioRapido()" style="padding: 4px 12px;">
+                        <button class="btn btn-sm btn-primary" onclick="fecharModal(); setTimeout(() => abrirCadastroUsuarioRapido(), 100)" style="padding: 4px 12px;">
                             <i class="fas fa-plus"></i> Adicionar
                         </button>
                     </div>
@@ -11551,9 +11713,16 @@ async function salvarNomeGrupo() {
             });
         }
         
-        // 🔴 ATUALIZAR O NOME DO GRUPO NAS CONTAS SALVAS
-        if (App.currentUser) {
-            atualizarNomeGrupoNasContas(App.currentUser.email, nomeGrupo);
+        // 🔴 ATUALIZAR O NOME DO GRUPO NAS CONTAS SALVAS NO LOCALSTORAGE
+        const saved = localStorage.getItem('mylife_accounts');
+        if (saved) {
+            let accounts = JSON.parse(saved);
+            const accountIndex = accounts.accounts.findIndex(acc => acc.email === App.currentUser.email);
+            if (accountIndex !== -1) {
+                accounts.accounts[accountIndex].nomeGrupo = nomeGrupo;
+                localStorage.setItem('mylife_accounts', JSON.stringify(accounts));
+                console.log('✅ Nome do grupo atualizado no localStorage:', nomeGrupo);
+            }
         }
         
         // Atualizar o cabeçalho do calendário
@@ -14532,15 +14701,25 @@ async function deletarUsuarioFamilia(id) {
         
         if (error) throw error;
         
-        showToast('Usuário excluído!', 'success');
+        showToast(`✅ Usuário ${usuario.apelido} excluído!`, 'success');
+        
+        // 🔴 RECARREGAR DADOS EM BACKGROUND
         await carregarDados(true);
         
-        // Se o usuário atual foi excluído, limpar
+        // 🔴 SE O USUÁRIO ATUAL FOI EXCLUÍDO, LIMPAR
         if (App.usuarioAtual && App.usuarioAtual.id == id) {
             App.usuarioAtual = null;
             localStorage.removeItem(`mylife_usuario_${App.currentUser.id}`);
             document.getElementById('usuarioHeaderNome').textContent = 'Selecionar';
         }
+        
+        // 🔴 FECHAR O MODAL ATUAL E REABRIR ATUALIZADO
+        fecharModal();
+        
+        // Pequeno delay para garantir que o modal fechou
+        setTimeout(() => {
+            abrirUsuariosFamilia();
+        }, 100);
         
     } catch (error) {
         console.error('Erro ao excluir:', error);
@@ -14588,20 +14767,16 @@ async function salvarNovoUsuarioFamilia() {
     }
     
     try {
-        // Verificar se já existe este telefone
-        const existe = App.dataCache.usuariosFamilia?.find(u => u.telefone === telefone);
-        if (existe) {
-            showToast('Este telefone já está cadastrado para outro usuário', 'warning');
-            return;
-        }
-        
         // Buscar o nome do grupo atual (se existir)
         let nomeGrupo = 'Minha Família';
         if (App.dataCache.usuariosFamilia && App.dataCache.usuariosFamilia.length > 0 && App.dataCache.usuariosFamilia[0].nome_grupo) {
             nomeGrupo = App.dataCache.usuariosFamilia[0].nome_grupo;
         }
         
-        const codigoAcesso = telefone.slice(-6);
+        // 🔴 GERAR CÓDIGO DE ACESSO ÚNICO (usando timestamp + random)
+        const timestamp = Date.now().toString().slice(-6);
+        const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+        const codigoAcesso = (telefone.slice(-4) + timestamp + random).slice(0, 8);
         
         const { data, error } = await App.supabase
             .from('usuarios_familia')
@@ -14611,7 +14786,7 @@ async function salvarNovoUsuarioFamilia() {
                 telefone: telefone,
                 apelido: apelido,
                 codigo_acesso: codigoAcesso,
-                nome_grupo: nomeGrupo,  // 🔴 PROPAGAR O NOME DO GRUPO
+                nome_grupo: nomeGrupo,
                 ultimo_acesso: new Date().toISOString(),
                 added_by: App.usuarioAtual?.apelido || 'sistema'
             })

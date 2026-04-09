@@ -10081,20 +10081,18 @@ function abrirModalGoogleAgenda() {
     
     // Buscar configurações atuais do usuário (com valores padrão TRUE)
     let configAtual = App.dataCache.configuracoesSync || {
-        sincronizar_eventos: true,   // Padrão: marcado
-        sincronizar_tarefas: true,   // Padrão: marcado
-        sincronizar_contas: true,    // Padrão: marcado
+        sincronizar_eventos: true,
+        sincronizar_tarefas: true,
+        sincronizar_contas: true,
         cor_eventos: '6',
         cor_tarefas: '7',
         cor_contas: '2'
     };
     
-    // Garantir que se não existir, usar true
     configAtual.sincronizar_eventos = configAtual.sincronizar_eventos !== false;
     configAtual.sincronizar_tarefas = configAtual.sincronizar_tarefas !== false;
     configAtual.sincronizar_contas = configAtual.sincronizar_contas !== false;
     
-    // Opções de cores disponíveis
     const opcoesCores = [
         { id: '1', nome: 'Azul', cor: '#4285f4', corBg: '#4285f4' },
         { id: '2', nome: 'Verde', cor: '#34a853', corBg: '#34a853' },
@@ -10144,14 +10142,14 @@ function abrirModalGoogleAgenda() {
                 <div id="googleStatusModal" style="margin-bottom: 20px; padding: 12px; background: ${isConnected ? '#e8f5e9' : '#fef7e0'}; border-radius: 12px; display: flex; align-items: center; gap: 10px;">
                     <i class="fas ${isConnected ? 'fa-check-circle' : 'fa-plug'}" style="color: ${isConnected ? '#2e7d32' : '#f9a825'}; font-size: 18px;"></i>
                     <span style="font-size: 13px; color: ${isConnected ? '#2e7d32' : '#b85c00'};">
-                        ${isConnected ? '✅ Conectado ao Google Calendar' : '⚠️ Não conectado. Clique no botão abaixo para conectar.'}
+                        ${isConnected ? '✅ Conectado ao Google Calendar' : '⚠️ Não conectado. Selecione as opções abaixo e clique em "Conectar com Google".'}
                     </span>
                 </div>
                 
                 <div style="margin-bottom: 24px;">
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
                         <i class="fas fa-sliders-h" style="color: #5f6368; font-size: 14px;"></i>
-                        <span style="font-weight: 500; font-size: 13px; color: #5f6368;">O que sincronizar (marcado por padrão)</span>
+                        <span style="font-weight: 500; font-size: 13px; color: #5f6368;">Selecione o que deseja sincronizar (mínimo 1 opção)</span>
                     </div>
                     
                     <div style="display: flex; flex-direction: column; gap: 10px;">
@@ -10188,7 +10186,7 @@ function abrirModalGoogleAgenda() {
                     <button id="btnConectarGoogleModal" class="btn" style="width: 100%; padding: 12px; background: #4285f4; color: #fff; border: none; border-radius: 30px; font-weight: 600; cursor: pointer;">
                         <i class="fab fa-google"></i> Conectar com Google
                     </button>
-                    <button id="btnSincronizarGoogleModal" class="btn" style="width: 100%; padding: 12px; background: #34a853; color: #fff; border: none; border-radius: 30px; font-weight: 600; cursor: pointer;">
+                    <button id="btnSincronizarGoogleModal" class="btn" style="width: 100%; padding: 12px; background: #34a853; color: #fff; border: none; border-radius: 30px; font-weight: 600; cursor: pointer; display: ${isConnected ? 'block' : 'none'};">
                         <i class="fas fa-sync-alt"></i> Salvar e Sincronizar
                     </button>
                     <button id="btnDesconectarGoogleModal" class="btn" style="width: 100%; padding: 12px; background: #ea4335; color: #fff; border: none; border-radius: 30px; font-weight: 600; cursor: pointer; display: none;">
@@ -10238,53 +10236,37 @@ function abrirModalGoogleAgenda() {
         }
     }
     
-    setTimeout(async () => {
-        const statusEl = document.getElementById('googleStatusModal');
-        const btnConectar = document.getElementById('btnConectarGoogleModal');
-        const btnSincronizar = document.getElementById('btnSincronizarGoogleModal');
-        const btnDesconectar = document.getElementById('btnDesconectarGoogleModal');
-        
-        if (!statusEl) return;
-        
-        try {
-            const { data: tokenData } = await App.supabase
-                .from('google_tokens')
-                .select('*')
-                .eq('user_id', App.currentUser.id)
-                .maybeSingle();
-            
-            if (tokenData) {
-                const expiresAt = new Date(tokenData.expires_at);
-                if (expiresAt > new Date()) {
-                    statusEl.innerHTML = `
-                        <i class="fas fa-check-circle" style="color: #2e7d32; font-size: 18px;"></i>
-                        <span style="font-size: 13px; color: #2e7d32;">✅ Conectado ao Google Calendar</span>
-                    `;
-                    btnConectar.style.display = 'none';
-                    btnSincronizar.style.display = 'block';
-                    btnDesconectar.style.display = 'block';
-                    localStorage.setItem('google_connected', 'true');
-                } else {
-                    statusEl.innerHTML = `
-                        <i class="fas fa-exclamation-triangle" style="color: #f9a825; font-size: 18px;"></i>
-                        <span style="font-size: 13px; color: #b85c00;">⚠️ Conexão expirada. Clique em "Conectar" para renovar.</span>
-                    `;
-                    localStorage.setItem('google_connected', 'false');
-                }
-            } else {
-                statusEl.innerHTML = `
-                    <i class="fas fa-plug" style="color: #5f6368; font-size: 18px;"></i>
-                    <span style="font-size: 13px; color: #5f6368;">⚠️ Não conectado. Clique no botão abaixo para conectar.</span>
-                `;
-                btnSincronizar.style.display = 'none';
-                localStorage.setItem('google_connected', 'false');
-            }
-        } catch (e) {
-            console.log('Erro ao verificar token:', e);
-        }
-    }, 100);
+    // Função auxiliar para verificar se pelo menos uma opção está marcada
+    function verificarOpcoesMarcadas() {
+        const syncEventos = document.getElementById('syncEventosModal')?.checked;
+        const syncTarefas = document.getElementById('syncTarefasModal')?.checked;
+        const syncContas = document.getElementById('syncContasModal')?.checked;
+        return syncEventos || syncTarefas || syncContas;
+    }
     
+    // Função para mostrar popup de erro de nenhuma opção
+    function mostrarPopupNenhumaOpcao() {
+        const mensagem = `
+            <div style="text-align: center; padding: 20px;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: var(--warning); margin-bottom: 15px;"></i>
+                <h3 style="margin-bottom: 10px;">Nenhuma opção selecionada</h3>
+                <p style="margin-bottom: 20px; color: var(--gray);">
+                    Você precisa selecionar <strong>pelo menos um item</strong> para sincronizar.<br><br>
+                    Escolha entre <strong>Eventos</strong>, <strong>Tarefas</strong> ou <strong>Contas</strong>.
+                </p>
+                <button onclick="fecharModal()" class="btn btn-primary">Entendi</button>
+            </div>
+        `;
+        abrirModal('Atenção', 'fa-exclamation-triangle', mensagem);
+    }
+    
+    // 🔴 BOTÃO CONECTAR COM GOOGLE COM VALIDAÇÃO
     document.getElementById('btnConectarGoogleModal').onclick = async () => {
+        if (!verificarOpcoesMarcadas()) {
+            mostrarPopupNenhumaOpcao();
+            return;
+        }
+        
         try {
             showToast('Abrindo Google...', 'info');
             
@@ -10329,6 +10311,7 @@ function abrirModalGoogleAgenda() {
         }
     };
     
+    // 🔴 BOTÃO DESCONECTAR
     document.getElementById('btnDesconectarGoogleModal').onclick = async () => {
         if (!confirm('Tem certeza que deseja desconectar sua conta Google?')) return;
         
@@ -10350,6 +10333,7 @@ function abrirModalGoogleAgenda() {
         }
     };
     
+    // 🔴 BOTÃO SALVAR E SINCRONIZAR COM VALIDAÇÃO E CONFIRMAÇÃO
     document.getElementById('btnSincronizarGoogleModal').onclick = async () => {
         const syncEventos = document.getElementById('syncEventosModal').checked;
         const syncTarefas = document.getElementById('syncTarefasModal').checked;
@@ -10358,24 +10342,11 @@ function abrirModalGoogleAgenda() {
         const corTarefas = document.getElementById('corTarefasModal').value;
         const corContas = document.getElementById('corContasModal').value;
         
-        // 🔴 VERIFICAR SE PELO MENOS UMA OPÇÃO ESTÁ MARCADA
-        if (!syncEventos && !syncTarefas && !syncContas) {
-            const mensagem = `
-                <div style="text-align: center; padding: 20px;">
-                    <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: var(--warning); margin-bottom: 15px;"></i>
-                    <h3 style="margin-bottom: 10px;">Nenhuma opção selecionada</h3>
-                    <p style="margin-bottom: 20px; color: var(--gray);">
-                        Você precisa selecionar pelo menos um item para sincronizar.<br>
-                        Escolha entre <strong>Eventos</strong>, <strong>Tarefas</strong> ou <strong>Contas</strong>.
-                    </p>
-                    <button onclick="fecharModal()" class="btn btn-primary">Entendi</button>
-                </div>
-            `;
-            abrirModal('Atenção', 'fa-exclamation-triangle', mensagem);
+        if (!verificarOpcoesMarcadas()) {
+            mostrarPopupNenhumaOpcao();
             return;
         }
         
-        // 🔴 CRIAR MENSAGEM DE CONFIRMAÇÃO
         let opcoesEscolhidas = [];
         if (syncEventos) opcoesEscolhidas.push('📅 Eventos');
         if (syncTarefas) opcoesEscolhidas.push('✅ Tarefas');
@@ -10460,13 +10431,62 @@ function abrirModalGoogleAgenda() {
             }
         };
     };
+    
+    // Atualizar status de conexão e visibilidade dos botões
+    setTimeout(async () => {
+        const statusEl = document.getElementById('googleStatusModal');
+        const btnConectar = document.getElementById('btnConectarGoogleModal');
+        const btnSincronizar = document.getElementById('btnSincronizarGoogleModal');
+        const btnDesconectar = document.getElementById('btnDesconectarGoogleModal');
+        
+        if (!statusEl) return;
+        
+        try {
+            const { data: tokenData } = await App.supabase
+                .from('google_tokens')
+                .select('*')
+                .eq('user_id', App.currentUser.id)
+                .maybeSingle();
+            
+            if (tokenData) {
+                const expiresAt = new Date(tokenData.expires_at);
+                if (expiresAt > new Date()) {
+                    statusEl.innerHTML = `
+                        <i class="fas fa-check-circle" style="color: #2e7d32; font-size: 18px;"></i>
+                        <span style="font-size: 13px; color: #2e7d32;">✅ Conectado ao Google Calendar</span>
+                    `;
+                    btnConectar.style.display = 'none';
+                    btnSincronizar.style.display = 'block';
+                    btnDesconectar.style.display = 'block';
+                    localStorage.setItem('google_connected', 'true');
+                } else {
+                    statusEl.innerHTML = `
+                        <i class="fas fa-exclamation-triangle" style="color: #f9a825; font-size: 18px;"></i>
+                        <span style="font-size: 13px; color: #b85c00;">⚠️ Conexão expirada. Selecione as opções e clique em "Conectar".</span>
+                    `;
+                    btnConectar.style.display = 'block';
+                    btnSincronizar.style.display = 'none';
+                    btnDesconectar.style.display = 'block';
+                    localStorage.setItem('google_connected', 'false');
+                }
+            } else {
+                statusEl.innerHTML = `
+                    <i class="fas fa-plug" style="color: #5f6368; font-size: 18px;"></i>
+                    <span style="font-size: 13px; color: #5f6368;">⚠️ Não conectado. Selecione as opções abaixo e clique em "Conectar com Google".</span>
+                `;
+                btnConectar.style.display = 'block';
+                btnSincronizar.style.display = 'none';
+                btnDesconectar.style.display = 'none';
+                localStorage.setItem('google_connected', 'false');
+            }
+        } catch (e) {
+            console.log('Erro ao verificar token:', e);
+        }
+    }, 100);
 }
-// ============================================
-// FUNÇÃO DE SINCRONIZAÇÃO COM CORES PERSONALIZADAS
-// ============================================
 
 // ============================================
-// FUNÇÃO DE SINCRONIZAÇÃO COM CORES PERSONALIZADAS - COM TRATAMENTO DE ERRO
+// FUNÇÃO DE SINCRONIZAÇÃO COM CORES PERSONALIZADAS
 // ============================================
 
 async function sincronizarGoogleComCores(cores) {
@@ -10482,9 +10502,7 @@ async function sincronizarGoogleComCores(cores) {
     try {
         showToast('🔄 Salvando configurações e sincronizando...', 'info');
         
-        // 🔴 SALVAR CONFIGURAÇÕES PRIMEIRO
         try {
-            // Verificar se a tabela existe, se não existir, criar
             const { error: upsertError } = await App.supabase
                 .from('configuracoes_sync')
                 .upsert({
@@ -10501,12 +10519,10 @@ async function sincronizarGoogleComCores(cores) {
             if (upsertError) {
                 console.error('Erro ao salvar configurações:', upsertError);
                 showToast('Erro ao salvar configurações: ' + upsertError.message, 'warning');
-                // Continuar mesmo com erro, tentar sincronizar
             } else {
                 console.log('✅ Configurações salvas com sucesso');
             }
             
-            // Atualizar cache local
             App.dataCache.configuracoesSync = {
                 sincronizar_eventos: syncEventos,
                 sincronizar_tarefas: syncTarefas,
@@ -10518,17 +10534,14 @@ async function sincronizarGoogleComCores(cores) {
             
         } catch (saveError) {
             console.error('Erro ao salvar localmente:', saveError);
-            // Continua mesmo com erro local
         }
         
-        // 🔴 AGORA SINCRONIZAR COM O GOOGLE
         const { data: { session } } = await App.supabase.auth.getSession();
         if (!session) {
             showToast('Faça login novamente', 'error');
             return;
         }
         
-        // Chamar a Edge Function passando as cores
         const response = await fetch('https://rirvrrlgjetsgwhqqfvq.supabase.co/functions/v1/sincronizar-google', {
             method: 'POST',
             headers: {
@@ -10557,7 +10570,6 @@ async function sincronizarGoogleComCores(cores) {
             showToast(mensagem, 'success');
             fecharModal();
             
-            // Atualizar dados localmente
             await carregarDados(true);
             await mostrarConteudo();
             

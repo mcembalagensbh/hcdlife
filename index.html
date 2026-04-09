@@ -3105,6 +3105,15 @@ async function alternarConta(email) {
         resetarParaHoje();
         fecharModal();
         showToast(`✅ Conectado como ${nomeGrupoAtualizado} (${conta.email})`, 'success');
+
+                    // 🔴 RESETAR TIMER DE SESSÃO PARA USUÁRIOS GRÁTIS
+            resetarTimerSessao();
+            
+            // 🔴 MARCAR PARA MOSTRAR ANÚNCIO NESTE LOGIN
+            window.mostrarAnuncioNoLogin = true;
+            
+            // 🔴 REINICIAR VERIFICAÇÃO DE SESSÃO
+            iniciarVerificacaoSessao();
         
         // 🔴 MOSTRAR ANÚNCIO APÓS ALTERNAR CONTA (se for plano grátis)
         setTimeout(() => {
@@ -3520,7 +3529,90 @@ function atualizarFooterAssinatura() {
 }
 
 
+
+
+// ============================================
+// CONTROLE DE SESSÃO PARA PLANO GRÁTIS
+// ============================================
+
+// Verificar se a sessão do usuário grátis expirou
+function verificarExpiracaoSessao() {
+    const isPremium = App.plano === 'mensal' || App.plano === 'anual' || App.plano === 'teste';
+    
+    if (isPremium) {
+        // Premium nunca expira
+        return false;
+    }
+    
+    // Plano Grátis: verificar tempo de sessão
+    const ultimoLogin = localStorage.getItem(`mylife_ultimo_login_${App.currentUser?.id}`);
+    if (!ultimoLogin) {
+        // Primeiro login, salvar agora
+        localStorage.setItem(`mylife_ultimo_login_${App.currentUser?.id}`, Date.now().toString());
+        return false;
+    }
+    
+    const agora = Date.now();
+    const diffMinutos = (agora - parseInt(ultimoLogin)) / (1000 * 60);
+    
+    if (diffMinutos >= 60) {
+        // Sessão expirou após 1 hora
+        return true;
+    }
+    
+    return false;
+}
+
+// Resetar o timer de sessão (chamar após ações importantes)
+function resetarTimerSessao() {
+    const isPremium = App.plano === 'mensal' || App.plano === 'anual' || App.plano === 'teste';
+    if (!isPremium && App.currentUser) {
+        localStorage.setItem(`mylife_ultimo_login_${App.currentUser.id}`, Date.now().toString());
+    }
+}
+
+// Iniciar verificação periódica da sessão
+let intervaloVerificacaoSessao = null;
+
+function iniciarVerificacaoSessao() {
+    if (intervaloVerificacaoSessao) clearInterval(intervaloVerificacaoSessao);
+    
+    intervaloVerificacaoSessao = setInterval(() => {
+        if (verificarExpiracaoSessao()) {
+            // Sessão expirou, fazer logout
+            clearInterval(intervaloVerificacaoSessao);
+            showToast('⏰ Sessão expirada. Faça login novamente para continuar usando o app.', 'warning');
+            
+            setTimeout(() => {
+                App.supabase.auth.signOut();
+                App.currentUser = null;
+                App.usuarioAtual = null;
+                document.getElementById('authContainer').style.display = 'flex';
+                document.getElementById('mainContainer').style.display = 'none';
+            }, 2000);
+        }
+    }, 60000); // Verifica a cada 1 minuto
+}
+
+
+
 function podeExecutarAcao() {
+    // 🔴 VERIFICAR SE SESSÃO EXPIROU PRIMEIRO
+    if (verificarExpiracaoSessao()) {
+        showToast('⏰ Sessão expirada. Faça login novamente.', 'warning');
+        setTimeout(() => {
+            App.supabase.auth.signOut();
+            App.currentUser = null;
+            App.usuarioAtual = null;
+            document.getElementById('authContainer').style.display = 'flex';
+            document.getElementById('mainContainer').style.display = 'none';
+        }, 2000);
+        return false;
+    }
+    
+    // 🔴 RESETAR TIMER AO EXECUTAR AÇÃO (usuário ativo)
+    resetarTimerSessao();
+    
     // Usuários em teste (plano = 'teste') têm acesso Premium
     if (App.plano === 'teste') {
         return true;
@@ -3703,61 +3795,6 @@ function abrirModalAssinaturaTeste() {
 let ultimoAnuncioExibido = null;
 let aguardandoPrimeiroAcesso = true;
 
-async function mostrarAnuncioInterstitial() {
-    // 🔴 VERIFICAR SE É PLANO GRÁTIS
-    const isPremium = App.plano === 'mensal' || App.plano === 'anual' || App.plano === 'teste';
-    
-    if (isPremium) {
-        console.log('🔵 Usuário Premium - sem anúncios');
-        return;
-    }
-    
-    // Verificar se já passou pelo menos 5 minutos desde o último anúncio
-    if (ultimoAnuncioExibido) {
-        const agora = new Date();
-        const diffMs = agora - ultimoAnuncioExibido;
-        const diffMinutos = diffMs / (1000 * 60);
-        
-        if (diffMinutos < 5) {
-            console.log(`🔵 Último anúncio há ${diffMinutos.toFixed(0)} minutos - aguardando 5 minutos`);
-            return;
-        }
-    }
-    
-    // Verificar se é ambiente mobile (Cordova/Capacitor) ou web
-    const isMobileApp = window.cordova || window.Capacitor;
-    
-    if (isMobileApp) {
-        // 🔴 AMBIENTE MOBILE - Usar AdMob (implementar depois)
-        console.log('📱 App mobile - Anúncio interstitial do AdMob será exibido');
-        
-        // Código futuro do AdMob:
-        /*
-        if (typeof admob !== 'undefined') {
-            admob.interstitial.config({
-                id: {
-                    android: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',
-                    ios: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX'
-                }
-            });
-            
-            admob.interstitial.prepare();
-            admob.interstitial.show().then(() => {
-                console.log('Anúncio exibido');
-                ultimoAnuncioExibido = new Date();
-            });
-        }
-        */
-        
-        // Enquanto não tem AdMob, mostrar demo
-        mostrarAnuncioDemo();
-        
-    } else {
-        // 🔴 AMBIENTE WEB - Mostrar anúncio demo (ou Google AdSense Interstitial)
-        mostrarAnuncioDemo();
-    }
-}
-
 // Anúncio demo (para testes - substituir pelo AdMob depois)
 function mostrarAnuncioDemo() {
     ultimoAnuncioExibido = new Date();
@@ -3843,21 +3880,65 @@ function fecharAnuncioEAbrirPremium() {
     abrirModalAssinatura();
 }
 
-// Função para verificar e mostrar anúncio ao abrir o app
-async function verificarEMostrarAnuncio() {
+// Controlar para não mostrar anúncio repetidamente
+let ultimoAnuncioExibido = null;
+
+async function mostrarAnuncioInterstitial() {
+    // 🔴 VERIFICAR SE É PLANO GRÁTIS
+    const isPremium = App.plano === 'mensal' || App.plano === 'anual' || App.plano === 'teste';
+    
+    if (isPremium) {
+        console.log('🔵 Usuário Premium/Teste - sem anúncios');
+        return;
+    }
+    
+    // 🔴 SÓ MOSTRA ANÚNCIO SE FOR LOGIN (controlado por flag)
+    if (!window.mostrarAnuncioNoLogin) {
+        console.log('🔵 Anúncio apenas no login - ignorado');
+        return;
+    }
+    
+    // Resetar flag
+    window.mostrarAnuncioNoLogin = false;
+    
+    // Verificar se já passou pelo menos 5 minutos desde o último anúncio
+    if (ultimoAnuncioExibido) {
+        const agora = new Date();
+        const diffMs = agora - ultimoAnuncioExibido;
+        const diffMinutos = diffMs / (1000 * 60);
+        
+        if (diffMinutos < 5) {
+            console.log(`🔵 Último anúncio há ${diffMinutos.toFixed(0)} minutos - aguardando 5 minutos`);
+            return;
+        }
+    }
+    
+    // Verificar se é ambiente mobile (Cordova/Capacitor) ou web
+    const isMobileApp = window.cordova || window.Capacitor;
+    
+    if (isMobileApp) {
+        console.log('📱 App mobile - Anúncio interstitial do AdMob será exibido');
+        // Código futuro do AdMob aqui
+        mostrarAnuncioDemo();
+    } else {
+        mostrarAnuncioDemo();
+    }
+}
+
+// Função para verificar e mostrar anúncio ao fazer login
+async function verificarEMostrarAnuncioLogin() {
     // Aguardar carregamento completo
     setTimeout(() => {
-        // Só mostra anúncio se:
-        // 1. Não é Premium
-        // 2. Não é período de teste
-        // 3. Já passou 5 minutos do último anúncio
         const isPremium = App.plano === 'mensal' || App.plano === 'anual' || App.plano === 'teste';
         
         if (!isPremium) {
+            window.mostrarAnuncioNoLogin = true;
             mostrarAnuncioInterstitial();
         }
-    }, 2000); // Aguarda 2 segundos após carregar
+    }, 1500);
 }
+
+
 
 
 
@@ -16155,29 +16236,25 @@ async function obterTokenFCM() {
 
 
 async function init() {
-
-
+    // Inicializar Firebase
     try {
-    if (typeof firebase !== 'undefined' && !firebase.apps.length) {
-        const firebaseConfig = {
-            apiKey: "AIzaSyA_HVXemcOOATH31HPh340C-676UPtVtbk",
-            authDomain: "mylife-app-99a2a.firebaseapp.com",
-            projectId: "mylife-app-99a2a",
-            storageBucket: "mylife-app-99a2a.firebasestorage.app",
-            messagingSenderId: "666460169027",
-            appId: "1:666460169027:web:735c9e183f3d97dc00c5f6"
-        };
-        firebase.initializeApp(firebaseConfig);
-        console.log('✅ Firebase inicializado dentro do init');
+        if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+            const firebaseConfig = {
+                apiKey: "AIzaSyA_HVXemcOOATH31HPh340C-676UPtVtbk",
+                authDomain: "mylife-app-99a2a.firebaseapp.com",
+                projectId: "mylife-app-99a2a",
+                storageBucket: "mylife-app-99a2a.firebasestorage.app",
+                messagingSenderId: "666460169027",
+                appId: "1:666460169027:web:735c9e183f3d97dc00c5f6"
+            };
+            firebase.initializeApp(firebaseConfig);
+            console.log('✅ Firebase inicializado dentro do init');
+        }
+    } catch (e) {
+        console.log('Firebase já inicializado ou erro:', e);
     }
-} catch (e) {
-    console.log('Firebase já inicializado ou erro:', e);
-}
-
 
     try {
-
-
         App.supabase = window.supabase.createClient(CONFIG.supabase.url, CONFIG.supabase.anonKey);
         let { data: { session } } = await App.supabase.auth.getSession();
 
@@ -16247,10 +16324,14 @@ async function init() {
             // ADICIONAR INDICADOR DE CONEXÃO (MODO OFFLINE)
             criarIndicadorConexao();
             atualizarIndicadorConexao();
+            iniciarPollingGoogle();
             
-            // 🔴 MOSTRAR ANÚNCIO INTERSTITIAL (apenas plano grátis)
+            // 🔴 INICIAR VERIFICAÇÃO DE SESSÃO PARA PLANO GRÁTIS
+            iniciarVerificacaoSessao();
+            
+            // 🔴 MOSTRAR ANÚNCIO INTERSTITIAL (apenas plano grátis - apenas no login)
             setTimeout(() => {
-                verificarEMostrarAnuncio();
+                verificarEMostrarAnuncioLogin();
             }, 1500);
             
         } else {
@@ -16286,6 +16367,15 @@ async function init() {
                         nomeGrupo = App.dataCache.usuariosFamilia[0].nome_grupo;
                     }
                     salvarContaNoLocalStorage(email, pass, nomeGrupo, data.user.id);
+
+                    // 🔴 RESETAR TIMER DE SESSÃO PARA USUÁRIOS GRÁTIS
+                    resetarTimerSessao();
+
+                    // 🔴 MARCAR PARA MOSTRAR ANÚNCIO NESTE LOGIN
+                    window.mostrarAnuncioNoLogin = true;
+
+                    // 🔴 INICIAR VERIFICAÇÃO DE SESSÃO
+                    iniciarVerificacaoSessao();
                     
                     // VERIFICAR USUÁRIO EM SEGUNDO PLANO
                     setTimeout(async () => {
@@ -16308,7 +16398,7 @@ async function init() {
                     
                     // 🔴 MOSTRAR ANÚNCIO APÓS LOGIN
                     setTimeout(() => {
-                        verificarEMostrarAnuncio();
+                        verificarEMostrarAnuncioLogin();
                     }, 1500);
                 }
             } catch (e) {
@@ -16420,18 +16510,16 @@ async function init() {
         });
 
         document.getElementById('btnSaldoHeader').addEventListener('click', () => {
-    const isAssinante = App.plano === 'mensal' || App.plano === 'anual';
-    const isTeste = App.plano === 'teste';
-    
-    if (isAssinante || isTeste) {
-        // Premium/teste: vai para a tela de saldos
-        App.currentFilter = 'saldos';
-        mostrarConteudo();
-    } else {
-        // Grátis: mostra modal explicativo
-        abrirExplicacaoSaldo();
-    }
-});
+            const isAssinante = App.plano === 'mensal' || App.plano === 'anual';
+            const isTeste = App.plano === 'teste';
+            
+            if (isAssinante || isTeste) {
+                App.currentFilter = 'saldos';
+                mostrarConteudo();
+            } else {
+                abrirExplicacaoSaldo();
+            }
+        });
 
         document.getElementById('btnUsuarioHeader').addEventListener('click', verificarUsuario);
 

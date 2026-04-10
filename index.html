@@ -2104,17 +2104,18 @@
 <body>
 
 <script>
-    // Detecta se está rodando dentro do APK Cordova
-    var isApp = window.cordova || document.URL.indexOf('http://') === -1 || document.URL.indexOf('https://') === -1;
+    // Detecta se está rodando dentro do APK pela URL
+    var url = window.location.href;
+    var isApp = url.indexOf('file://') === 0 || url.indexOf('cdvfile://') === 0 || url.indexOf('http://localhost') === 0;
     
+    // Só mostra a splash screen se for APP
     if (isApp) {
-        // Só mostra a splash screen se for APP
-        document.write('<div id="customSplash" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; z-index: 9999; flex-direction: column;">');
-        document.write('    <img src="https://cdn.awsli.com.br/1608/1608652/arquivos/screen_xxxhdpi.png" style="max-width: 200px; width: auto; height: auto; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">');
-        document.write('    <div style="margin-top: 20px; color: white; font-size: 13px;">');
-        document.write('        <i class="fas fa-spinner fa-spin"></i> Carregando...');
-        document.write('    </div>');
-        document.write('</div>');
+        // Criar splash screen
+        var splashDiv = document.createElement('div');
+        splashDiv.id = 'customSplash';
+        splashDiv.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; flex-direction: column; z-index: 9999;';
+        splashDiv.innerHTML = '<img src="https://cdn.awsli.com.br/1608/1608652/arquivos/screen_xxxhdpi.png" style="max-width: 200px; width: auto; height: auto; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);"><div style="margin-top: 20px; color: white; font-size: 13px;"><i class="fas fa-spinner fa-spin"></i> Carregando...</div>';
+        document.body.appendChild(splashDiv);
         
         setTimeout(function() {
             var splash = document.getElementById('customSplash');
@@ -2131,38 +2132,6 @@
 
     <div id="authContainer">
         <div class="auth-box">
-            <h2 class="auth-title"><i class="fas fa-home"></i> My Life</h2>
-            <div id="loginForm">
-                <div class="form-group">
-                    <label class="form-label"><i class="fas fa-envelope"></i> Email</label>
-                    <input type="email" id="loginEmail" class="form-input" placeholder="seu@email.com" inputmode="email">
-                </div>
-                <div class="form-group">
-                    <label class="form-label"><i class="fas fa-lock"></i> Senha</label>
-                    <input type="password" id="loginPassword" class="form-input" placeholder="Sua senha">
-                </div>
-                <div class="forgot-password-link">
-                    <a href="#" onclick="handleForgotPassword()">Esqueci minha senha?</a>
-                </div>
-                <button class="btn btn-primary" id="btnLogin" style="width:100%">
-                    <i class="fas fa-sign-in-alt"></i> Entrar
-                </button>
-                <div class="auth-toggle">
-                    Não tem conta? <a class="auth-link" id="linkRegister" onclick="abrirModalInfo(); return false;" href="#">Registrar</a>
-                </div>
-            </div>
-            <div id="registerForm" style="display:none">
-                <div class="form-group">
-                    <label class="form-label"><i class="fas fa-user"></i> Nome Completo</label>
-                    <input type="text" id="registerName" class="form-input" placeholder="Ex: João da Silva" autocomplete="name" required>
-                    <small style="color: var(--gray); font-size: 11px;">* Seu nome para identificação nos registros</small>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label"><i class="fas fa-phone"></i> Celular (com DDD)</label>
-                    <input type="tel" id="registerPhone" class="form-input" placeholder="Ex: 31999999999" inputmode="numeric" maxlength="11" autocomplete="tel" required>
-                    <small style="color: var(--gray); font-size: 11px;">* Apenas números, com DDD (ex: 31999999999)</small>
-                </div>
     
     <div class="form-group">
         <label class="form-label"><i class="fas fa-envelope"></i> Email (para login)</label>

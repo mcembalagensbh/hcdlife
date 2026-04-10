@@ -3620,35 +3620,10 @@ function podeExecutarAcao() {
     // 🔴 RESETAR TIMER AO EXECUTAR AÇÃO (usuário ativo)
     resetarTimerSessao();
     
-    // Usuários em teste (plano = 'teste') têm acesso Premium
-    if (App.plano === 'teste') {
-        return true;
-    }
-    
-    // Usuários com planos pagos têm acesso Premium
-    if (App.plano === 'mensal' || App.plano === 'anual') {
-        return true;
-    }
-    
-    // Se não tem assinatura ativa, não pode executar ações
-    if (!App.assinaturaAtiva) {
-        return false;
-    }
-    
-    // Verificação extra: se tem data de expiração e está expirada
-    if (App.dataExpiracao) {
-        let hoje = new Date();
-        hoje.setHours(0, 0, 0, 0);
-        
-        let dataExp = new Date(App.dataExpiracao);
-        dataExp.setHours(0, 0, 0, 0);
-        
-        if (dataExp < hoje) {
-            return false; // Expirado
-        }
-    }
-    
-    return true; // Pode executar
+    // ✅ NÃO BLOQUEIA MAIS NADA!
+    // Os limites serão verificados individualmente em cada função de CRIAÇÃO
+    // Edição, exclusão e pagamento continuam funcionando normalmente
+    return true;
 }
 
 // ============================================
@@ -3680,37 +3655,71 @@ function executarAcaoComVerificacao(callback, mensagemBloqueio) {
 }
 
 // Versão específica para ações do menu +
+// Versão específica para ações do menu + (CRIAÇÃO de novos itens)
+// Versão específica para ações do menu + (CRIAÇÃO de novos itens)
 function verificarEAcao(acao) {
     if (!App.usuarioAtual) {
         abrirSelecaoUsuario(true, acao);
         return;
     }
     
-    if (!podeExecutarAcao()) {
-        abrirModalAssinaturaBloqueio();
+    // 🔴 VERIFICAR SE ESTÁ ONLINE
+    if (!App.isOnline) {
+        showToast('📡 Você está offline. Conecte-se à internet para adicionar itens.', 'warning');
         return;
     }
     
-    if (!App.isOnline) {
-        showToast('📡 Você está offline. Conecte-se à internet para adicionar ou editar itens.', 'warning');
+    // 🔴 VERIFICAR SE SESSÃO EXPIROU
+    if (verificarExpiracaoSessao()) {
+        showToast('⏰ Sessão expirada. Faça login novamente.', 'warning');
+        setTimeout(() => {
+            App.supabase.auth.signOut();
+            App.currentUser = null;
+            App.usuarioAtual = null;
+            document.getElementById('authContainer').style.display = 'flex';
+            document.getElementById('mainContainer').style.display = 'none';
+        }, 2000);
         return;
     }
+    
+    // Resetar timer ao executar ação
+    resetarTimerSessao();
+    
+    // ✅ REMOVIDA A VERIFICAÇÃO DE ASSINATURA
+    // Os limites serão verificados dentro de cada função de criação
+    // (contas, eventos, gastos, lista, giros, tarefas)
     
     executarAcao(acao);
 }
 
 // Versão específica para edições (botões de editar, pagar, excluir)
+// Versão específica para edições (botões de editar, pagar, excluir)
+// Versão específica para edições (botões de editar, pagar, excluir)
 function verificarEAcaoEdicao(callback) {
-    if (!App.assinaturaAtiva) {
-        abrirModalAssinaturaBloqueio();
-        return;
-    }
-    
     // 🔴 VERIFICAR SE ESTÁ ONLINE
     if (!App.isOnline) {
         showToast('📡 Você está offline. Conecte-se à internet para editar itens.', 'warning');
         return;
     }
+    
+    // 🔴 VERIFICAR SE SESSÃO EXPIROU
+    if (verificarExpiracaoSessao()) {
+        showToast('⏰ Sessão expirada. Faça login novamente.', 'warning');
+        setTimeout(() => {
+            App.supabase.auth.signOut();
+            App.currentUser = null;
+            App.usuarioAtual = null;
+            document.getElementById('authContainer').style.display = 'flex';
+            document.getElementById('mainContainer').style.display = 'none';
+        }, 2000);
+        return;
+    }
+    
+    // Resetar timer ao executar ação
+    resetarTimerSessao();
+    
+    // ✅ REMOVIDA A VERIFICAÇÃO DE ASSINATURA
+    // Usuários grátis podem editar, excluir e pagar normalmente
     
     if (typeof callback === 'function') {
         callback();
@@ -3806,7 +3815,7 @@ let aguardandoPrimeiroAcesso = true;
 function mostrarAnuncioDemo() {
     ultimoAnuncioExibido = new Date();
     
-    // Criar modal de anúncio
+    // Verificar se é PWA/web
     const modalAnuncio = document.createElement('div');
     modalAnuncio.id = 'modalAnuncio';
     modalAnuncio.style.cssText = `
@@ -3824,55 +3833,86 @@ function mostrarAnuncioDemo() {
         animation: fadeIn 0.3s ease;
     `;
     
-    modalAnuncio.innerHTML = `
-        <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 30px; border-radius: 20px; text-align: center; max-width: 320px; width: 90%;">
-            <i class="fas fa-crown" style="font-size: 48px; color: #ffd700; margin-bottom: 15px;"></i>
-            <h3 style="color: white; margin-bottom: 10px;">My Life Premium</h3>
-            <p style="color: rgba(255,255,255,0.9); font-size: 14px; margin-bottom: 20px;">
-                Organize sua vida sem anúncios!<br>
-                Controle financeiro, eventos, tarefas e muito mais!
-            </p>
-            
-            <div style="background: rgba(255,255,255,0.2); border-radius: 12px; padding: 15px; margin-bottom: 20px;">
-                <div style="font-size: 24px; font-weight: 700; color: #ffd700;">R$ 17,90/mês</div>
-                <div style="font-size: 12px; color: white;">ou R$ 189,90/ano</div>
-            </div>
-            
-            <div style="display: flex; flex-direction: column; gap: 10px;">
-                <button onclick="fecharAnuncioEAbrirPremium()" style="padding: 12px; background: #ffd700; border: none; border-radius: 30px; font-weight: 600; color: #667eea; cursor: pointer;">
-                    <i class="fas fa-crown"></i> ASSINAR PREMIUM (sem anúncios)
-                </button>
-                <button onclick="fecharAnuncio()" style="padding: 10px; background: transparent; border: 1px solid white; border-radius: 30px; color: white; cursor: pointer;">
-                    Continuar no plano Grátis
-                </button>
-            </div>
-            
-            <p style="font-size: 10px; color: rgba(255,255,255,0.6); margin-top: 15px;">
-                O anúncio fecha em <span id="contadorAnuncio">5</span> segundos
-            </p>
-        </div>
-        
-        <style>
-            @keyframes fadeIn {
-                from { opacity: 0; }
-                to { opacity: 1; }
-            }
-        </style>
+    // Container do anúncio
+    const adContainer = document.createElement('div');
+    adContainer.style.cssText = `
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        max-width: 350px;
+        width: 90%;
+        text-align: center;
+        padding: 20px;
     `;
     
+    adContainer.innerHTML = `
+        <div style="margin-bottom: 15px;">
+            <i class="fas fa-ad" style="font-size: 32px; color: #667eea;"></i>
+            <h3 style="margin: 10px 0;">Anúncio</h3>
+        </div>
+        <div id="admob-ad-container" style="min-height: 250px; display: flex; align-items: center; justify-content: center;">
+            <div class="loading-spinner" style="display: flex; flex-direction: column; align-items: center;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 24px;"></i>
+                <span style="font-size: 12px; margin-top: 8px;">Carregando anúncio...</span>
+            </div>
+        </div>
+        <div style="margin-top: 20px;">
+            <button id="fecharAnuncioBtn" disabled style="
+                padding: 10px 20px;
+                background: #ccc;
+                color: white;
+                border: none;
+                border-radius: 30px;
+                cursor: not-allowed;
+                font-weight: 600;
+                opacity: 0.6;
+            ">
+                Aguarde...
+            </button>
+            <p style="font-size: 11px; color: #999; margin-top: 10px;" id="contadorAnuncio">
+                Anúncio disponível em 5 segundos
+            </p>
+        </div>
+    `;
+    
+    modalAnuncio.appendChild(adContainer);
     document.body.appendChild(modalAnuncio);
     
-    // Contador regressivo
+    // Simular carregamento do anúncio (para PWA, você precisa de uma solução de terceiros)
     let segundos = 5;
     const contadorSpan = document.getElementById('contadorAnuncio');
+    const btnFechar = document.getElementById('fecharAnuncioBtn');
+    
     const intervaloContador = setInterval(() => {
         segundos--;
-        if (contadorSpan) contadorSpan.textContent = segundos;
+        if (contadorSpan) {
+            if (segundos > 0) {
+                contadorSpan.innerHTML = `Anúncio disponível em ${segundos} segundos`;
+            } else {
+                contadorSpan.innerHTML = `✅ Anúncio finalizado! Clique em "Fechar"`;
+                if (btnFechar) {
+                    btnFechar.disabled = false;
+                    btnFechar.style.background = '#667eea';
+                    btnFechar.style.cursor = 'pointer';
+                    btnFechar.style.opacity = '1';
+                    btnFechar.innerHTML = 'Fechar';
+                }
+            }
+        }
         if (segundos <= 0) {
             clearInterval(intervaloContador);
-            fecharAnuncio();
         }
     }, 1000);
+    
+    // Evento de fechar
+    document.getElementById('fecharAnuncioBtn').onclick = () => {
+        if (segundos > 0) {
+            showToast('Aguarde o anúncio finalizar!', 'warning');
+            return;
+        }
+        const modal = document.getElementById('modalAnuncio');
+        if (modal) modal.remove();
+    };
 }
 
 function fecharAnuncio() {
@@ -5420,7 +5460,7 @@ function calcularUltimaDataEvento(regra) {
         ? (usuarioRaw.apelido || usuarioRaw.nome || 'desconhecido') 
         : String(usuarioRaw);
     let usuarioBadge = `<span class="usuario-badge">${usuario}</span>`;
-    let podeEditar = App.assinaturaAtiva;
+    let podeEditar = true;  // <--- ESTA É A LINHA CORRIGIDA
 
     if (item.tipo === 'conta') {
         let venc = criarData(item.ano || ano, item.mes || mes, item.dia || item.dia_vencimento);
@@ -5533,7 +5573,7 @@ function calcularUltimaDataEvento(regra) {
 
         async function renderizarGastos(content, mes, ano) {
     let gastosMes = App.dataCache.gastos.filter(g => g.mes === mes && g.ano === ano);
-    let podeEditar = App.assinaturaAtiva;
+    let podeEditar = true;
     
     if (gastosMes.length === 0) {
         content.innerHTML = `<div class="empty-state"><i class="fas fa-shopping-bag"></i><p>Nenhum gasto neste mês</p>${podeEditar ? '<button class="btn btn-primary" onclick="verificarEAcao(\'gasto\')" style="margin-top:16px"><i class="fas fa-plus"></i> Novo Gasto</button>' : ''}</div>`;
@@ -5581,7 +5621,7 @@ function calcularUltimaDataEvento(regra) {
 
         async function renderizarLista(content) {
     let lista = App.dataCache.lista || [];
-    let podeEditar = App.assinaturaAtiva;
+    let podeEditar = true;
     
     if (lista.length === 0) {
         content.innerHTML = `<div class="empty-state"><i class="fas fa-shopping-cart"></i><p>Lista de compras vazia</p>${podeEditar ? '<button class="btn btn-primary" onclick="verificarEAcao(\'lista\')" style="margin-top:16px"><i class="fas fa-plus"></i> Adicionar Item</button>' : ''}</div>`;
@@ -5651,7 +5691,7 @@ function calcularUltimaDataEvento(regra) {
 // ============================================
 async function renderizarSaldos(content) {
     let saldos = App.dataCache.saldos || [];
-    let podeEditar = App.assinaturaAtiva;
+    let podeEditar = true;  // ✅ Usuários grátis podem editar saldos existentes
     let html = '<div class="items-list">';
     let central = saldos.find(s => s.is_central);
 
@@ -5721,6 +5761,10 @@ async function renderizarSaldos(content) {
     html += '</div>';
     content.innerHTML = html;
 }
+
+
+
+
 // ============================================
 // FUNÇÕES PARA OS BOTÕES DOS SALDOS (COLE AQUI)
 // ============================================
@@ -6677,7 +6721,7 @@ function abrirExtratoCompleto(id) {
 
 async function renderizarGiros(content) {
     let giros = App.dataCache.giros || [];
-    let podeEditar = App.assinaturaAtiva;
+    let podeEditar = true;
     let usuarioAtualId = App.currentUser?.id;
     
     // Separar giros: meus (gestor) e outros
@@ -15454,6 +15498,7 @@ async function salvarNovoUsuarioFamilia() {
     
     if (!isPremium) {
         const usuariosAtuais = App.dataCache.usuariosFamilia || [];
+        // ⚠️ SÓ BLOQUEIA SE JÁ TIVER 2 OU MAIS USUÁRIOS CADASTRADOS
         if (usuariosAtuais.length >= 2) {
             // Mostrar popup explicativo sobre o Premium
             const mensagem = `
@@ -15462,7 +15507,8 @@ async function salvarNovoUsuarioFamilia() {
                     <h3 style="margin-bottom: 10px;">Limite de usuários atingido</h3>
                     <p style="margin-bottom: 15px; color: var(--gray);">
                         O plano <strong>Grátis</strong> permite no máximo <strong>2 usuários</strong> na família.<br><br>
-                        Com o <strong style="color: var(--purple);">Plano Premium</strong> você pode adicionar quantos usuários quiser!
+                        <strong>Você já tem ${usuariosAtuais.length} usuário(s) cadastrado(s).</strong><br><br>
+                        Para adicionar mais usuários, assine o <strong style="color: var(--purple);">Plano Premium</strong>!
                     </p>
                     <div style="display: flex; gap: 10px;">
                         <button onclick="fecharModal(); abrirModalAssinatura();" class="btn btn-primary" style="flex: 1;">
@@ -15527,7 +15573,7 @@ async function renderizarTarefas(content) {
     let usuarios = App.dataCache.usuariosFamilia || [];
     let usuarioAtual = App.usuarioAtual;
     
-    let podeEditar = App.assinaturaAtiva;
+    let podeEditar = true;
     
     console.log('🔵 renderizarTarefas chamada');
     console.log('📊 Tarefas:', tarefas.length);
@@ -16837,7 +16883,7 @@ function atualizarValorPeloCodigo() {
 // Renderizar lista de notas
 async function renderizarNotas(content) {
     let notas = App.dataCache.notas || [];
-    let podeEditar = App.assinaturaAtiva;
+    let podeEditar = true;
     
     if (notas.length === 0) {
         content.innerHTML = `<div class="empty-state"><i class="fas fa-sticky-note"></i><p>Nenhuma anotação</p>${podeEditar ? '<button class="btn btn-primary" onclick="abrirNovaNota()" style="margin-top:16px"><i class="fas fa-plus"></i> Nova Anotação</button>' : ''}</div>`;
@@ -17940,4 +17986,4 @@ function abrirPaginaModal(titulo, icone, url) {
 </html>
 
 
-Edição 126
+Edição 127

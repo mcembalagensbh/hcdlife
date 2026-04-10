@@ -10172,7 +10172,7 @@ function abrirModalGoogleAgenda() {
                         <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 10px 12px; background: #f8f9fa; border-radius: 12px; border: 1px solid #e9ecef;">
                             <input type="checkbox" id="syncTarefasModal" ${configAtual.sincronizar_tarefas ? 'checked' : ''} style="width: 18px; height: 18px;">
                             <div style="flex: 1;">
-                                <div style="font-weight: 500; font-size: 14px;">✅ Tarefas</div>
+                                <div style="font-weight: 500; font-size: 14px;">📌 Tarefas</div>
                                 <div style="font-size: 11px; color: #5f6368;">Tarefas com data limite</div>
                             </div>
                             ${gerarSelectCores(configAtual.cor_tarefas || '7', 'Tarefas')}
@@ -10307,6 +10307,8 @@ function abrirModalGoogleAgenda() {
             const data = await response.json();
             
             if (data.url) {
+                // 🔴 FECHAR O MODAL AO ABRIR O GOOGLE OAUTH
+                fecharModal();
                 window.open(data.url, '_blank', 'width=600,height=700');
             } else {
                 showToast('Erro ao iniciar conexão', 'error');
@@ -10356,12 +10358,12 @@ function abrirModalGoogleAgenda() {
         
         let opcoesEscolhidas = [];
         if (syncEventos) opcoesEscolhidas.push('📅 Eventos');
-        if (syncTarefas) opcoesEscolhidas.push('✅ Tarefas');
+        if (syncTarefas) opcoesEscolhidas.push('📌 Tarefas');
         if (syncContas) opcoesEscolhidas.push('💰 Contas');
         
         let opcoesNaoEscolhidas = [];
         if (!syncEventos) opcoesNaoEscolhidas.push('📅 Eventos');
-        if (!syncTarefas) opcoesNaoEscolhidas.push('✅ Tarefas');
+        if (!syncTarefas) opcoesNaoEscolhidas.push('📌 Tarefas');
         if (!syncContas) opcoesNaoEscolhidas.push('💰 Contas');
         
         let mensagemConfirmacao = `
@@ -10496,6 +10498,10 @@ function abrirModalGoogleAgenda() {
 // FUNÇÃO DE SINCRONIZAÇÃO COM CORES PERSONALIZADAS
 // ============================================
 
+// ============================================
+// FUNÇÃO DE SINCRONIZAÇÃO COM CORES PERSONALIZADAS
+// ============================================
+
 async function sincronizarGoogleComCores(cores) {
     if (!App.currentUser) {
         showToast('Você precisa estar logado', 'warning');
@@ -10567,26 +10573,83 @@ async function sincronizarGoogleComCores(cores) {
         const data = await response.json();
         
         if (response.ok && data.success) {
-            let mensagem = `✅ Sincronizado! `;
+            let mensagem = '';
+            let icone = 'fa-check-circle';
+            let corIcone = '#2e7d32';
+            
             if (data.criados > 0) mensagem += `${data.criados} criados, `;
             if (data.atualizados > 0) mensagem += `${data.atualizados} atualizados, `;
             if (data.deletados > 0) mensagem += `${data.deletados} removidos`;
             if (mensagem.endsWith(', ')) mensagem = mensagem.slice(0, -2);
-            if (mensagem === '✅ Sincronizado! ') mensagem = '✅ Sincronizado com sucesso!';
+            if (mensagem === '') mensagem = 'Sincronização concluída!';
             
-            showToast(mensagem, 'success');
-            fecharModal();
+            // 🔴 MODAL COM BOTÃO X E BOTÃO FECHAR (NÃO FECHA SOZINHO)
+            const resultadoHtml = `
+                <div style="padding: 0;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #e9ecef;">
+                        <div class="modal-title">
+                            <i class="fas fa-sync-alt"></i> Sincronização
+                        </div>
+                        <button onclick="fecharModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #5f6368;">&times;</button>
+                    </div>
+                    <div style="text-align: center; padding: 20px;">
+                        <i class="fas ${icone}" style="font-size: 48px; color: ${corIcone}; margin-bottom: 15px;"></i>
+                        <h3 style="margin-bottom: 10px;">✅ Sincronização concluída!</h3>
+                        <p style="margin-bottom: 20px; color: var(--gray);">
+                            ${mensagem}
+                        </p>
+                        <button onclick="fecharModal()" class="btn btn-primary" style="padding: 10px 30px;">Fechar</button>
+                    </div>
+                </div>
+            `;
             
-            await carregarDados(true);
-            await mostrarConteudo();
+            abrirModal('Sincronização', 'fa-sync-alt', resultadoHtml);
             
         } else {
-            showToast('Erro na sincronização: ' + (data.error || 'Erro desconhecido'), 'error');
+            // 🔴 MODAL DE ERRO COM BOTÃO X E BOTÃO FECHAR
+            const erroHtml = `
+                <div style="padding: 0;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #e9ecef;">
+                        <div class="modal-title">
+                            <i class="fas fa-exclamation-triangle"></i> Erro
+                        </div>
+                        <button onclick="fecharModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #5f6368;">&times;</button>
+                    </div>
+                    <div style="text-align: center; padding: 20px;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: var(--danger); margin-bottom: 15px;"></i>
+                        <h3 style="margin-bottom: 10px;">Erro na sincronização</h3>
+                        <p style="margin-bottom: 20px; color: var(--gray);">
+                            ${data.error || 'Erro desconhecido'}
+                        </p>
+                        <button onclick="fecharModal()" class="btn btn-primary" style="padding: 10px 30px;">Fechar</button>
+                    </div>
+                </div>
+            `;
+            abrirModal('Erro', 'fa-exclamation-triangle', erroHtml);
         }
         
     } catch (error) {
         console.error('Erro completo:', error);
-        showToast('Erro: ' + error.message, 'error');
+        
+        const erroHtml = `
+            <div style="padding: 0;">
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #e9ecef;">
+                    <div class="modal-title">
+                        <i class="fas fa-exclamation-triangle"></i> Erro
+                    </div>
+                    <button onclick="fecharModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #5f6368;">&times;</button>
+                </div>
+                <div style="text-align: center; padding: 20px;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: var(--danger); margin-bottom: 15px;"></i>
+                    <h3 style="margin-bottom: 10px;">Erro na sincronização</h3>
+                    <p style="margin-bottom: 20px; color: var(--gray);">
+                        ${error.message}
+                    </p>
+                    <button onclick="fecharModal()" class="btn btn-primary" style="padding: 10px 30px;">Fechar</button>
+                </div>
+            </div>
+        `;
+        abrirModal('Erro', 'fa-exclamation-triangle', erroHtml);
     }
 }
 
@@ -15518,7 +15581,7 @@ async function renderizarTarefas(content) {
     });
     
     console.log('📋 Tarefas pendentes:', minhasTarefas.length);
-    console.log('✅ Tarefas concluídas:', tarefasConcluidas.length);
+    console.log('📌 Tarefas concluídas:', tarefasConcluidas.length);
     
     let pendentes = minhasTarefas;
     

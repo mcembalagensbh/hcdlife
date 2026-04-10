@@ -2102,6 +2102,33 @@
 
 </head>
 <body>
+
+<script>
+    // Detecta se está rodando dentro do APK Cordova
+    var isApp = window.cordova || document.URL.indexOf('http://') === -1 || document.URL.indexOf('https://') === -1;
+    
+    if (isApp) {
+        // Só mostra a splash screen se for APP
+        document.write('<div id="customSplash" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; z-index: 9999; flex-direction: column;">');
+        document.write('    <img src="https://cdn.awsli.com.br/1608/1608652/arquivos/screen_xxxhdpi.png" style="max-width: 200px; width: auto; height: auto; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">');
+        document.write('    <div style="margin-top: 20px; color: white; font-size: 13px;">');
+        document.write('        <i class="fas fa-spinner fa-spin"></i> Carregando...');
+        document.write('    </div>');
+        document.write('</div>');
+        
+        setTimeout(function() {
+            var splash = document.getElementById('customSplash');
+            if (splash) {
+                splash.style.transition = 'opacity 0.5s';
+                splash.style.opacity = '0';
+                setTimeout(function() {
+                    splash.style.display = 'none';
+                }, 500);
+            }
+        }, 2500);
+    }
+</script>
+
     <div id="authContainer">
         <div class="auth-box">
             <h2 class="auth-title"><i class="fas fa-home"></i> My Life</h2>
@@ -2125,17 +2152,17 @@
                 </div>
             </div>
             <div id="registerForm" style="display:none">
-    <div class="form-group">
-        <label class="form-label"><i class="fas fa-user"></i> Nome Completo</label>
-        <input type="text" id="registerName" class="form-input" placeholder="Ex: João da Silva" autocomplete="name" required>
-        <small style="color: var(--gray); font-size: 11px;">* Seu nome para identificação nos registros</small>
-    </div>
-    
-    <div class="form-group">
-        <label class="form-label"><i class="fas fa-phone"></i> Celular (com DDD)</label>
-        <input type="tel" id="registerPhone" class="form-input" placeholder="Ex: 31999999999" inputmode="numeric" maxlength="11" autocomplete="tel" required>
-        <small style="color: var(--gray); font-size: 11px;">* Apenas números, com DDD (ex: 31999999999)</small>
-    </div>
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-user"></i> Nome Completo</label>
+                    <input type="text" id="registerName" class="form-input" placeholder="Ex: João da Silva" autocomplete="name" required>
+                    <small style="color: var(--gray); font-size: 11px;">* Seu nome para identificação nos registros</small>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-phone"></i> Celular (com DDD)</label>
+                    <input type="tel" id="registerPhone" class="form-input" placeholder="Ex: 31999999999" inputmode="numeric" maxlength="11" autocomplete="tel" required>
+                    <small style="color: var(--gray); font-size: 11px;">* Apenas números, com DDD (ex: 31999999999)</small>
+                </div>
     
     <div class="form-group">
         <label class="form-label"><i class="fas fa-envelope"></i> Email (para login)</label>

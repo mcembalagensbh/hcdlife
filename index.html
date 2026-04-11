@@ -17724,101 +17724,6 @@ function abrirPaginaModal(titulo, icone, url) {
 }
 
 
-</script>
-
-<!-- Modal Iphone -->
-<div class="modal-overlay" id="modalIphone" style="display: none;">
-    <div class="modal-content" style="max-width: 500px; position: relative;">
-        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid var(--light);">
-            <h2 style="margin: 0;"><i class="fab fa-apple" style="color: #000;"></i> Usar no Iphone</h2>
-            <!-- 🔴 BOTÃO X COM FUNÇÃO DIRETA -->
-            <button class="close-modal" onclick="document.getElementById('modalIphone').style.display='none';" style="background: none; border: none; font-size: 28px; cursor: pointer; color: var(--gray);">&times;</button>
-        </div>
-        
-        <div class="modal-body" style="padding: 20px;">
-            <div style="background: linear-gradient(135deg, #f8f9fa, #ffffff); padding: 25px; border-radius: 12px; text-align: center;">
-                <div style="background: #000; width: 80px; height: 80px; border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
-                    <i class="fab fa-apple" style="color: white; font-size: 48px;"></i>
-                </div>
-                
-                <h3 style="margin-bottom: 10px;">Acesse pelo Safari</h3>
-                
-                <p style="margin-bottom: 20px; color: var(--gray);">
-                    No Iphone, você pode usar o My Life diretamente pelo navegador Safari, sem precisar instalar nada!
-                </p>
-                
-                <div style="background: #e8f4fd; border: 2px dashed var(--primary); border-radius: 12px; padding: 15px; margin-bottom: 20px;">
-                    <div style="font-size: 1.2em; font-weight: 600; color: var(--primary); margin-bottom: 10px;">
-                        🔗 Link de acesso:
-                    </div>
-                    <div style="background: white; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 1.1em; word-break: break-all;">
-                        mylife.app.br
-                    </div>
-                </div>
-                
-                <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; border-radius: 6px; margin-bottom: 20px; text-align: left;">
-                    <i class="fas fa-info-circle" style="color: #856404;"></i>
-                    <strong style="color: #856404;"> Importante:</strong>
-                    <p style="color: #856404; margin: 5px 0 0 20px;">
-                        Solicite ao titular da assinatura o email e senha para você ter acesso aos mesmos dados em tempo real.
-                    </p>
-                </div>
-                
-                <!-- Botão de Compartilhar -->
-                <button class="btn btn-success" onclick="compartilharIphone()" style="width: 100%; padding: 15px; font-size: 1.1em;">
-                    <i class="fas fa-share-alt"></i> Compartilhar no WhatsApp
-                </button>
-                
-                <p style="margin-top: 15px; font-size: 12px; color: var(--gray);">
-                    Ao compartilhar, você enviará o link e as instruções para o Iphone
-                </p>
-            </div>
-        </div>
-    </div>
-</div>
-
-
-<!-- Modal Informativo - Conta Familiar -->
-<div class="modal-overlay" id="modalInfoFamiliar" style="display: none;">
-    <div class="modal-content" style="max-width: 400px; text-align: center;">
-        <div class="modal-header" style="border-bottom: none; padding-bottom: 0;">
-            <h2 style="color: var(--primary-dark); margin: 0 auto; display: flex; align-items: center; gap: 10px;">
-                <i class="fas fa-users" style="color: var(--primary);"></i> 
-                Conta Familiar
-            </h2>
-            <button class="close-modal" onclick="fecharModalInfo()" style="position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 24px; cursor: pointer; color: var(--gray);">&times;</button>
-        </div>
-        
-        <div class="modal-body" style="padding: 20px;">
-            <div style="background: linear-gradient(135deg, #667eea10, #764ba210); width: 100px; height: 100px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
-                <i class="fas fa-home" style="font-size: 50px; color: var(--primary);"></i>
-            </div>
-            
-            <h3 style="margin-bottom: 15px; color: var(--dark);">Uma única conta para toda família</h3>
-            
-            <div style="background: #e8f4fd; border-radius: 8px; padding: 20px; margin-bottom: 20px; text-align: left;">
-                <p style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
-                    <i class="fas fa-check-circle" style="color: var(--success); font-size: 20px;"></i>
-                    <span>O <strong>mesmo e-mail e senha</strong> serão utilizados em todos os celulares ou computadores da sua família.</span>
-                </p>
-                <p style="display: flex; align-items: center; gap: 10px;">
-                    <i class="fas fa-sync-alt" style="color: var(--primary); font-size: 20px;"></i>
-                    <span>Todos terão acesso aos <strong>mesmos dados</strong> (contas, eventos, gastos) em tempo real.</span>
-                </p>
-            </div>
-            
-            <button class="btn btn-primary" onclick="fecharModalInfoEConfirmar()" style="width: 100%; padding: 15px; font-size: 16px;">
-                <i class="fas fa-check"></i> Entendi, continuar
-            </button>
-            
-            <p style="margin-top: 15px; color: var(--gray); font-size: 12px;">
-                Ao clicar em "Entendi", você confirma que leu e entendeu como funciona a conta familiar.
-            </p>
-        </div>
-    </div>
-</div>
-
-
 
 // ============================================
 // FUNÇÕES PARA SWIPE (ARRASTAR PARA OS LADOS) NO CALENDÁRIO
@@ -18100,6 +18005,108 @@ function abrirPaginaModal(titulo, icone, url) {
     
     console.log('✅ Pull-to-refresh ativado');
 })();
+
+
+
+
+
+
+</script>
+
+<!-- Modal Iphone -->
+<div class="modal-overlay" id="modalIphone" style="display: none;">
+    <div class="modal-content" style="max-width: 500px; position: relative;">
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid var(--light);">
+            <h2 style="margin: 0;"><i class="fab fa-apple" style="color: #000;"></i> Usar no Iphone</h2>
+            <!-- 🔴 BOTÃO X COM FUNÇÃO DIRETA -->
+            <button class="close-modal" onclick="document.getElementById('modalIphone').style.display='none';" style="background: none; border: none; font-size: 28px; cursor: pointer; color: var(--gray);">&times;</button>
+        </div>
+        
+        <div class="modal-body" style="padding: 20px;">
+            <div style="background: linear-gradient(135deg, #f8f9fa, #ffffff); padding: 25px; border-radius: 12px; text-align: center;">
+                <div style="background: #000; width: 80px; height: 80px; border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                    <i class="fab fa-apple" style="color: white; font-size: 48px;"></i>
+                </div>
+                
+                <h3 style="margin-bottom: 10px;">Acesse pelo Safari</h3>
+                
+                <p style="margin-bottom: 20px; color: var(--gray);">
+                    No Iphone, você pode usar o My Life diretamente pelo navegador Safari, sem precisar instalar nada!
+                </p>
+                
+                <div style="background: #e8f4fd; border: 2px dashed var(--primary); border-radius: 12px; padding: 15px; margin-bottom: 20px;">
+                    <div style="font-size: 1.2em; font-weight: 600; color: var(--primary); margin-bottom: 10px;">
+                        🔗 Link de acesso:
+                    </div>
+                    <div style="background: white; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 1.1em; word-break: break-all;">
+                        mylife.app.br
+                    </div>
+                </div>
+                
+                <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; border-radius: 6px; margin-bottom: 20px; text-align: left;">
+                    <i class="fas fa-info-circle" style="color: #856404;"></i>
+                    <strong style="color: #856404;"> Importante:</strong>
+                    <p style="color: #856404; margin: 5px 0 0 20px;">
+                        Solicite ao titular da assinatura o email e senha para você ter acesso aos mesmos dados em tempo real.
+                    </p>
+                </div>
+                
+                <!-- Botão de Compartilhar -->
+                <button class="btn btn-success" onclick="compartilharIphone()" style="width: 100%; padding: 15px; font-size: 1.1em;">
+                    <i class="fas fa-share-alt"></i> Compartilhar no WhatsApp
+                </button>
+                
+                <p style="margin-top: 15px; font-size: 12px; color: var(--gray);">
+                    Ao compartilhar, você enviará o link e as instruções para o Iphone
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal Informativo - Conta Familiar -->
+<div class="modal-overlay" id="modalInfoFamiliar" style="display: none;">
+    <div class="modal-content" style="max-width: 400px; text-align: center;">
+        <div class="modal-header" style="border-bottom: none; padding-bottom: 0;">
+            <h2 style="color: var(--primary-dark); margin: 0 auto; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-users" style="color: var(--primary);"></i> 
+                Conta Familiar
+            </h2>
+            <button class="close-modal" onclick="fecharModalInfo()" style="position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 24px; cursor: pointer; color: var(--gray);">&times;</button>
+        </div>
+        
+        <div class="modal-body" style="padding: 20px;">
+            <div style="background: linear-gradient(135deg, #667eea10, #764ba210); width: 100px; height: 100px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                <i class="fas fa-home" style="font-size: 50px; color: var(--primary);"></i>
+            </div>
+            
+            <h3 style="margin-bottom: 15px; color: var(--dark);">Uma única conta para toda família</h3>
+            
+            <div style="background: #e8f4fd; border-radius: 8px; padding: 20px; margin-bottom: 20px; text-align: left;">
+                <p style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-check-circle" style="color: var(--success); font-size: 20px;"></i>
+                    <span>O <strong>mesmo e-mail e senha</strong> serão utilizados em todos os celulares ou computadores da sua família.</span>
+                </p>
+                <p style="display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-sync-alt" style="color: var(--primary); font-size: 20px;"></i>
+                    <span>Todos terão acesso aos <strong>mesmos dados</strong> (contas, eventos, gastos) em tempo real.</span>
+                </p>
+            </div>
+            
+            <button class="btn btn-primary" onclick="fecharModalInfoEConfirmar()" style="width: 100%; padding: 15px; font-size: 16px;">
+                <i class="fas fa-check"></i> Entendi, continuar
+            </button>
+            
+            <p style="margin-top: 15px; color: var(--gray); font-size: 12px;">
+                Ao clicar em "Entendi", você confirma que leu e entendeu como funciona a conta familiar.
+            </p>
+        </div>
+    </div>
+</div>
+
+
+
 
 
 </body>

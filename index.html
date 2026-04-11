@@ -11709,6 +11709,14 @@ function fecharModalInfoEConfirmar() {
             }
         }
 
+
+
+
+
+
+
+
+
         function confirmarExclusaoGasto(id, desc, valor) {
             let conteudo = `
                 <div style="padding:16px">
@@ -11769,6 +11777,248 @@ async function excluirGastoSemSaldo(id) {
         showToast('Erro: ' + error.message, 'error');
     }
 }
+
+
+
+function confirmarExclusao(id, tipo, isRecorrente, regraId, dia, mes, ano, isIndividual, individualId) {
+    console.log('🔵 confirmarExclusao chamada:', { id, tipo, isRecorrente, regraId, dia, mes, ano, isIndividual, individualId });
+    
+    if (tipo === 'gasto') {
+        confirmarExclusaoGasto(id, '', 0);
+        return;
+    }
+
+    // ===== VERIFICAR SE É UMA CONTA EDITADA (TEM REGRA_ID MAS É INDIVIDUAL) =====
+    if (tipo === 'conta') {
+        console.log('🔵 Verificando conta para exclusão - ID:', id);
+        
+        let conta = App.dataCache.contas?.find(c => c.id == id);
+        
+        if (conta && conta.regra_id && conta.regra_id > 0) {
+            let regra = App.dataCache.regrasContas?.find(r => r.id == conta.regra_id);
+            let frequenciaTexto = regra ? regra.frequencia : 'recorrente';
+            
+            let conteudo = `
+                <div style="padding: 16px;">
+                    <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
+                        <i class="fas fa-exclamation-triangle" style="color: #856404;"></i>
+                        <strong style="margin-left: 8px;">Conta editada individualmente</strong>
+                        <p style="margin-top: 8px; font-size: 13px; color: #856404;">
+                            Esta conta (${conta.descricao}) foi editada individualmente e agora é independente da regra ${frequenciaTexto} original.
+                        </p>
+                        <p style="margin-top: 8px; font-size: 13px; color: #856404;">
+                            <strong>Você só pode excluir APENAS esta conta específica.</strong><br>
+                            As demais contas da série (próximos meses) continuarão existindo normalmente.
+                        </p>
+                    </div>
+                    
+                    <div class="btn-group" style="margin-top: 20px; display: flex; gap: 10px;">
+                        <button class="btn btn-danger" onclick="excluirContaIndividual('${conta.id}')" style="flex: 2;">
+                            <i class="fas fa-trash"></i> Excluir apenas esta conta
+                        </button>
+                        <button class="btn" onclick="fecharModal()" style="flex: 1; background: var(--gray); color: #fff;">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            `;
+            abrirModal('Excluir Conta Editada', 'fa-trash', conteudo);
+            return;
+        }
+    }
+
+    // ===== EVENTOS =====
+    if (tipo === 'evento') {
+        console.log('🔵 Processando exclusão de evento');
+        
+        let evento = null;
+        
+        if (isRecorrente && regraId) {
+            evento = App.dataCache.regrasEventos?.find(r => r.id == regraId);
+        } else if (isIndividual && individualId) {
+            evento = App.dataCache.eventosIndividuais?.find(e => e.id == individualId);
+        } else {
+            evento = App.dataCache.eventos?.find(e => e.id == id);
+        }
+        
+        if (!evento) {
+            console.log('⚠️ Evento não encontrado no cache, tentando exclusão simples');
+            if (confirm(`Tem certeza que deseja excluir este evento?`)) {
+                executarExclusaoEventoSimples(id, isRecorrente, regraId, dia, mes, ano, isIndividual, individualId);
+            }
+            return;
+        }
+        
+        // Verificar se tem data_inicio e data_fim
+        let temDataFim = evento && evento.data_fim;
+        let isEventoUnicoUmDia = false;
+        
+        if (!isRecorrente && !regraId && evento) {
+            if (evento.data_inicio && evento.data_fim) {
+                const dataInicio = new Date(evento.data_inicio + 'T12:00:00');
+                const dataFim = new Date(evento.data_fim + 'T12:00:00');
+                
+                if (dataInicio.toDateString() === dataFim.toDateString()) {
+                    isEventoUnicoUmDia = true;
+                }
+            } else if (evento.data_inicio && !evento.data_fim) {
+                isEventoUnicoUmDia = true;
+            } else if (evento.dia && evento.mes && evento.ano && !evento.data_fim) {
+                isEventoUnicoUmDia = true;
+            }
+        }
+        
+        // SE FOR EVENTO ÚNICO DE 1 DIA, FAZ EXCLUSÃO SIMPLES
+        if (isEventoUnicoUmDia) {
+            if (confirm(`Tem certeza que deseja excluir o evento "${evento.titulo || evento.titulo_base || 'Evento'}"?`)) {
+                executarExclusaoEventoSimples(id, isRecorrente, regraId, dia, mes, ano, isIndividual, individualId);
+            }
+            return;
+        }
+        
+        // SE FOR EVENTO COM MAIS DE 1 DIA OU RECORRENTE, MOSTRA OPÇÕES
+        let tituloEvento = evento.titulo || evento.titulo_base || 'Evento';
+        
+        let conteudo = `
+            <div style="padding:16px">
+                <h3 style="margin-bottom:16px">Excluir Evento</h3>
+                <p><strong>${tituloEvento}</strong></p>
+                <p style="margin:12px 0">Como deseja excluir este evento?</p>
+                <div class="exclusao-opcoes">
+                    <div class="exclusao-opcao" onclick="selecionarExclusao('unica', '${id}', '${tipo}', ${isRecorrente}, '${regraId}', ${dia}, ${mes}, ${ano}, ${isIndividual}, '${individualId}')" style="padding:12px; margin:5px 0; border:1px solid #eee; border-radius:8px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.borderColor='var(--purple)'" onmouseout="this.style.borderColor='#eee'">
+                        <strong>Apenas este dia</strong>
+                        <p style="font-size:0.9em;color:var(--gray); margin:4px 0 0 0">Exclui somente o evento deste dia específico</p>
+                    </div>`;
+        
+        if (temDataFim || isRecorrente) {
+            conteudo += `
+                    <div class="exclusao-opcao" onclick="selecionarExclusao('futuras', '${id}', '${tipo}', ${isRecorrente}, '${regraId}', ${dia}, ${mes}, ${ano}, ${isIndividual}, '${individualId}')" style="padding:12px; margin:5px 0; border:1px solid #eee; border-radius:8px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.borderColor='var(--purple)'" onmouseout="this.style.borderColor='#eee'">
+                        <strong>Deste dia em diante</strong>
+                        <p style="font-size:0.9em;color:var(--gray); margin:4px 0 0 0">Exclui este e todos os eventos futuros</p>
+                    </div>`;
+        }
+        
+        conteudo += `
+                    <div class="exclusao-opcao" onclick="selecionarExclusao('todas', '${id}', '${tipo}', ${isRecorrente}, '${regraId}', ${dia}, ${mes}, ${ano}, ${isIndividual}, '${individualId}')" style="padding:12px; margin:5px 0; border:1px solid #eee; border-radius:8px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.borderColor='var(--purple)'" onmouseout="this.style.borderColor='#eee'">
+                        <strong>Todos os dias</strong>
+                        <p style="font-size:0.9em;color:var(--gray); margin:4px 0 0 0">Exclui todos os dias deste evento</p>
+                    </div>
+                </div>
+                <div class="btn-group" style="margin-top:20px">
+                    <button class="btn" onclick="fecharModal()" style="background:var(--gray);color:#fff; padding:10px 20px; border-radius:6px; border:none; cursor:pointer;">Cancelar</button>
+                </div>
+            </div>
+        `;
+        abrirModal('Excluir Evento', 'fa-trash', conteudo);
+        return;
+    }
+    
+    // ===== CONTAS RECORRENTES =====
+    if (tipo === 'conta' && (isRecorrente || (regraId && regraId !== 'undefined'))) {
+        console.log('🔵 Processando exclusão de conta recorrente');
+        
+        let conteudo = `
+            <div style="padding:16px">
+                <h3 style="margin-bottom:16px">Excluir Conta Recorrente</h3>
+                <p>Ao excluir uma conta o seu saldo não será afetado. Esse valor não retornará ao saldo. Para retornar o valor ao saldo, desfaça o pagamento antes de excluir a conta.</p>
+                <p style="margin:12px 0; font-weight:bold">Como deseja excluir?</p>
+                <div class="exclusao-opcoes">
+                    <div class="exclusao-opcao" onclick="selecionarExclusaoConta('unica', '${id}', '${tipo}', ${isRecorrente}, '${regraId}', ${dia}, ${mes}, ${ano})" style="padding:12px; margin:5px 0; border:1px solid #eee; border-radius:8px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.borderColor='var(--purple)'" onmouseout="this.style.borderColor='#eee'">
+                        <strong>Apenas esta ocorrência</strong>
+                        <p style="font-size:0.9em;color:var(--gray); margin:4px 0 0 0">Exclui somente esta conta específica</p>
+                    </div>
+                    <div class="exclusao-opcao" onclick="selecionarExclusaoConta('futuras', '${id}', '${tipo}', ${isRecorrente}, '${regraId}', ${dia}, ${mes}, ${ano})" style="padding:12px; margin:5px 0; border:1px solid #eee; border-radius:8px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.borderColor='var(--purple)'" onmouseout="this.style.borderColor='#eee'">
+                        <strong>Desta data em diante</strong>
+                        <p style="font-size:0.9em;color:var(--gray); margin:4px 0 0 0">Exclui esta e todas as futuras</p>
+                    </div>
+                    <div class="exclusao-opcao" onclick="selecionarExclusaoConta('todas', '${id}', '${tipo}', ${isRecorrente}, '${regraId}', ${dia}, ${mes}, ${ano})" style="padding:12px; margin:5px 0; border:1px solid #eee; border-radius:8px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.borderColor='var(--purple)'" onmouseout="this.style.borderColor='#eee'">
+                        <strong>Todas as ocorrências</strong>
+                        <p style="font-size:0.9em;color:var(--gray); margin:4px 0 0 0">Exclui a regra inteira</p>
+                    </div>
+                </div>
+                <div class="btn-group" style="margin-top:20px">
+                    <button class="btn" onclick="fecharModal()" style="background:var(--gray);color:#fff; padding:10px 20px; border-radius:6px; border:none; cursor:pointer;">Cancelar</button>
+                </div>
+            </div>
+        `;
+        abrirModal('Excluir Conta', 'fa-trash', conteudo);
+        return;
+    }
+    
+    // ===== ITENS ÚNICOS (conta única, etc) =====
+    if (confirm(`Tem certeza que deseja excluir este ${tipo}?`)) {
+        (async () => {
+            try {
+                console.log('🔵 Executando exclusão simples para:', tipo, id);
+                
+                if (tipo === 'gasto') {
+                    await App.supabase.from('gastos').delete().eq('id', id);
+                } else if (tipo === 'evento') {
+                    await App.supabase.from('eventos').delete().eq('id', id);
+                } else if (tipo === 'conta') {
+                    await App.supabase.from('contas').delete().eq('id', id);
+                }
+
+                await registrarHistorico('exclusao_item', `${tipo} excluído`, { id, tipo, usuario: App.usuarioAtual });
+                showToast('Item excluído!', 'success');
+                
+                await sincronizarGoogleAutomatico();
+                
+                fecharModal();
+                await carregarDados(true);
+                await atualizarCalendario();
+                await mostrarConteudo();
+                
+            } catch (error) {
+                console.error('Erro ao excluir:', error);
+                showToast('Erro: ' + error.message, 'error');
+            }
+        })();
+    }
+}
+
+// ============================================
+// FUNÇÃO AUXILIAR PARA EXECUTAR EXCLUSÃO SIMPLES DE EVENTO
+// ============================================
+
+async function executarExclusaoEventoSimples(id, isRecorrente, regraId, dia, mes, ano, isIndividual, individualId) {
+    try {
+        console.log('🔵 Executando exclusão simples de evento');
+        
+        if (isRecorrente && regraId) {
+            // Criar exceção para excluir apenas esta ocorrência
+            let dataExcecao = dataParaString(ano, mes, dia);
+            await App.supabase.from('excecoes_recorrencia').insert({
+                user_id: App.currentUser.id,
+                regra_id: regraId,
+                data_excecao: dataExcecao,
+                acao: 'excluir',
+                added_by: App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido'
+            });
+        } else if (isIndividual && individualId) {
+            await App.supabase.from('eventos_individuais').delete().eq('id', individualId);
+        } else {
+            await App.supabase.from('eventos').delete().eq('id', id);
+        }
+        
+        await registrarHistorico('exclusao_evento', `Evento excluído`, { id, usuario: App.usuarioAtual });
+        showToast('Evento excluído!', 'success');
+        
+        await sincronizarGoogleAutomatico();
+        
+        fecharModal();
+        await carregarDados(true);
+        await atualizarCalendario();
+        await mostrarConteudo();
+        
+    } catch (error) {
+        console.error('Erro ao excluir evento:', error);
+        showToast('Erro: ' + error.message, 'error');
+    }
+}
+
+
+
 
     function selecionarExclusao(tipo, id, tipoItem, isRecorrente, regraId, dia, mes, ano, isIndividual, individualId) {
     (async () => {

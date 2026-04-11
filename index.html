@@ -17726,124 +17726,21 @@ function abrirPaginaModal(titulo, icone, url) {
 
 
 // ============================================
-// FUNÇÕES PARA SWIPE (ARRASTAR PARA OS LADOS) NO CALENDÁRIO COM EFEITO VISUAL
+// FUNÇÕES PARA SWIPE (ARRASTAR PARA OS LADOS) NO CALENDÁRIO - EFEITO SIMPLES
 // ============================================
 
 (function initSwipeCalendar() {
     let touchStartX = 0;
-    let touchEndX = 0;
-    let touchCurrentX = 0;
+    let touchStartY = 0;
     let isSwiping = false;
-    let swipeDirection = null;
-    const SWIPE_THRESHOLD = 30; // pixels mínimos para considerar swipe
+    const SWIPE_THRESHOLD = 30;
     
     const calendarGrid = document.getElementById('calendarGrid');
     const calendarSection = document.querySelector('.calendar-section');
     
     if (!calendarGrid || !calendarSection) return;
     
-    // Criar elemento de overlay para animação
-    let swipeOverlay = null;
-    let originalTransform = '';
     let isAnimating = false;
-    
-    function criarOverlay() {
-        if (swipeOverlay) return;
-        
-        swipeOverlay = document.createElement('div');
-        swipeOverlay.id = 'swipeOverlay';
-        swipeOverlay.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 999;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            pointer-events: none;
-        `;
-        swipeOverlay.innerHTML = `
-            <div style="background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 50%; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); animation: pulse 0.5s ease infinite;">
-                <i class="fas fa-chevron-left" style="color: white; font-size: 24px;"></i>
-            </div>
-        `;
-        document.body.appendChild(swipeOverlay);
-        
-        // Adicionar animação CSS
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes pulse {
-                0% { transform: scale(1); opacity: 1; }
-                50% { transform: scale(1.2); opacity: 0.8; }
-                100% { transform: scale(1); opacity: 1; }
-            }
-            .calendar-slide-left {
-                animation: slideLeft 0.3s ease forwards;
-            }
-            .calendar-slide-right {
-                animation: slideRight 0.3s ease forwards;
-            }
-            @keyframes slideLeft {
-                0% { transform: translateX(0); opacity: 1; }
-                50% { transform: translateX(-30px); opacity: 0.5; }
-                100% { transform: translateX(0); opacity: 1; }
-            }
-            @keyframes slideRight {
-                0% { transform: translateX(0); opacity: 1; }
-                50% { transform: translateX(30px); opacity: 0.5; }
-                100% { transform: translateX(0); opacity: 1; }
-            }
-        `;
-        document.head.appendChild(style);
-    }
-    
-    function mostrarOverlay(direcao) {
-        if (!swipeOverlay) criarOverlay();
-        if (!swipeOverlay) return;
-        
-        const icon = swipeOverlay.querySelector('i');
-        if (icon) {
-            if (direcao === 'left') {
-                icon.className = 'fas fa-chevron-left';
-            } else {
-                icon.className = 'fas fa-chevron-right';
-            }
-        }
-        swipeOverlay.style.display = 'flex';
-        
-        // Esconder após 300ms
-        setTimeout(() => {
-            if (swipeOverlay) swipeOverlay.style.display = 'none';
-        }, 300);
-    }
-    
-    function aplicarEfeitoTransicao(direcao, callback) {
-        if (isAnimating) return;
-        isAnimating = true;
-        
-        // Salvar transform original
-        originalTransform = calendarGrid.style.transform || '';
-        
-        // Aplicar classe de animação
-        if (direcao === 'left') {
-            calendarGrid.classList.add('calendar-slide-left');
-        } else {
-            calendarGrid.classList.add('calendar-slide-right');
-        }
-        
-        // Mostrar overlay
-        mostrarOverlay(direcao);
-        
-        // Executar callback após animação
-        setTimeout(() => {
-            calendarGrid.classList.remove('calendar-slide-left', 'calendar-slide-right');
-            if (callback) callback();
-            isAnimating = false;
-        }, 300);
-    }
     
     // Adicionar eventos de toque ao calendário
     calendarSection.addEventListener('touchstart', function(e) {
@@ -17851,17 +17748,16 @@ function abrirPaginaModal(titulo, icone, url) {
         touchStartX = e.changedTouches[0].screenX;
         touchStartY = e.changedTouches[0].screenY;
         isSwiping = false;
-        touchCurrentX = touchStartX;
         
-        // Adicionar efeito de arrasto visual
+        // Preparar para animação
         calendarGrid.style.transition = 'transform 0.05s linear';
     }, { passive: false });
     
     calendarSection.addEventListener('touchmove', function(e) {
         if (!touchStartX || isAnimating) return;
         
-        touchCurrentX = e.changedTouches[0].screenX;
-        const deltaX = touchCurrentX - touchStartX;
+        const currentX = e.changedTouches[0].screenX;
+        const deltaX = currentX - touchStartX;
         const deltaY = e.changedTouches[0].screenY - touchStartY;
         
         // Verificar se é movimento horizontal
@@ -17869,68 +17765,67 @@ function abrirPaginaModal(titulo, icone, url) {
             isSwiping = true;
             e.preventDefault();
             
-            // Aplicar transform para seguir o dedo (máximo 50px)
-            const moveX = Math.min(Math.max(deltaX, -50), 50);
+            // Aplicar transform para seguir o dedo (máximo 40px)
+            const moveX = Math.min(Math.max(deltaX, -40), 40);
             calendarGrid.style.transform = `translateX(${moveX}px)`;
-            calendarGrid.style.opacity = `${1 - Math.abs(moveX) / 100}`;
         }
     }, { passive: false });
     
     calendarSection.addEventListener('touchend', function(e) {
         if (!touchStartX || isAnimating) {
             // Resetar transform
-            calendarGrid.style.transform = originalTransform;
-            calendarGrid.style.opacity = '1';
+            calendarGrid.style.transform = '';
             calendarGrid.style.transition = '';
             touchStartX = 0;
             return;
         }
         
-        touchEndX = e.changedTouches[0].screenX;
-        const deltaX = touchEndX - touchStartX;
+        const endX = e.changedTouches[0].screenX;
+        const deltaX = endX - touchStartX;
         const deltaY = e.changedTouches[0].screenY - touchStartY;
         
-        // Resetar transform imediato
+        // Resetar transform suavemente
+        calendarGrid.style.transition = 'transform 0.2s ease';
         calendarGrid.style.transform = '';
-        calendarGrid.style.opacity = '1';
-        calendarGrid.style.transition = '';
         
         // Só processa se foi um movimento horizontal significativo
         if (Math.abs(deltaX) > SWIPE_THRESHOLD && Math.abs(deltaX) > Math.abs(deltaY)) {
             if (deltaX > 0) {
                 // Arrastou para DIREITA -> Mês ANTERIOR
-                console.log('👆 Swipe direito: mês anterior');
-                aplicarEfeitoTransicao('right', () => {
+                isAnimating = true;
+                setTimeout(() => {
                     App.currentMonthOffset--;
                     App.selectedDay = null;
                     atualizarCalendario();
                     mostrarConteudo();
-                });
+                    setTimeout(() => { isAnimating = false; }, 200);
+                }, 100);
                 showToast('📅 Mês anterior', 'info');
             } else {
                 // Arrastou para ESQUERDA -> Próximo MÊS
-                console.log('👆 Swipe esquerdo: próximo mês');
-                aplicarEfeitoTransicao('left', () => {
+                isAnimating = true;
+                setTimeout(() => {
                     App.currentMonthOffset++;
                     App.selectedDay = null;
                     atualizarCalendario();
                     mostrarConteudo();
-                });
+                    setTimeout(() => { isAnimating = false; }, 200);
+                }, 100);
                 showToast('📅 Próximo mês', 'info');
             }
         }
         
         // Resetar valores
+        setTimeout(() => {
+            calendarGrid.style.transition = '';
+        }, 200);
+        
         touchStartX = 0;
-        touchEndX = 0;
-        touchStartY = 0;
-        touchEndY = 0;
         isSwiping = false;
     });
     
-    console.log('✅ Swipe no calendário ativado com efeito visual');
+    console.log('✅ Swipe no calendário ativado (efeito simples)');
 })();
-
 
 
 

@@ -17726,68 +17726,196 @@ function abrirPaginaModal(titulo, icone, url) {
 
 
 // ============================================
-// FUNÇÕES PARA SWIPE (ARRASTAR PARA OS LADOS) NO CALENDÁRIO
+// FUNÇÕES PARA SWIPE (ARRASTAR PARA OS LADOS) NO CALENDÁRIO COM EFEITO VISUAL
 // ============================================
 
 (function initSwipeCalendar() {
     let touchStartX = 0;
     let touchEndX = 0;
-    let touchStartY = 0;
-    let touchEndY = 0;
+    let touchCurrentX = 0;
     let isSwiping = false;
-    const SWIPE_THRESHOLD = 50; // pixels mínimos para considerar swipe
+    let swipeDirection = null;
+    const SWIPE_THRESHOLD = 30; // pixels mínimos para considerar swipe
     
     const calendarGrid = document.getElementById('calendarGrid');
     const calendarSection = document.querySelector('.calendar-section');
     
     if (!calendarGrid || !calendarSection) return;
     
+    // Criar elemento de overlay para animação
+    let swipeOverlay = null;
+    let originalTransform = '';
+    let isAnimating = false;
+    
+    function criarOverlay() {
+        if (swipeOverlay) return;
+        
+        swipeOverlay = document.createElement('div');
+        swipeOverlay.id = 'swipeOverlay';
+        swipeOverlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        `;
+        swipeOverlay.innerHTML = `
+            <div style="background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 50%; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); animation: pulse 0.5s ease infinite;">
+                <i class="fas fa-chevron-left" style="color: white; font-size: 24px;"></i>
+            </div>
+        `;
+        document.body.appendChild(swipeOverlay);
+        
+        // Adicionar animação CSS
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes pulse {
+                0% { transform: scale(1); opacity: 1; }
+                50% { transform: scale(1.2); opacity: 0.8; }
+                100% { transform: scale(1); opacity: 1; }
+            }
+            .calendar-slide-left {
+                animation: slideLeft 0.3s ease forwards;
+            }
+            .calendar-slide-right {
+                animation: slideRight 0.3s ease forwards;
+            }
+            @keyframes slideLeft {
+                0% { transform: translateX(0); opacity: 1; }
+                50% { transform: translateX(-30px); opacity: 0.5; }
+                100% { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideRight {
+                0% { transform: translateX(0); opacity: 1; }
+                50% { transform: translateX(30px); opacity: 0.5; }
+                100% { transform: translateX(0); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    function mostrarOverlay(direcao) {
+        if (!swipeOverlay) criarOverlay();
+        if (!swipeOverlay) return;
+        
+        const icon = swipeOverlay.querySelector('i');
+        if (icon) {
+            if (direcao === 'left') {
+                icon.className = 'fas fa-chevron-left';
+            } else {
+                icon.className = 'fas fa-chevron-right';
+            }
+        }
+        swipeOverlay.style.display = 'flex';
+        
+        // Esconder após 300ms
+        setTimeout(() => {
+            if (swipeOverlay) swipeOverlay.style.display = 'none';
+        }, 300);
+    }
+    
+    function aplicarEfeitoTransicao(direcao, callback) {
+        if (isAnimating) return;
+        isAnimating = true;
+        
+        // Salvar transform original
+        originalTransform = calendarGrid.style.transform || '';
+        
+        // Aplicar classe de animação
+        if (direcao === 'left') {
+            calendarGrid.classList.add('calendar-slide-left');
+        } else {
+            calendarGrid.classList.add('calendar-slide-right');
+        }
+        
+        // Mostrar overlay
+        mostrarOverlay(direcao);
+        
+        // Executar callback após animação
+        setTimeout(() => {
+            calendarGrid.classList.remove('calendar-slide-left', 'calendar-slide-right');
+            if (callback) callback();
+            isAnimating = false;
+        }, 300);
+    }
+    
     // Adicionar eventos de toque ao calendário
     calendarSection.addEventListener('touchstart', function(e) {
+        if (isAnimating) return;
         touchStartX = e.changedTouches[0].screenX;
         touchStartY = e.changedTouches[0].screenY;
         isSwiping = false;
+        touchCurrentX = touchStartX;
+        
+        // Adicionar efeito de arrasto visual
+        calendarGrid.style.transition = 'transform 0.05s linear';
     }, { passive: false });
     
     calendarSection.addEventListener('touchmove', function(e) {
-        if (!touchStartX) return;
+        if (!touchStartX || isAnimating) return;
         
-        const deltaX = e.changedTouches[0].screenX - touchStartX;
+        touchCurrentX = e.changedTouches[0].screenX;
+        const deltaX = touchCurrentX - touchStartX;
         const deltaY = e.changedTouches[0].screenY - touchStartY;
         
-        // Verificar se é movimento horizontal (ignorar vertical)
-        if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+        // Verificar se é movimento horizontal
+        if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 5) {
             isSwiping = true;
-            e.preventDefault(); // Prevenir scroll enquanto arrasta
+            e.preventDefault();
+            
+            // Aplicar transform para seguir o dedo (máximo 50px)
+            const moveX = Math.min(Math.max(deltaX, -50), 50);
+            calendarGrid.style.transform = `translateX(${moveX}px)`;
+            calendarGrid.style.opacity = `${1 - Math.abs(moveX) / 100}`;
         }
     }, { passive: false });
     
     calendarSection.addEventListener('touchend', function(e) {
-        if (!touchStartX) return;
+        if (!touchStartX || isAnimating) {
+            // Resetar transform
+            calendarGrid.style.transform = originalTransform;
+            calendarGrid.style.opacity = '1';
+            calendarGrid.style.transition = '';
+            touchStartX = 0;
+            return;
+        }
         
         touchEndX = e.changedTouches[0].screenX;
-        touchEndY = e.changedTouches[0].screenY;
-        
         const deltaX = touchEndX - touchStartX;
-        const deltaY = touchEndY - touchStartY;
+        const deltaY = e.changedTouches[0].screenY - touchStartY;
+        
+        // Resetar transform imediato
+        calendarGrid.style.transform = '';
+        calendarGrid.style.opacity = '1';
+        calendarGrid.style.transition = '';
         
         // Só processa se foi um movimento horizontal significativo
         if (Math.abs(deltaX) > SWIPE_THRESHOLD && Math.abs(deltaX) > Math.abs(deltaY)) {
             if (deltaX > 0) {
                 // Arrastou para DIREITA -> Mês ANTERIOR
                 console.log('👆 Swipe direito: mês anterior');
-                App.currentMonthOffset--;
-                App.selectedDay = null;
-                atualizarCalendario();
-                mostrarConteudo();
+                aplicarEfeitoTransicao('right', () => {
+                    App.currentMonthOffset--;
+                    App.selectedDay = null;
+                    atualizarCalendario();
+                    mostrarConteudo();
+                });
                 showToast('📅 Mês anterior', 'info');
             } else {
                 // Arrastou para ESQUERDA -> Próximo MÊS
                 console.log('👆 Swipe esquerdo: próximo mês');
-                App.currentMonthOffset++;
-                App.selectedDay = null;
-                atualizarCalendario();
-                mostrarConteudo();
+                aplicarEfeitoTransicao('left', () => {
+                    App.currentMonthOffset++;
+                    App.selectedDay = null;
+                    atualizarCalendario();
+                    mostrarConteudo();
+                });
                 showToast('📅 Próximo mês', 'info');
             }
         }
@@ -17800,213 +17928,8 @@ function abrirPaginaModal(titulo, icone, url) {
         isSwiping = false;
     });
     
-    console.log('✅ Swipe no calendário ativado');
+    console.log('✅ Swipe no calendário ativado com efeito visual');
 })();
-
-// ============================================
-// FUNÇÕES PARA PULL-TO-REFRESH (ARRASTAR PARA BAIXO)
-// ============================================
-
-(function initPullToRefresh() {
-    let pullStartY = 0;
-    let pullEndY = 0;
-    let isPulling = false;
-    let pullIndicator = null;
-    const PULL_THRESHOLD = 80; // pixels para ativar o refresh
-    
-    // Criar indicador visual de pull-to-refresh
-    function criarIndicadorPullRefresh() {
-        if (document.getElementById('pullRefreshIndicator')) return;
-        
-        const indicator = document.createElement('div');
-        indicator.id = 'pullRefreshIndicator';
-        indicator.innerHTML = `
-            <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
-                <i class="fas fa-arrow-down" style="font-size: 16px;"></i>
-                <span>Puxe para atualizar</span>
-            </div>
-        `;
-        indicator.style.cssText = `
-            position: fixed;
-            top: -50px;
-            left: 0;
-            right: 0;
-            height: 50px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 999;
-            transition: top 0.2s ease;
-            font-size: 14px;
-            font-weight: 500;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        `;
-        document.body.appendChild(indicator);
-        return indicator;
-    }
-    
-    // Atualizar texto do indicador
-    function atualizarIndicadorPullRefresh(ativo) {
-        const indicator = document.getElementById('pullRefreshIndicator');
-        if (!indicator) return;
-        
-        if (ativo) {
-            indicator.innerHTML = `
-                <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
-                    <i class="fas fa-sync-alt fa-spin" style="font-size: 16px;"></i>
-                    <span>Atualizando...</span>
-                </div>
-            `;
-        } else {
-            indicator.innerHTML = `
-                <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
-                    <i class="fas fa-arrow-down" style="font-size: 16px;"></i>
-                    <span>Puxe para atualizar</span>
-                </div>
-            `;
-        }
-    }
-    
-    // Mostrar modal de confirmação
-    function mostrarConfirmacaoRefresh() {
-        const modalHtml = `
-            <div style="padding: 0;">
-                <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 20px; text-align: center;">
-                    <i class="fas fa-sync-alt" style="font-size: 40px; color: #fff; margin-bottom: 10px;"></i>
-                    <h3 style="margin: 0; color: #fff;">Atualizar Aplicativo</h3>
-                </div>
-                <div style="padding: 20px; text-align: center;">
-                    <p style="margin-bottom: 20px; font-size: 16px;">
-                        Ao atualizar, você voltará para a <strong>data de hoje</strong> e todos os dados serão recarregados.
-                    </p>
-                    <p style="margin-bottom: 20px; color: var(--gray); font-size: 13px;">
-                        <i class="fas fa-info-circle"></i> Esta ação não remove nenhum dado, apenas recarrega as informações do servidor.
-                    </p>
-                    <div style="display: flex; gap: 12px; margin-top: 20px;">
-                        <button id="confirmRefreshBtn" class="btn btn-primary" style="flex: 1;">
-                            <i class="fas fa-check"></i> Sim, atualizar
-                        </button>
-                        <button id="cancelRefreshBtn" class="btn" style="flex: 1; background: var(--gray); color: #fff;">
-                            Cancelar
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        abrirModal('Atualizar App', 'fa-sync-alt', modalHtml);
-        
-        document.getElementById('confirmRefreshBtn').onclick = async () => {
-            fecharModal();
-            await executarRefreshCompleto();
-        };
-        
-        document.getElementById('cancelRefreshBtn').onclick = () => {
-            fecharModal();
-            showToast('Atualização cancelada', 'info');
-        };
-    }
-    
-    // Executar refresh completo
-    async function executarRefreshCompleto() {
-        try {
-            showToast('🔄 Atualizando dados...', 'info');
-            
-            // Voltar para a data de hoje
-            resetarParaHoje();
-            
-            // Recarregar todos os dados do servidor
-            await carregarDados(true);
-            
-            // Atualizar calendário e conteúdo
-            await atualizarCalendario();
-            await mostrarConteudo();
-            
-            showToast('✅ Dados atualizados com sucesso!', 'success');
-            
-        } catch (error) {
-            console.error('Erro ao atualizar:', error);
-            showToast('Erro ao atualizar dados', 'error');
-        }
-    }
-    
-    // Configurar eventos de toque para pull-to-refresh
-    let startY = 0;
-    let isDragging = false;
-    let indicatorVisible = false;
-    
-    // Criar indicador ao iniciar
-    setTimeout(() => {
-        pullIndicator = criarIndicadorPullRefresh();
-    }, 500);
-    
-    // Detectar scroll no topo da página
-    document.addEventListener('touchstart', function(e) {
-        // Só ativa se estiver no topo da página
-        if (window.scrollY <= 5) {
-            startY = e.touches[0].clientY;
-            isDragging = true;
-        }
-    });
-    
-    document.addEventListener('touchmove', function(e) {
-        if (!isDragging) return;
-        
-        const currentY = e.touches[0].clientY;
-        const diffY = currentY - startY;
-        
-        if (diffY > 0 && window.scrollY <= 5) {
-            // Prevenir scroll enquanto arrasta
-            e.preventDefault();
-            
-            if (diffY > PULL_THRESHOLD && !indicatorVisible) {
-                indicatorVisible = true;
-                if (pullIndicator) {
-                    pullIndicator.style.top = '0px';
-                    atualizarIndicadorPullRefresh(false);
-                }
-            } else if (diffY < PULL_THRESHOLD && indicatorVisible) {
-                indicatorVisible = false;
-                if (pullIndicator) {
-                    pullIndicator.style.top = '-50px';
-                }
-            }
-        }
-    });
-    
-    document.addEventListener('touchend', function(e) {
-        if (!isDragging) return;
-        
-        const endY = e.changedTouches[0].clientY;
-        const diffY = endY - startY;
-        
-        if (diffY > PULL_THRESHOLD && window.scrollY <= 5) {
-            // Usuário arrastou o suficiente, mostrar confirmação
-            if (pullIndicator) {
-                pullIndicator.style.top = '-50px';
-            }
-            indicatorVisible = false;
-            
-            // Mostrar modal de confirmação
-            mostrarConfirmacaoRefresh();
-        } else {
-            // Esconder indicador
-            if (pullIndicator) {
-                pullIndicator.style.top = '-50px';
-            }
-            indicatorVisible = false;
-        }
-        
-        isDragging = false;
-        startY = 0;
-    });
-    
-    console.log('✅ Pull-to-refresh ativado');
-})();
-
-
 
 
 

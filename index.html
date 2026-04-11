@@ -17981,11 +17981,19 @@ function abrirPaginaModal(titulo, icone, url) {
 // FUNÇÕES PARA SWIPE (ARRASTAR PARA OS LADOS) NO CALENDÁRIO - EFEITO SIMPLES
 // ============================================
 
+// ============================================
+// FUNÇÕES PARA SWIPE (ARRASTAR PARA OS LADOS) NO CALENDÁRIO - EFEITO SUAVE COMPLETO
+// ============================================
+
 (function initSwipeCalendar() {
     let touchStartX = 0;
     let touchStartY = 0;
+    let touchStartTime = 0;
     let isSwiping = false;
-    const SWIPE_THRESHOLD = 30;
+    let currentTranslateX = 0;
+    let animationFrame = null;
+    const SWIPE_THRESHOLD = 50; // pixels para ativar o swipe
+    const MAX_TRANSLATE = 150; // máximo de deslocamento em pixels
     
     const calendarGrid = document.getElementById('calendarGrid');
     const calendarSection = document.querySelector('.calendar-section');
@@ -17993,20 +18001,87 @@ function abrirPaginaModal(titulo, icone, url) {
     if (!calendarGrid || !calendarSection) return;
     
     let isAnimating = false;
+    let currentMonthChanging = false;
     
-    // Adicionar eventos de toque ao calendário
+    // Função para atualizar a posição do calendário
+    function updateTranslate(x, animated = false) {
+        if (animated) {
+            calendarGrid.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1)';
+        } else {
+            calendarGrid.style.transition = 'none';
+        }
+        calendarGrid.style.transform = `translateX(${x}px)`;
+        currentTranslateX = x;
+    }
+    
+    // Função para resetar a posição com animação
+    function resetPosition() {
+        return new Promise((resolve) => {
+            calendarGrid.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1)';
+            calendarGrid.style.transform = 'translateX(0px)';
+            setTimeout(() => {
+                currentTranslateX = 0;
+                resolve();
+            }, 300);
+        });
+    }
+    
+    // Função para executar a troca de mês com animação completa
+    async function changeMonth(direction, callback) {
+        if (currentMonthChanging) return;
+        currentMonthChanging = true;
+        
+        const targetX = direction === 'next' ? -MAX_TRANSLATE : MAX_TRANSLATE;
+        
+        // Animar para fora
+        calendarGrid.style.transition = 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)';
+        calendarGrid.style.transform = `translateX(${targetX}px)`;
+        
+        // Aguardar a animação de saída
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
+        // Executar a mudança de mês
+        if (callback) callback();
+        
+        // Resetar posição instantaneamente (sem animação)
+        calendarGrid.style.transition = 'none';
+        calendarGrid.style.transform = `translateX(${-targetX}px)`;
+        
+        // Forçar reflow
+        calendarGrid.offsetHeight;
+        
+        // Animar de volta
+        calendarGrid.style.transition = 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)';
+        calendarGrid.style.transform = 'translateX(0px)';
+        
+        // Aguardar a animação de volta
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
+        // Limpar
+        calendarGrid.style.transition = '';
+        currentTranslateX = 0;
+        currentMonthChanging = false;
+    }
+    
+    // Adicionar eventos de toque
     calendarSection.addEventListener('touchstart', function(e) {
-        if (isAnimating) return;
+        if (currentMonthChanging) return;
+        
         touchStartX = e.changedTouches[0].screenX;
         touchStartY = e.changedTouches[0].screenY;
+        touchStartTime = Date.now();
         isSwiping = false;
         
-        // Preparar para animação
-        calendarGrid.style.transition = 'transform 0.05s linear';
+        // Cancelar qualquer animação em andamento
+        if (animationFrame) {
+            cancelAnimationFrame(animationFrame);
+        }
+        
+        calendarGrid.style.transition = 'none';
     }, { passive: false });
     
     calendarSection.addEventListener('touchmove', function(e) {
-        if (!touchStartX || isAnimating) return;
+        if (!touchStartX || currentMonthChanging) return;
         
         const currentX = e.changedTouches[0].screenX;
         const deltaX = currentX - touchStartX;
@@ -18017,17 +18092,29 @@ function abrirPaginaModal(titulo, icone, url) {
             isSwiping = true;
             e.preventDefault();
             
-            // Aplicar transform para seguir o dedo (máximo 40px)
-            const moveX = Math.min(Math.max(deltaX, -40), 40);
-            calendarGrid.style.transform = `translateX(${moveX}px)`;
+            // Calcular nova posição com easing
+            let newX = deltaX;
+            // Aplicar resistência para não passar do limite
+            if (Math.abs(newX) > MAX_TRANSLATE) {
+                newX = MAX_TRANSLATE * Math.sign(newX);
+            }
+            // Efeito de mola suave no final
+            if (Math.abs(newX) > MAX_TRANSLATE * 0.8) {
+                newX = MAX_TRANSLATE * 0.8 + (newX - MAX_TRANSLATE * 0.8) * 0.3;
+            }
+            
+            calendarGrid.style.transform = `translateX(${newX}px)`;
+            currentTranslateX = newX;
+            
+            // Adicionar leve opacidade durante o arrasto
+            const opacity = 1 - Math.min(Math.abs(newX) / MAX_TRANSLATE, 0.3);
+            calendarGrid.style.opacity = opacity;
         }
     }, { passive: false });
     
     calendarSection.addEventListener('touchend', function(e) {
-        if (!touchStartX || isAnimating) {
-            // Resetar transform
-            calendarGrid.style.transform = '';
-            calendarGrid.style.transition = '';
+        if (!touchStartX || currentMonthChanging) {
+            resetPosition();
             touchStartX = 0;
             return;
         }
@@ -18035,48 +18122,59 @@ function abrirPaginaModal(titulo, icone, url) {
         const endX = e.changedTouches[0].screenX;
         const deltaX = endX - touchStartX;
         const deltaY = e.changedTouches[0].screenY - touchStartY;
+        const deltaTime = Date.now() - touchStartTime;
+        const velocity = Math.abs(deltaX) / deltaTime; // velocidade em pixels/ms
         
-        // Resetar transform suavemente
-        calendarGrid.style.transition = 'transform 0.2s ease';
-        calendarGrid.style.transform = '';
+        // Verificar se foi um movimento significativo
+        const isFastSwipe = velocity > 0.5; // swipe rápido
+        const isLongSwipe = Math.abs(deltaX) > SWIPE_THRESHOLD;
         
-        // Só processa se foi um movimento horizontal significativo
-        if (Math.abs(deltaX) > SWIPE_THRESHOLD && Math.abs(deltaX) > Math.abs(deltaY)) {
+        if ((isLongSwipe || isFastSwipe) && Math.abs(deltaX) > Math.abs(deltaY)) {
+            // Determinar direção
             if (deltaX > 0) {
                 // Arrastou para DIREITA -> Mês ANTERIOR
-                isAnimating = true;
-                setTimeout(() => {
+                console.log('👆 Swipe direito: mês anterior');
+                changeMonth('prev', () => {
                     App.currentMonthOffset--;
                     App.selectedDay = null;
                     atualizarCalendario();
                     mostrarConteudo();
-                    setTimeout(() => { isAnimating = false; }, 200);
-                }, 100);
+                });
                 showToast('📅 Mês anterior', 'info');
             } else {
                 // Arrastou para ESQUERDA -> Próximo MÊS
-                isAnimating = true;
-                setTimeout(() => {
+                console.log('👆 Swipe esquerdo: próximo mês');
+                changeMonth('next', () => {
                     App.currentMonthOffset++;
                     App.selectedDay = null;
                     atualizarCalendario();
                     mostrarConteudo();
-                    setTimeout(() => { isAnimating = false; }, 200);
-                }, 100);
-                showToast('📅 Próximo mês', 'info');
+                });
+                showToast('📅 Próximo mês', 'success');
             }
+        } else {
+            // Swipe cancelado, volta suavemente
+            resetPosition();
+            setTimeout(() => {
+                calendarGrid.style.opacity = '1';
+            }, 300);
         }
         
         // Resetar valores
-        setTimeout(() => {
-            calendarGrid.style.transition = '';
-        }, 200);
-        
         touchStartX = 0;
         isSwiping = false;
+        calendarGrid.style.transition = '';
     });
     
-    console.log('✅ Swipe no calendário ativado (efeito simples)');
+    // Prevenir scroll da página quando estiver arrastando o calendário
+    calendarSection.addEventListener('touchcancel', function(e) {
+        resetPosition();
+        touchStartX = 0;
+        isSwiping = false;
+        calendarGrid.style.opacity = '1';
+    });
+    
+    console.log('✅ Swipe no calendário ativado com efeito suave completo');
 })();
 
 

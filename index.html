@@ -17978,11 +17978,7 @@ function abrirPaginaModal(titulo, icone, url) {
 
 
 // ============================================
-// FUNÇÕES PARA SWIPE (ARRASTAR PARA OS LADOS) NO CALENDÁRIO - EFEITO SIMPLES
-// ============================================
-
-// ============================================
-// FUNÇÕES PARA SWIPE (ARRASTAR PARA OS LADOS) NO CALENDÁRIO - EFEITO SUAVE COMPLETO
+// FUNÇÕES PARA SWIPE (ARRASTAR PARA OS LADOS) NO CALENDÁRIO - SEM OPACIDADE
 // ============================================
 
 (function initSwipeCalendar() {
@@ -18106,9 +18102,8 @@ function abrirPaginaModal(titulo, icone, url) {
             calendarGrid.style.transform = `translateX(${newX}px)`;
             currentTranslateX = newX;
             
-            // Adicionar leve opacidade durante o arrasto
-            const opacity = 1 - Math.min(Math.abs(newX) / MAX_TRANSLATE, 0.3);
-            calendarGrid.style.opacity = opacity;
+            // 🔴 REMOVIDO: efeito de opacidade
+            // calendarGrid.style.opacity = ... (linha removida)
         }
     }, { passive: false });
     
@@ -18150,14 +18145,11 @@ function abrirPaginaModal(titulo, icone, url) {
                     atualizarCalendario();
                     mostrarConteudo();
                 });
-                showToast('📅 Próximo mês', 'success');
+                showToast('📅 Próximo mês', 'info');
             }
         } else {
             // Swipe cancelado, volta suavemente
             resetPosition();
-            setTimeout(() => {
-                calendarGrid.style.opacity = '1';
-            }, 300);
         }
         
         // Resetar valores
@@ -18171,10 +18163,9 @@ function abrirPaginaModal(titulo, icone, url) {
         resetPosition();
         touchStartX = 0;
         isSwiping = false;
-        calendarGrid.style.opacity = '1';
     });
     
-    console.log('✅ Swipe no calendário ativado com efeito suave completo');
+    console.log('✅ Swipe no calendário ativado com efeito suave (sem opacidade)');
 })();
 
 

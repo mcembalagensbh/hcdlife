@@ -17643,13 +17643,13 @@ async function sincronizarGoogleParaMyLife() {
     }
     
     // Verificar se tem token do Google
-    const { data: googleToken } = await supabaseClient
+    const { data: googleToken, error: tokenBuscaError } = await supabaseClient
         .from('google_tokens')
         .select('*')
         .eq('user_id', userId)
         .maybeSingle();
     
-    if (!googleToken) {
+    if (tokenBuscaError || !googleToken) {
         console.log('⏸️ Google não conectado');
         return;
     }
@@ -17699,8 +17699,77 @@ async function sincronizarGoogleParaMyLife() {
         }
     }
     
-    // Usar calendar_id do usuário ou 'primary' como padrão
-    const calendarId = googleToken.calendar_id || 'primary';
+    // 🔴 CORREÇÃO: Buscar calendar_id correto
+    let calendarId = googleToken.calendar_id;
+    
+    // Se não tem calendar_id ou é inválido, buscar da lista
+    if (!calendarId || calendarId === 'null' || calendarId === 'undefined' || calendarId.includes('@group')) {
+        console.log('🔍 Calendar ID inválido ou não encontrado, buscando da lista...');
+        
+        try {
+            // Buscar lista de calendários do usuário
+            const listResponse = await fetch('https://www.googleapis.com/calendar/v3/users/me/calendarList', {
+                headers: { 'Authorization': `Bearer ${accessToken}` }
+            });
+            
+            const calendarsList = await listResponse.json();
+            
+            // Procurar pelo calendário "My Life"
+            const myLifeCalendar = calendarsList.items?.find(c => c.summary === 'My Life');
+            
+            if (myLifeCalendar) {
+                calendarId = myLifeCalendar.id;
+                console.log('✅ Calendário "My Life" encontrado:', calendarId);
+                
+                // Salvar no banco
+                await supabaseClient
+                    .from('google_tokens')
+                    .update({ calendar_id: calendarId })
+                    .eq('user_id', userId);
+            } else {
+                // Criar novo calendário
+                console.log('📅 Criando novo calendário "My Life"...');
+                
+                const createResponse = await fetch('https://www.googleapis.com/calendar/v3/calendars', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        summary: 'My Life',
+                        description: 'Eventos sincronizados do My Life',
+                        timeZone: 'America/Sao_Paulo'
+                    })
+                });
+                
+                const newCalendar = await createResponse.json();
+                
+                if (createResponse.ok) {
+                    calendarId = newCalendar.id;
+                    console.log('✅ Calendário criado:', calendarId);
+                    
+                    await supabaseClient
+                        .from('google_tokens')
+                        .update({ calendar_id: calendarId })
+                        .eq('user_id', userId);
+                } else {
+                    calendarId = 'primary';
+                    console.log('⚠️ Usando calendário primary como fallback');
+                }
+            }
+        } catch (error) {
+            console.error('❌ Erro ao buscar calendários:', error);
+            calendarId = 'primary';
+            console.log('⚠️ Usando calendário primary como fallback');
+        }
+    }
+    
+    // Garantir que calendarId é válido
+    if (!calendarId || calendarId.includes('@group')) {
+        calendarId = 'primary';
+        console.log('⚠️ Calendar ID inválido, usando primary');
+    }
     
     console.log(`🔄 Buscando eventos do Google Calendar: ${calendarId}`);
     
@@ -17726,8 +17795,105 @@ async function sincronizarGoogleParaMyLife() {
             }
         );
         
-        if (eventsResponse.status === 401) {
-            console.log('⚠️ Token inválido');
+        if (eventsResponse.status === 404) {
+            console.log('⚠️ Calendário não encontrado, tentando primary...');
+            
+            const primaryResponse = await fetch(
+                `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${timeMin}&timeMax=${timeMax}&maxResults=500&orderBy=updated&singleEvents=true`,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Cache-Control': 'no-cache'
+                    }
+                }
+            );
+            
+            if (primaryResponse.ok) {
+                console.log('✅ Usando calendário primary com sucesso');
+                
+                await supabaseClient
+                    .from('google_tokens')
+                    .update({ calendar_id: 'primary' })
+                    .eq('user_id', userId);
+                
+                const eventsData = await primaryResponse.json();
+                const items = eventsData.items || [];
+                console.log(`📊 Encontrados ${items.length} eventos no Google`);
+                
+                let criados = 0;
+                
+                for (const item of items) {
+                    const description = item.description || '';
+                    const myLifeIdMatch = description.match(/ID My Life: (\d+)/);
+                    
+                    if (myLifeIdMatch) continue;
+                    
+                    let titulo = item.summary || 'Sem título';
+                    titulo = titulo.replace(/^📅 /, '').replace(/^💰 /, '').replace(/^.*\[TAREFA\] /, '');
+                    
+                    const descricao = item.description?.split('\n\nID My Life:')[0] || '';
+                    const local = item.location || '';
+                    
+                    let dataInicio;
+                    let isDiaInteiro = false;
+                    
+                    if (item.start?.dateTime) {
+                        dataInicio = new Date(item.start.dateTime);
+                    } else if (item.start?.date) {
+                        dataInicio = new Date(item.start.date + 'T12:00:00');
+                        isDiaInteiro = true;
+                    } else {
+                        dataInicio = new Date();
+                    }
+                    
+                    const hora = isDiaInteiro ? '' : dataInicio.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                    const ano = dataInicio.getFullYear();
+                    const mes = dataInicio.getMonth() + 1;
+                    const dia = dataInicio.getDate();
+                    
+                    const { data: existente } = await supabaseClient
+                        .from('eventos')
+                        .select('id')
+                        .eq('user_id', userId)
+                        .eq('titulo', titulo)
+                        .eq('dia', dia)
+                        .eq('mes', mes)
+                        .eq('ano', ano)
+                        .maybeSingle();
+                    
+                    if (existente) continue;
+                    
+                    console.log(`➕ Criando evento: "${titulo}" - ${dia}/${mes}/${ano} ${hora}`);
+                    
+                    const { data: insertData, error: insertError } = await supabaseClient
+                        .from('eventos')
+                        .insert({
+                            user_id: userId,
+                            titulo: titulo,
+                            descricao: descricao,
+                            local: local,
+                            hora: hora || null,
+                            ano: ano,
+                            mes: mes,
+                            dia: dia,
+                            is_recorrente: false,
+                            added_by: 'Google Calendar',
+                            google_event_id: item.id
+                        })
+                        .select();
+                    
+                    if (!insertError && insertData) {
+                        criados++;
+                    }
+                }
+                
+                if (criados > 0) {
+                    showToast(`✅ ${criados} eventos importados do Google Calendar!`, 'success');
+                    await carregarDados(true);
+                    await atualizarCalendario();
+                    await mostrarConteudo();
+                }
+            }
             return;
         }
         
@@ -17748,28 +17914,23 @@ async function sincronizarGoogleParaMyLife() {
             const description = item.description || '';
             const myLifeIdMatch = description.match(/ID My Life: (\d+)/);
             
-            // Se já tem ID do My Life, ignorar (já existe no app)
             if (myLifeIdMatch) {
                 ignorados++;
                 continue;
             }
             
-            // Extrair título (remover emojis que o My Life adiciona)
             let titulo = item.summary || 'Sem título';
             titulo = titulo.replace(/^📅 /, '').replace(/^💰 /, '').replace(/^.*\[TAREFA\] /, '');
             
             const descricao = item.description?.split('\n\nID My Life:')[0] || '';
             const local = item.location || '';
             
-            // Tratar datas corretamente
             let dataInicio;
             let isDiaInteiro = false;
             
             if (item.start?.dateTime) {
-                // Evento com hora
                 dataInicio = new Date(item.start.dateTime);
             } else if (item.start?.date) {
-                // Evento de dia inteiro
                 dataInicio = new Date(item.start.date + 'T12:00:00');
                 isDiaInteiro = true;
             } else {
@@ -17781,7 +17942,6 @@ async function sincronizarGoogleParaMyLife() {
             const mes = dataInicio.getMonth() + 1;
             const dia = dataInicio.getDate();
             
-            // Verificar se já existe no banco (evitar duplicatas)
             const { data: existente } = await supabaseClient
                 .from('eventos')
                 .select('id')
@@ -17799,7 +17959,6 @@ async function sincronizarGoogleParaMyLife() {
             
             console.log(`➕ Criando evento: "${titulo}" - ${dia}/${mes}/${ano} ${hora}`);
             
-            // Inserir no My Life
             const { data: insertData, error: insertError } = await supabaseClient
                 .from('eventos')
                 .insert({
@@ -17823,7 +17982,6 @@ async function sincronizarGoogleParaMyLife() {
                 criados++;
                 console.log(`✅ Evento criado ID: ${insertData[0].id}`);
                 
-                // Atualizar o Google com o ID do My Life
                 try {
                     await fetch(
                         `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${item.id}`,

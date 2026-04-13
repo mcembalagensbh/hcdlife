@@ -11273,6 +11273,8 @@ function garantirNomeUsuario(nome) {
             .eq('id', id)
             .single();
         
+        console.log('🔍 Evento sendo editado:', { id, google_event_id: eventoExistente?.google_event_id, added_by: eventoExistente?.added_by });
+        
         // 🔴 SE VEIO DO GOOGLE (tem google_event_id) → ATUALIZAR em vez de recriar
         if (eventoExistente && eventoExistente.google_event_id) {
             console.log('🔄 Evento veio do Google, atualizando em vez de recriar...');
@@ -11308,6 +11310,8 @@ function garantirNomeUsuario(nome) {
             await mostrarConteudo();
             return;
         }
+        
+        console.log('📝 Evento NÃO veio do Google, criando novo...');
         
         // 🔴 CÓDIGO ORIGINAL PARA EVENTOS NORMAIS (não vieram do Google)
         if (isRecorrente && regraId) {
@@ -18465,4 +18469,4 @@ window.sincronizarGoogleParaMyLife = sincronizarGoogleParaMyLife;
 </body>
 </html>
 
-    157
+    159

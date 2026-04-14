@@ -16828,11 +16828,9 @@ async function sincronizarGoogleParaMyLife() {
     const userId = App.currentUser?.id;
     
     if (!userId) return;
-    
-    // Verificar se tem usuário da família selecionado
     if (!App.usuarioAtual) return;
     
-    // Buscar token do Google para este usuário específico
+    // Buscar token do Google
     const { data: googleToken } = await supabaseClient
         .from('google_tokens')
         .select('*')
@@ -16872,22 +16870,31 @@ async function sincronizarGoogleParaMyLife() {
         }
     }
     
-    // Usar o calendário do usuário
+    // 🔴 BUSCAR CALENDÁRIO EXISTENTE (NUNCA CRIAR DUPLICADO)
     let calendarId = googleToken.calendar_id;
     
     if (!calendarId) {
-        const calendarName = `My Life - ${App.usuarioAtual.apelido || App.usuarioAtual.nome}`;
+        console.log('🔍 Buscando calendário existente...');
         
         const listResponse = await fetch('https://www.googleapis.com/calendar/v3/users/me/calendarList', {
             headers: { 'Authorization': `Bearer ${accessToken}` }
         });
         const calendarsList = await listResponse.json();
         
+        const calendarName = `My Life - ${App.usuarioAtual.apelido || App.usuarioAtual.nome}`;
         const existingCalendar = calendarsList.items?.find(c => c.summary === calendarName);
         
         if (existingCalendar) {
             calendarId = existingCalendar.id;
+            console.log('✅ Calendário existente REUTILIZADO:', calendarId);
+            
+            await supabaseClient
+                .from('google_tokens')
+                .update({ calendar_id: calendarId })
+                .eq('usuario_familia_id', App.usuarioAtual.id);
         } else {
+            console.log('📅 Nenhum calendário encontrado, criando novo...');
+            
             const createResponse = await fetch('https://www.googleapis.com/calendar/v3/calendars', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
@@ -16897,9 +16904,12 @@ async function sincronizarGoogleParaMyLife() {
                     timeZone: 'America/Sao_Paulo' 
                 })
             });
+            
             const newCalendar = await createResponse.json();
             if (createResponse.ok) {
                 calendarId = newCalendar.id;
+                console.log('📅 Novo calendário CRIADO:', calendarId);
+                
                 await supabaseClient
                     .from('google_tokens')
                     .update({ calendar_id: calendarId })
@@ -16969,10 +16979,9 @@ async function sincronizarGoogleParaMyLife() {
             
             if (myLifeIdMatch) {
                 const myLifeId = parseInt(myLifeIdMatch[1]);
-                console.log(`🔄 Atualizando evento ID ${myLifeId}: "${titulo}" (${App.usuarioAtual.apelido})`);
+                console.log(`🔄 Atualizando evento ID ${myLifeId}: "${titulo}"`);
                 
-                // 🔴 REMOVER filtro de usuario_familia_id
-                const { error: updateError } = await supabaseClient
+                await supabaseClient
                     .from('eventos')
                     .update({
                         titulo: titulo,
@@ -16981,20 +16990,13 @@ async function sincronizarGoogleParaMyLife() {
                         hora: isDiaInteiro ? null : hora,
                         dia: dia,
                         mes: mes,
-                        ano: ano,
-                        data_inicio: item.start?.dateTime ? item.start.dateTime : item.start?.date,
-                        data_fim: item.end?.dateTime ? item.end.dateTime : item.end?.date
+                        ano: ano
                     })
                     .eq('id', myLifeId)
                     .eq('user_id', userId);
                 
-                if (!updateError) {
-                    atualizados++;
-                    console.log(`✅ Evento ${myLifeId} atualizado no App`);
-                }
-            } 
-            else {
-                // 🔴 REMOVER filtro de usuario_familia_id na busca
+                atualizados++;
+            } else {
                 const { data: existente } = await supabaseClient
                     .from('eventos')
                     .select('id')
@@ -17006,17 +17008,13 @@ async function sincronizarGoogleParaMyLife() {
                     .maybeSingle();
                 
                 if (existente) {
-                    console.log(`🔄 Evento já existe (ID ${existente.id}), atualizando google_event_id`);
                     await supabaseClient
                         .from('eventos')
                         .update({ google_event_id: item.id })
                         .eq('id', existente.id);
                     atualizados++;
                 } else {
-                    console.log(`➕ Criando novo evento: "${titulo}" (${App.usuarioAtual.apelido})`);
-                    
-                    // 🔴 REMOVER usuario_familia_id do insert
-                    const { error: insertError } = await supabaseClient
+                    await supabaseClient
                         .from('eventos')
                         .insert({
                             user_id: userId,
@@ -17031,8 +17029,7 @@ async function sincronizarGoogleParaMyLife() {
                             added_by: 'Google Calendar',
                             google_event_id: item.id
                         });
-                    
-                    if (!insertError) criados++;
+                    criados++;
                 }
             }
         }
@@ -17207,18 +17204,24 @@ function iniciarPollingGoogle() {
             return;
         }
         
-        const { data: googleToken, error } = await App.supabase
-            .from('google_tokens')
-            .select('*')
-            .eq('user_id', App.currentUser.id)
-            .maybeSingle();
-        
-        if (error || !googleToken) {
-            console.log('⏸️ Polling desativado - Google não conectado');
+        if (!App.usuarioAtual) {
+            console.log('⏸️ Nenhum usuário da família selecionado');
             return;
         }
         
-        console.log('✅ Google conectado - iniciando polling (a cada 30 segundos)');
+        // 🔴 CORREÇÃO: Buscar pelo usuario_familia_id
+        const { data: googleToken, error } = await App.supabase
+            .from('google_tokens')
+            .select('*')
+            .eq('usuario_familia_id', App.usuarioAtual.id)
+            .maybeSingle();
+        
+        if (error || !googleToken) {
+            console.log(`⏸️ Polling desativado - ${App.usuarioAtual.apelido} não conectado`);
+            return;
+        }
+        
+        console.log(`✅ Google conectado para ${App.usuarioAtual.apelido} - iniciando polling (a cada 30 segundos)`);
         
         setTimeout(() => {
             console.log('🔄 [Polling] Primeira verificação...');
@@ -17237,35 +17240,10 @@ function iniciarPollingGoogle() {
     })();
 }
 
-function pararPollingGoogle() {
-    if (intervaloPollingGoogle) {
-        clearInterval(intervaloPollingGoogle);
-        intervaloPollingGoogle = null;
-        console.log('⏹️ Polling do Google Calendar parado');
-    }
-}
 
-// ============================================
-// FORÇAR BUSCA DE EVENTOS DO GOOGLE AGORA
-// ============================================
 
-async function forcarBuscaGoogle() {
-    if (!App.currentUser) {
-        showToast('Você precisa estar logado', 'warning');
-        return;
-    }
-    
-    showToast('🔄 Buscando eventos do Google Calendar...', 'info');
-    console.log('🔍 Forçando busca manual de eventos do Google...');
-    
-    if (typeof sincronizarGoogleParaMyLife === 'function') {
-        await sincronizarGoogleParaMyLife();
-        showToast('✅ Busca concluída! Verifique seus eventos.', 'success');
-    } else {
-        console.error('❌ sincronizarGoogleParaMyLife não está definida');
-        showToast('Erro: Função de sincronização não encontrada', 'error');
-    }
-}
+
+
 
 // ============================================
 // FORÇAR SINCRONIZAÇÃO DE ITENS ANTIGOS
@@ -18820,4 +18798,4 @@ window.sincronizarGoogleParaMyLife = sincronizarGoogleParaMyLife;
 
 </body>
 </html>
-    208
+    201

@@ -12181,16 +12181,23 @@ async function verificarEventosDeletadosNoGoogle() {
     
     const { data: googleToken } = await supabaseClient
         .from('google_tokens')
-        .select('access_token')
+        .select('access_token, calendar_id')
         .eq('usuario_familia_id', App.usuarioAtual.id)
         .maybeSingle();
     
     if (!googleToken) return;
     
-    const calendarId = 'a57da2995830c0282d6bc5dcd7851ec10fc9410801fb3fddebfb73ea53b1918e@group.calendar.google.com';
+    // 🔴 USAR O calendar_id DO BANCO
+    let calendarId = googleToken.calendar_id;
+    
+    if (!calendarId) {
+        console.log('⚠️ Nenhum calendar_id encontrado no banco');
+        return;
+    }
+    
+    console.log('📅 Verificando eventos deletados no calendário:', calendarId);
     
     try {
-        // Buscar eventos do Google (últimos 30 dias)
         const trintaDiasAtras = new Date();
         trintaDiasAtras.setDate(trintaDiasAtras.getDate() - 30);
         
@@ -12199,12 +12206,14 @@ async function verificarEventosDeletadosNoGoogle() {
             { headers: { 'Authorization': `Bearer ${googleToken.access_token}` } }
         );
         
-        if (!response.ok) return;
+        if (!response.ok) {
+            console.log(`⚠️ Erro ao buscar eventos do Google: ${response.status}`);
+            return;
+        }
         
         const data = await response.json();
         const googleEventIds = new Set();
         
-        // Coletar IDs dos eventos no Google
         for (const item of data.items || []) {
             const description = item.description || '';
             const myLifeIdMatch = description.match(/ID My Life: (\d+)/);
@@ -12213,7 +12222,6 @@ async function verificarEventosDeletadosNoGoogle() {
             }
         }
         
-        // Buscar eventos do App que têm google_event_id
         const { data: eventosApp } = await supabaseClient
             .from('eventos')
             .select('id, google_event_id')
@@ -12221,7 +12229,6 @@ async function verificarEventosDeletadosNoGoogle() {
             .eq('usuario_familia_id', App.usuarioAtual.id)
             .not('google_event_id', 'is', null);
         
-        // Verificar quais eventos não existem mais no Google
         let deletados = 0;
         for (const evento of eventosApp || []) {
             if (!googleEventIds.has(evento.id)) {
@@ -12236,7 +12243,7 @@ async function verificarEventosDeletadosNoGoogle() {
         }
         
         if (deletados > 0) {
-            console.log(`✅ ${deletados} eventos removidos do App (deletados no Google)`);
+            console.log(`✅ ${deletados} eventos removidos do App`);
             await carregarDados(true);
             await atualizarCalendario();
             await mostrarConteudo();
@@ -18735,5 +18742,3 @@ window.sincronizarGoogleParaMyLife = sincronizarGoogleParaMyLife;
 
 </body>
 </html>
-
-    198

@@ -11385,7 +11385,6 @@ function garantirNomeUsuario(nome) {
     }
 
     try {
-        // Buscar o evento original
         const { data: eventoExistente } = await App.supabase
             .from('eventos')
             .select('*')
@@ -11401,7 +11400,7 @@ function garantirNomeUsuario(nome) {
         console.log('📌 Google ID:', eventoExistente.google_event_id);
         
         // 1. ATUALIZAR no App
-        const { error: updateError } = await App.supabase
+        await App.supabase
             .from('eventos')
             .update({
                 titulo: titulo,
@@ -11418,14 +11417,17 @@ function garantirNomeUsuario(nome) {
             })
             .eq('id', id);
         
-        if (updateError) throw updateError;
+        console.log('✅ Evento atualizado no App');
         
         // 2. ATUALIZAR no Google (se tiver google_event_id)
         if (eventoExistente.google_event_id) {
+            console.log('🔄 Enviando atualização para o Google...');
+            
+            // 🔴 BUSCAR PELO USUÁRIO ATUAL (FUNCIONA PARA TODOS)
             const { data: googleToken } = await App.supabase
                 .from('google_tokens')
                 .select('access_token, calendar_id')
-                .eq('user_id', App.currentUser.id)
+                .eq('usuario_familia_id', App.usuarioAtual.id)
                 .single();
             
             if (googleToken && googleToken.calendar_id) {
@@ -11454,7 +11456,7 @@ function garantirNomeUsuario(nome) {
                     end: endObj
                 };
                 
-                await fetch(
+                const updateResponse = await fetch(
                     `https://www.googleapis.com/calendar/v3/calendars/${googleToken.calendar_id}/events/${eventoExistente.google_event_id}`,
                     {
                         method: 'PUT',
@@ -11462,11 +11464,16 @@ function garantirNomeUsuario(nome) {
                         body: JSON.stringify(eventBody)
                     }
                 );
-                console.log('✅ Atualizado no Google');
+                
+                if (updateResponse.ok) {
+                    console.log('✅ Evento atualizado no Google');
+                } else {
+                    console.error('❌ Erro no Google:', updateResponse.status);
+                }
             }
         }
         
-        // 3. DELETAR QUALQUER EVENTO DUPLICADO (mesmo google_event_id)
+        // 3. REMOVER DUPLICATAS
         if (eventoExistente.google_event_id) {
             const { data: duplicados } = await App.supabase
                 .from('eventos')
@@ -11489,7 +11496,7 @@ function garantirNomeUsuario(nome) {
         await mostrarConteudo();
         
     } catch (error) {
-        console.error('Erro:', error);
+        console.error('Erro ao editar evento:', error);
         showToast('Erro: ' + error.message, 'error');
     }
 }

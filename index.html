@@ -11387,7 +11387,7 @@ function garantirNomeUsuario(nome) {
     }
 
     try {
-        // Buscar o evento original (para pegar o google_event_id)
+        // Buscar o evento original
         const { data: eventoExistente } = await App.supabase
             .from('eventos')
             .select('*')
@@ -11395,9 +11395,9 @@ function garantirNomeUsuario(nome) {
             .single();
         
         console.log('🔍 Editando evento ID:', id);
-        console.log('Google ID atual:', eventoExistente?.google_event_id);
+        console.log('Google ID:', eventoExistente?.google_event_id);
         
-        // ATUALIZAR o evento existente no App
+        // ATUALIZAR no App
         const { error: updateError } = await App.supabase
             .from('eventos')
             .update({
@@ -11419,21 +11419,20 @@ function garantirNomeUsuario(nome) {
         
         console.log('✅ Evento atualizado no App');
         
-        // SE TEM GOOGLE EVENT ID, ATUALIZAR DIRETAMENTE NO GOOGLE
+        // ATUALIZAR no Google se tiver google_event_id
         if (eventoExistente?.google_event_id) {
-            console.log('🔄 Atualizando diretamente no Google...');
+            console.log('🔄 Enviando atualização para o Google...');
             
-            // Buscar o token do Google (sem filtro de usuario_familia_id)
             const { data: googleToken } = await App.supabase
                 .from('google_tokens')
                 .select('access_token, calendar_id')
                 .eq('user_id', App.currentUser.id)
-                .maybeSingle();
+                .single();
             
             if (googleToken && googleToken.calendar_id) {
                 const calendarId = googleToken.calendar_id;
                 
-                // Formatar data
+                // Formatar data para o Google
                 const dataStr = `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
                 let startObj, endObj;
                 
@@ -11454,7 +11453,10 @@ function garantirNomeUsuario(nome) {
                     end: endObj
                 };
                 
-                // Enviar atualização para o Google
+                console.log('Enviando para Google:', JSON.stringify(eventBody));
+                console.log('Calendar ID:', calendarId);
+                console.log('Google Event ID:', eventoExistente.google_event_id);
+                
                 const updateResponse = await fetch(
                     `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${eventoExistente.google_event_id}`,
                     {
@@ -11467,11 +11469,14 @@ function garantirNomeUsuario(nome) {
                 if (updateResponse.ok) {
                     console.log('✅ Evento atualizado no Google');
                 } else {
-                    console.error('❌ Erro ao atualizar no Google:', updateResponse.status);
+                    const errorText = await updateResponse.text();
+                    console.error('❌ Erro ao atualizar no Google:', updateResponse.status, errorText);
                 }
             } else {
-                console.log('⚠️ Token do Google ou calendar_id não encontrado');
+                console.log('⚠️ Token ou calendar_id não encontrado');
             }
+        } else {
+            console.log('⚠️ Evento não tem google_event_id, não será enviado ao Google');
         }
         
         showToast('Evento atualizado!', 'success');
@@ -11486,7 +11491,6 @@ function garantirNomeUsuario(nome) {
         showToast('Erro: ' + error.message, 'error');
     }
 }
-
 
 
 
@@ -18814,4 +18818,4 @@ window.sincronizarGoogleParaMyLife = sincronizarGoogleParaMyLife;
 
 </body>
 </html>
-    201
+    202

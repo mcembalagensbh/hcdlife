@@ -11387,13 +11387,38 @@ function garantirNomeUsuario(nome) {
     }
 
     try {
-        const { data: eventoExistente } = await App.supabase
+        // Buscar o evento original pelo ID
+        let { data: eventoExistente } = await App.supabase
             .from('eventos')
             .select('*')
             .eq('id', id)
-            .single();
+            .maybeSingle();
         
-        console.log('🔍 Editando evento ID:', id);
+        // 🔴 Se não encontrou pelo ID, buscar por título e data (evita duplicação)
+        if (!eventoExistente) {
+            console.log('🔍 Evento não encontrado pelo ID, buscando por título e data...');
+            const { data: eventoPorTitulo } = await App.supabase
+                .from('eventos')
+                .select('*')
+                .eq('user_id', App.currentUser.id)
+                .eq('titulo', titulo)
+                .eq('dia', dia)
+                .eq('mes', mes)
+                .eq('ano', ano)
+                .maybeSingle();
+            
+            if (eventoPorTitulo) {
+                eventoExistente = eventoPorTitulo;
+                console.log('✅ Evento encontrado por título/data, ID:', eventoExistente.id);
+            }
+        }
+        
+        if (!eventoExistente) {
+            showToast('Evento não encontrado', 'error');
+            return;
+        }
+        
+        console.log('🔍 Editando evento ID:', eventoExistente.id);
         console.log('Google ID:', eventoExistente?.google_event_id);
         
         // ATUALIZAR no App
@@ -11412,7 +11437,7 @@ function garantirNomeUsuario(nome) {
                 data_inicio: dataInicioStr,
                 data_fim: dataFimStr
             })
-            .eq('id', id);
+            .eq('id', eventoExistente.id);
         
         if (updateError) throw updateError;
         
@@ -11435,7 +11460,6 @@ function garantirNomeUsuario(nome) {
                 let startObj, endObj;
                 
                 if (hora && hora !== '') {
-                    // 🔴 CORREÇÃO: Limpar formato da hora
                     let horaLimpa = hora;
                     if (horaLimpa.split(':').length > 2) {
                         const partes = horaLimpa.split(':');
@@ -11451,7 +11475,7 @@ function garantirNomeUsuario(nome) {
                 
                 const eventBody = {
                     summary: titulo,
-                    description: `${desc || ''}\n\nID My Life: ${id}`,
+                    description: `${desc || ''}\n\nID My Life: ${eventoExistente.id}`,
                     location: local || '',
                     start: startObj,
                     end: endObj
@@ -11473,6 +11497,8 @@ function garantirNomeUsuario(nome) {
                     console.error('❌ Erro ao atualizar no Google:', updateResponse.status, errorText);
                 }
             }
+        } else {
+            console.log('⚠️ Evento não tem google_event_id, será criado no Google na próxima sincronização');
         }
         
         showToast('Evento atualizado!', 'success');
@@ -18814,4 +18840,4 @@ window.sincronizarGoogleParaMyLife = sincronizarGoogleParaMyLife;
 
 </body>
 </html>
-    201
+    205

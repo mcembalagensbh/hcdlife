@@ -16810,7 +16810,7 @@ async function sincronizarGoogleParaMyLife() {
     
     if (!userId) return;
     
-    // 🔴 VERIFICAR SE TEM USUÁRIO DA FAMÍLIA SELECIONADO
+    // Verificar se tem usuário da família selecionado
     if (!App.usuarioAtual) return;
     
     // Buscar token do Google para este usuário específico
@@ -16853,7 +16853,7 @@ async function sincronizarGoogleParaMyLife() {
         }
     }
     
-    // 🔴 USAR O CALENDÁRIO DO USUÁRIO
+    // Usar o calendário do usuário
     let calendarId = googleToken.calendar_id;
     
     if (!calendarId) {
@@ -16948,6 +16948,7 @@ async function sincronizarGoogleParaMyLife() {
             const mes = dataInicio.getMonth() + 1;
             const dia = dataInicio.getDate();
             
+            // 🔴 SE TEM ID MY LIFE → ATUALIZAR
             if (myLifeIdMatch) {
                 const myLifeId = parseInt(myLifeIdMatch[1]);
                 console.log(`🔄 Atualizando evento ID ${myLifeId}: "${titulo}" (${App.usuarioAtual.apelido})`);
@@ -16973,7 +16974,9 @@ async function sincronizarGoogleParaMyLife() {
                     console.log(`✅ Evento ${myLifeId} atualizado no App`);
                 }
             } 
+            // 🔴 SE NÃO TEM ID MY LIFE → VERIFICAR SE JÁ EXISTE PELO TÍTULO E DATA
             else {
+                // Buscar se já existe um evento com mesmo título e data
                 const { data: existente } = await supabaseClient
                     .from('eventos')
                     .select('id')
@@ -16984,28 +16987,37 @@ async function sincronizarGoogleParaMyLife() {
                     .eq('ano', ano)
                     .maybeSingle();
                 
-                if (existente) continue;
-                
-                console.log(`➕ Criando novo evento: "${titulo}" (${App.usuarioAtual.apelido})`);
-                
-                const { error: insertError } = await supabaseClient
-                    .from('eventos')
-                    .insert({
-                        user_id: userId,
-                        usuario_familia_id: App.usuarioAtual.id,
-                        titulo: titulo,
-                        descricao: descricao,
-                        local: local,
-                        hora: isDiaInteiro ? null : hora,
-                        ano: ano,
-                        mes: mes,
-                        dia: dia,
-                        is_recorrente: false,
-                        added_by: 'Google Calendar',
-                        google_event_id: item.id
-                    });
-                
-                if (!insertError) criados++;
+                if (existente) {
+                    // Já existe, apenas atualizar o google_event_id
+                    console.log(`🔄 Evento já existe (ID ${existente.id}), atualizando google_event_id`);
+                    await supabaseClient
+                        .from('eventos')
+                        .update({ google_event_id: item.id })
+                        .eq('id', existente.id);
+                    atualizados++;
+                } else {
+                    // Criar novo evento
+                    console.log(`➕ Criando novo evento: "${titulo}" (${App.usuarioAtual.apelido})`);
+                    
+                    const { error: insertError } = await supabaseClient
+                        .from('eventos')
+                        .insert({
+                            user_id: userId,
+                            usuario_familia_id: App.usuarioAtual.id,
+                            titulo: titulo,
+                            descricao: descricao,
+                            local: local,
+                            hora: isDiaInteiro ? null : hora,
+                            ano: ano,
+                            mes: mes,
+                            dia: dia,
+                            is_recorrente: false,
+                            added_by: 'Google Calendar',
+                            google_event_id: item.id
+                        });
+                    
+                    if (!insertError) criados++;
+                }
             }
         }
         
@@ -17016,14 +17028,10 @@ async function sincronizarGoogleParaMyLife() {
             await mostrarConteudo();
         }
         
-        // 🔴 VERIFICAR EVENTOS DELETADOS NO GOOGLE
-       // await verificarEventosDeletadosNoGoogle(); //desativado
-        
     } catch (error) {
         console.error('Erro no polling:', error);
     }
 }
-
 
 
 
@@ -18796,4 +18804,5 @@ window.sincronizarGoogleParaMyLife = sincronizarGoogleParaMyLife;
 
 </body>
 </html>
-        201
+
+            202

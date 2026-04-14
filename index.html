@@ -823,16 +823,18 @@
         }
 
         .item-card {
-            padding: 12px;
-            border-bottom: 1px solid #f0f0f0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            border-left: 3px solid var(--purple);
-            min-height: 52px;
-            transition: all 0.2s
-        }
+    padding: 12px;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    border-left: 3px solid var(--purple);
+    min-height: 52px;
+    transition: all 0.2s;
+    margin-bottom: 8px;  /* 🔴 ADICIONAR ESTA LINHA */
+    border-radius: 8px;   /* 🔴 ADICIONAR ESTA LINHA (opcional) */
+}
 
         .item-card.vencida {
             border-left-color: var(--danger);
@@ -1886,9 +1888,10 @@
     font-weight: 600;
     font-size: 14px;
     color: var(--purple);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    line-height: 1.3;
     width: 100%;
 }
 
@@ -5582,12 +5585,6 @@ function calcularUltimaDataEvento(regra) {
         ? (usuarioRaw.apelido || usuarioRaw.nome || 'desconhecido') 
         : String(usuarioRaw);
     
-    // Limitar título a 30 caracteres
-    let tituloLimitado = (item.titulo || item.descricao || 'Sem título');
-    if (tituloLimitado.length > 30) {
-        tituloLimitado = tituloLimitado.substring(0, 30) + '...';
-    }
-    
     let podeEditar = true;
 
     if (item.tipo === 'conta') {
@@ -5602,9 +5599,9 @@ function calcularUltimaDataEvento(regra) {
 
         titulo = item.descricao || 'Conta sem descrição';
         
-        // Limitar título
-        if (titulo.length > 30) {
-            titulo = titulo.substring(0, 30) + '...';
+        // Limitar título a 100 caracteres (em vez de 30)
+        if (titulo.length > 100) {
+            titulo = titulo.substring(0, 100) + '...';
         }
         
         // Info de última data para contas recorrentes
@@ -5669,9 +5666,9 @@ function calcularUltimaDataEvento(regra) {
         let corIcone = item.cor_icone || '#ffd700';
         titulo = item.titulo || 'Evento sem título';
         
-        // Limitar título
-        if (titulo.length > 30) {
-            titulo = titulo.substring(0, 30) + '...';
+        // Limitar título a 100 caracteres (em vez de 30)
+        if (titulo.length > 100) {
+            titulo = titulo.substring(0, 100) + '...';
         }
         
         // Info de última data para eventos recorrentes

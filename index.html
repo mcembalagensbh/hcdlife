@@ -11276,71 +11276,30 @@ function garantirNomeUsuario(nome) {
         console.log('🔍 Editando evento ID:', id);
         console.log('Evento original:', eventoExistente);
         
-        // 🔴 SE VEIO DO GOOGLE (tem google_event_id) → ATUALIZAR
-        if (eventoExistente && eventoExistente.google_event_id) {
-            console.log('🔄 Evento veio do Google, ATUALIZANDO...');
-            
-            // ATUALIZAR o evento existente (NÃO criar novo)
-            const { error: updateError } = await App.supabase
-                .from('eventos')
-                .update({
-                    titulo: titulo,
-                    descricao: desc || '',
-                    local: local,
-                    hora: hora,
-                    dia: dia,
-                    mes: mes,
-                    ano: ano,
-                    icone: icone,
-                    cor_icone: corIcone,
-                    data_inicio: dataInicioStr,
-                    data_fim: dataFimStr
-                })
-                .eq('id', id);
-            
-            if (updateError) throw updateError;
-            
-            showToast('Evento atualizado no App!', 'success');
-            
-            // Forçar sincronização para atualizar no Google
-            await sincronizarGoogleAutomatico();
-            
-            fecharModal();
-            await carregarDados(true);
-            await atualizarCalendario();
-            await mostrarConteudo();
-            return;
-        }
+        // 🔴 ATUALIZAR o evento existente (NÃO criar novo)
+        const { error: updateError } = await App.supabase
+            .from('eventos')
+            .update({
+                titulo: titulo,
+                descricao: desc || '',
+                local: local,
+                hora: hora,
+                dia: dia,
+                mes: mes,
+                ano: ano,
+                icone: icone,
+                cor_icone: corIcone,
+                data_inicio: dataInicioStr,
+                data_fim: dataFimStr
+            })
+            .eq('id', id);
         
-        // 🔴 SE NÃO VEIO DO GOOGLE (evento criado no App)
-        console.log('📝 Evento criado no App, recriando...');
+        if (updateError) throw updateError;
         
-        // Deletar o antigo
-        await App.supabase.from('eventos').delete().eq('id', id);
-        
-        // Criar novo
-        let dataInicio = new Date(dataInicioStr + 'T12:00:00');
-        
-        await App.supabase.from('eventos').insert({
-            user_id: App.currentUser.id,
-            titulo: titulo,
-            descricao: desc || '',
-            dia: dia,
-            mes: mes,
-            ano: ano,
-            hora: hora || null,
-            local: local || null,
-            icone: icone,
-            cor_icone: corIcone,
-            data_inicio: dataInicioStr,
-            data_fim: dataFimStr,
-            is_recorrente: false,
-            added_by: nomeUsuario
-        });
-
-        await registrarHistorico('edicao_evento', `Evento editado: ${titulo}`, { id, usuario: nomeUsuario });
+        console.log('✅ Evento atualizado no App, ID:', id);
         showToast('Evento atualizado!', 'success');
         
+        // Forçar sincronização com Google
         await sincronizarGoogleAutomatico();
         
         fecharModal();
@@ -18379,4 +18338,3 @@ window.sincronizarGoogleParaMyLife = sincronizarGoogleParaMyLife;
 
 </body>
 </html>
-163

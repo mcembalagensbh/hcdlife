@@ -11793,10 +11793,54 @@ function confirmarExclusao(id, tipo, isRecorrente, regraId, dia, mes, ano, isInd
             }
         }
         
-        // SE FOR EVENTO ÚNICO DE 1 DIA, FAZ EXCLUSÃO SIMPLES
+        // 🔴 SE FOR EVENTO ÚNICO DE 1 DIA, FAZ EXCLUSÃO SIMPLES (apenas confirmação)
         if (isEventoUnicoUmDia) {
             if (confirm(`Tem certeza que deseja excluir o evento "${evento.titulo || evento.titulo_base || 'Evento'}"?`)) {
-                executarExclusaoEventoSimples(id, isRecorrente, regraId, dia, mes, ano, isIndividual, individualId);
+                
+                // 🔴 DELETAR DO GOOGLE CALENDAR TAMBÉM
+                (async () => {
+                    try {
+                        // Buscar o google_event_id do evento
+                        const { data: eventoGoogle } = await App.supabase
+                            .from('eventos')
+                            .select('google_event_id')
+                            .eq('id', id)
+                            .single();
+                        
+                        if (eventoGoogle && eventoGoogle.google_event_id) {
+                            console.log(`🗑️ Deletando evento do Google Calendar: ${eventoGoogle.google_event_id}`);
+                            
+                            const { data: googleToken } = await App.supabase
+                                .from('google_tokens')
+                                .select('access_token')
+                                .eq('user_id', App.currentUser.id)
+                                .single();
+                            
+                            if (googleToken) {
+                                const MY_LIFE_CALENDAR_ID = 'e296cbd5b44633cc4294a59ec2b78c5a3613fe24085a5b69ff4dc91632dc70c9@group.calendar.google.com';
+                                
+                                const deleteRes = await fetch(
+                                    `https://www.googleapis.com/calendar/v3/calendars/${MY_LIFE_CALENDAR_ID}/events/${eventoGoogle.google_event_id}`,
+                                    {
+                                        method: 'DELETE',
+                                        headers: { 'Authorization': `Bearer ${googleToken.access_token}` }
+                                    }
+                                );
+                                
+                                if (deleteRes.ok) {
+                                    console.log(`✅ Evento deletado do Google`);
+                                } else {
+                                    console.log(`⚠️ Evento não encontrado no Google (já foi deletado)`);
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Erro ao deletar do Google:', error);
+                    }
+                    
+                    // Executar a exclusão no App
+                    executarExclusaoEventoSimples(id, isRecorrente, regraId, dia, mes, ano, isIndividual, individualId);
+                })();
             }
             return;
         }
@@ -11879,6 +11923,39 @@ function confirmarExclusao(id, tipo, isRecorrente, regraId, dia, mes, ano, isInd
                 if (tipo === 'gasto') {
                     await App.supabase.from('gastos').delete().eq('id', id);
                 } else if (tipo === 'evento') {
+                    // 🔴 DELETAR DO GOOGLE CALENDAR TAMBÉM
+                    const { data: eventoGoogle } = await App.supabase
+                        .from('eventos')
+                        .select('google_event_id')
+                        .eq('id', id)
+                        .single();
+                    
+                    if (eventoGoogle && eventoGoogle.google_event_id) {
+                        console.log(`🗑️ Deletando evento do Google Calendar: ${eventoGoogle.google_event_id}`);
+                        
+                        const { data: googleToken } = await App.supabase
+                            .from('google_tokens')
+                            .select('access_token')
+                            .eq('user_id', App.currentUser.id)
+                            .single();
+                        
+                        if (googleToken) {
+                            const MY_LIFE_CALENDAR_ID = 'e296cbd5b44633cc4294a59ec2b78c5a3613fe24085a5b69ff4dc91632dc70c9@group.calendar.google.com';
+                            
+                            const deleteRes = await fetch(
+                                `https://www.googleapis.com/calendar/v3/calendars/${MY_LIFE_CALENDAR_ID}/events/${eventoGoogle.google_event_id}`,
+                                {
+                                    method: 'DELETE',
+                                    headers: { 'Authorization': `Bearer ${googleToken.access_token}` }
+                                }
+                            );
+                            
+                            if (deleteRes.ok) {
+                                console.log(`✅ Evento deletado do Google`);
+                            }
+                        }
+                    }
+                    
                     await App.supabase.from('eventos').delete().eq('id', id);
                 } else if (tipo === 'conta') {
                     await App.supabase.from('contas').delete().eq('id', id);

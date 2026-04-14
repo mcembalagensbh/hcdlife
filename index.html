@@ -11369,7 +11369,7 @@ function garantirNomeUsuario(nome) {
             fecharSeletorIconesEdit();
         }
 
-   async function salvarEdicaoEvento(id, isRecorrente, regraId, isIndividual, individualId, dia, mes, ano) {
+  async function salvarEdicaoEvento(id, isRecorrente, regraId, isIndividual, individualId, dia, mes, ano) {
     let titulo = document.getElementById('eventoTituloEdit')?.value.trim();
     let desc = document.getElementById('eventoDescricaoEdit')?.value.trim();
     let dataInicioStr = document.getElementById('eventoDataInicioEdit')?.value;
@@ -11395,10 +11395,9 @@ function garantirNomeUsuario(nome) {
             .single();
         
         console.log('🔍 Editando evento ID:', id);
-        console.log('Evento original:', eventoExistente);
         console.log('Google ID atual:', eventoExistente?.google_event_id);
         
-        // 🔴 ATUALIZAR o evento existente (NÃO criar novo)
+        // 🔴 ATUALIZAR o evento existente no App
         const { error: updateError } = await App.supabase
             .from('eventos')
             .update({
@@ -11418,11 +11417,61 @@ function garantirNomeUsuario(nome) {
         
         if (updateError) throw updateError;
         
-        console.log('✅ Evento atualizado no App, ID:', id);
-        showToast('Evento atualizado!', 'success');
+        console.log('✅ Evento atualizado no App');
         
-        // 🔴 Forçar sincronização para atualizar no Google
-        await sincronizarGoogleAutomatico();
+        // 🔴 SE TEM GOOGLE EVENT ID, ATUALIZAR DIRETAMENTE NO GOOGLE
+        if (eventoExistente?.google_event_id) {
+            console.log('🔄 Atualizando diretamente no Google...');
+            
+            const { data: googleToken } = await App.supabase
+                .from('google_tokens')
+                .select('access_token')
+                .eq('usuario_familia_id', App.usuarioAtual.id)
+                .single();
+            
+            if (googleToken) {
+                const calendarId = '8364e7d3614fe1a7d440719017621cb3de404671bef4aeb9705782c37919138c@group.calendar.google.com';
+                
+                // Formatar data
+                const dataStr = `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+                let startObj, endObj;
+                
+                if (hora && hora !== '') {
+                    const dateTimeStr = `${dataStr}T${hora}:00-03:00`;
+                    startObj = { dateTime: dateTimeStr, timeZone: 'America/Sao_Paulo' };
+                    endObj = { dateTime: dateTimeStr, timeZone: 'America/Sao_Paulo' };
+                } else {
+                    startObj = { date: dataStr };
+                    endObj = { date: dataStr };
+                }
+                
+                const eventBody = {
+                    summary: titulo,
+                    description: `${desc || ''}\n\nID My Life: ${id}`,
+                    location: local || '',
+                    start: startObj,
+                    end: endObj
+                };
+                
+                // Enviar atualização para o Google
+                const updateResponse = await fetch(
+                    `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${eventoExistente.google_event_id}`,
+                    {
+                        method: 'PUT',
+                        headers: { 'Authorization': `Bearer ${googleToken.access_token}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify(eventBody)
+                    }
+                );
+                
+                if (updateResponse.ok) {
+                    console.log('✅ Evento atualizado no Google');
+                } else {
+                    console.error('❌ Erro ao atualizar no Google:', updateResponse.status);
+                }
+            }
+        }
+        
+        showToast('Evento atualizado!', 'success');
         
         fecharModal();
         await carregarDados(true);
@@ -18747,5 +18796,4 @@ window.sincronizarGoogleParaMyLife = sincronizarGoogleParaMyLife;
 
 </body>
 </html>
-
-    200
+        201

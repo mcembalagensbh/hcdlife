@@ -11398,6 +11398,7 @@ function garantirNomeUsuario(nome) {
         
         console.log('🔍 Editando evento ID:', id);
         console.log('📌 Google ID:', eventoExistente.google_event_id);
+        console.log('👤 Usuário atual:', App.usuarioAtual?.apelido);
         
         // 1. ATUALIZAR no App
         await App.supabase
@@ -11423,7 +11424,7 @@ function garantirNomeUsuario(nome) {
         if (eventoExistente.google_event_id) {
             console.log('🔄 Enviando atualização para o Google...');
             
-            // 🔴 BUSCAR PELO USUÁRIO ATUAL (FUNCIONA PARA TODOS)
+            // 🔴 BUSCAR PELO USUÁRIO ATUAL (funciona para qualquer usuário)
             const { data: googleToken } = await App.supabase
                 .from('google_tokens')
                 .select('access_token, calendar_id')
@@ -11468,8 +11469,11 @@ function garantirNomeUsuario(nome) {
                 if (updateResponse.ok) {
                     console.log('✅ Evento atualizado no Google');
                 } else {
-                    console.error('❌ Erro no Google:', updateResponse.status);
+                    const errorText = await updateResponse.text();
+                    console.error('❌ Erro no Google:', updateResponse.status, errorText);
                 }
+            } else {
+                console.log('⚠️ Token ou calendar_id não encontrado para', App.usuarioAtual?.apelido);
             }
         }
         
@@ -11500,7 +11504,6 @@ function garantirNomeUsuario(nome) {
         showToast('Erro: ' + error.message, 'error');
     }
 }
-
 
 
 

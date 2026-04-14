@@ -9247,9 +9247,9 @@ function atualizarTipoFimEvento() {
                 let mes = dataAtual.getMonth() + 1;
                 let dia = dataAtual.getDate();
                 
+                // 🔴 REMOVIDO usuario_familia_id
                 await App.supabase.from('eventos').insert({
                     user_id: App.currentUser.id,
-                    usuario_familia_id: App.usuarioAtual.id,  // 🔴 LINHA IMPORTANTE
                     titulo: titulo,
                     descricao: desc || '',
                     dia: dia,
@@ -9292,9 +9292,9 @@ function atualizarTipoFimEvento() {
             
             const horaFinal = (hora && hora !== '') ? hora : null;
             
+            // 🔴 REMOVIDO usuario_familia_id
             let regraData = {
                 user_id: App.currentUser.id,
-                usuario_familia_id: App.usuarioAtual.id,  // 🔴 LINHA IMPORTANTE
                 titulo_base: titulo,
                 descricao: desc || '',
                 dia: diaEvento,
@@ -11397,7 +11397,7 @@ function garantirNomeUsuario(nome) {
         console.log('🔍 Editando evento ID:', id);
         console.log('Google ID atual:', eventoExistente?.google_event_id);
         
-        // 🔴 ATUALIZAR o evento existente no App
+        // ATUALIZAR o evento existente no App
         const { error: updateError } = await App.supabase
             .from('eventos')
             .update({
@@ -11419,18 +11419,19 @@ function garantirNomeUsuario(nome) {
         
         console.log('✅ Evento atualizado no App');
         
-        // 🔴 SE TEM GOOGLE EVENT ID, ATUALIZAR DIRETAMENTE NO GOOGLE
+        // SE TEM GOOGLE EVENT ID, ATUALIZAR DIRETAMENTE NO GOOGLE
         if (eventoExistente?.google_event_id) {
             console.log('🔄 Atualizando diretamente no Google...');
             
+            // Buscar o token do Google (sem filtro de usuario_familia_id)
             const { data: googleToken } = await App.supabase
                 .from('google_tokens')
-                .select('access_token')
-                .eq('usuario_familia_id', App.usuarioAtual.id)
-                .single();
+                .select('access_token, calendar_id')
+                .eq('user_id', App.currentUser.id)
+                .maybeSingle();
             
-            if (googleToken) {
-                const calendarId = '8364e7d3614fe1a7d440719017621cb3de404671bef4aeb9705782c37919138c@group.calendar.google.com';
+            if (googleToken && googleToken.calendar_id) {
+                const calendarId = googleToken.calendar_id;
                 
                 // Formatar data
                 const dataStr = `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
@@ -11468,6 +11469,8 @@ function garantirNomeUsuario(nome) {
                 } else {
                     console.error('❌ Erro ao atualizar no Google:', updateResponse.status);
                 }
+            } else {
+                console.log('⚠️ Token do Google ou calendar_id não encontrado');
             }
         }
         
@@ -11964,11 +11967,11 @@ function confirmarExclusao(id, tipo, isRecorrente, regraId, dia, mes, ano, isInd
             }
         }
         
-        // 🔴 SE FOR EVENTO ÚNICO DE 1 DIA, FAZ EXCLUSÃO SIMPLES (apenas confirmação)
+        // SE FOR EVENTO ÚNICO DE 1 DIA, FAZ EXCLUSÃO SIMPLES (apenas confirmação)
         if (isEventoUnicoUmDia) {
             if (confirm(`Tem certeza que deseja excluir o evento "${evento.titulo || evento.titulo_base || 'Evento'}"?`)) {
                 
-                // 🔴 DELETAR DO GOOGLE CALENDAR TAMBÉM
+                // DELETAR DO GOOGLE CALENDAR TAMBÉM
                 (async () => {
                     try {
                         // Buscar o google_event_id do evento
@@ -11981,17 +11984,18 @@ function confirmarExclusao(id, tipo, isRecorrente, regraId, dia, mes, ano, isInd
                         if (eventoGoogle && eventoGoogle.google_event_id) {
                             console.log(`🗑️ Deletando evento do Google Calendar: ${eventoGoogle.google_event_id}`);
                             
+                            // 🔴 CORREÇÃO: Buscar o calendar_id do token
                             const { data: googleToken } = await App.supabase
                                 .from('google_tokens')
-                                .select('access_token')
+                                .select('access_token, calendar_id')
                                 .eq('user_id', App.currentUser.id)
                                 .single();
                             
-                            if (googleToken) {
-                                const MY_LIFE_CALENDAR_ID = 'e296cbd5b44633cc4294a59ec2b78c5a3613fe24085a5b69ff4dc91632dc70c9@group.calendar.google.com';
+                            if (googleToken && googleToken.calendar_id) {
+                                const calendarId = googleToken.calendar_id;
                                 
                                 const deleteRes = await fetch(
-                                    `https://www.googleapis.com/calendar/v3/calendars/${MY_LIFE_CALENDAR_ID}/events/${eventoGoogle.google_event_id}`,
+                                    `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${eventoGoogle.google_event_id}`,
                                     {
                                         method: 'DELETE',
                                         headers: { 'Authorization': `Bearer ${googleToken.access_token}` }
@@ -12003,6 +12007,8 @@ function confirmarExclusao(id, tipo, isRecorrente, regraId, dia, mes, ano, isInd
                                 } else {
                                     console.log(`⚠️ Evento não encontrado no Google (já foi deletado)`);
                                 }
+                            } else {
+                                console.log('⚠️ Token do Google ou calendar_id não encontrado');
                             }
                         }
                     } catch (error) {
@@ -12094,7 +12100,7 @@ function confirmarExclusao(id, tipo, isRecorrente, regraId, dia, mes, ano, isInd
                 if (tipo === 'gasto') {
                     await App.supabase.from('gastos').delete().eq('id', id);
                 } else if (tipo === 'evento') {
-                    // 🔴 DELETAR DO GOOGLE CALENDAR TAMBÉM
+                    // DELETAR DO GOOGLE CALENDAR TAMBÉM
                     const { data: eventoGoogle } = await App.supabase
                         .from('eventos')
                         .select('google_event_id')
@@ -12104,17 +12110,18 @@ function confirmarExclusao(id, tipo, isRecorrente, regraId, dia, mes, ano, isInd
                     if (eventoGoogle && eventoGoogle.google_event_id) {
                         console.log(`🗑️ Deletando evento do Google Calendar: ${eventoGoogle.google_event_id}`);
                         
+                        // 🔴 CORREÇÃO: Buscar o calendar_id do token
                         const { data: googleToken } = await App.supabase
                             .from('google_tokens')
-                            .select('access_token')
+                            .select('access_token, calendar_id')
                             .eq('user_id', App.currentUser.id)
                             .single();
                         
-                        if (googleToken) {
-                            const MY_LIFE_CALENDAR_ID = 'e296cbd5b44633cc4294a59ec2b78c5a3613fe24085a5b69ff4dc91632dc70c9@group.calendar.google.com';
+                        if (googleToken && googleToken.calendar_id) {
+                            const calendarId = googleToken.calendar_id;
                             
                             const deleteRes = await fetch(
-                                `https://www.googleapis.com/calendar/v3/calendars/${MY_LIFE_CALENDAR_ID}/events/${eventoGoogle.google_event_id}`,
+                                `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${eventoGoogle.google_event_id}`,
                                 {
                                     method: 'DELETE',
                                     headers: { 'Authorization': `Bearer ${googleToken.access_token}` }
@@ -12124,6 +12131,8 @@ function confirmarExclusao(id, tipo, isRecorrente, regraId, dia, mes, ano, isInd
                             if (deleteRes.ok) {
                                 console.log(`✅ Evento deletado do Google`);
                             }
+                        } else {
+                            console.log('⚠️ Token do Google ou calendar_id não encontrado');
                         }
                     }
                     
@@ -12149,6 +12158,10 @@ function confirmarExclusao(id, tipo, isRecorrente, regraId, dia, mes, ano, isInd
         })();
     }
 }
+
+
+
+
 
 // ============================================
 // FUNÇÃO AUXILIAR PARA EXECUTAR EXCLUSÃO SIMPLES DE EVENTO
@@ -16948,11 +16961,11 @@ async function sincronizarGoogleParaMyLife() {
             const mes = dataInicio.getMonth() + 1;
             const dia = dataInicio.getDate();
             
-            // 🔴 SE TEM ID MY LIFE → ATUALIZAR
             if (myLifeIdMatch) {
                 const myLifeId = parseInt(myLifeIdMatch[1]);
                 console.log(`🔄 Atualizando evento ID ${myLifeId}: "${titulo}" (${App.usuarioAtual.apelido})`);
                 
+                // 🔴 REMOVER filtro de usuario_familia_id
                 const { error: updateError } = await supabaseClient
                     .from('eventos')
                     .update({
@@ -16974,9 +16987,8 @@ async function sincronizarGoogleParaMyLife() {
                     console.log(`✅ Evento ${myLifeId} atualizado no App`);
                 }
             } 
-            // 🔴 SE NÃO TEM ID MY LIFE → VERIFICAR SE JÁ EXISTE PELO TÍTULO E DATA
             else {
-                // Buscar se já existe um evento com mesmo título e data
+                // 🔴 REMOVER filtro de usuario_familia_id na busca
                 const { data: existente } = await supabaseClient
                     .from('eventos')
                     .select('id')
@@ -16988,7 +17000,6 @@ async function sincronizarGoogleParaMyLife() {
                     .maybeSingle();
                 
                 if (existente) {
-                    // Já existe, apenas atualizar o google_event_id
                     console.log(`🔄 Evento já existe (ID ${existente.id}), atualizando google_event_id`);
                     await supabaseClient
                         .from('eventos')
@@ -16996,14 +17007,13 @@ async function sincronizarGoogleParaMyLife() {
                         .eq('id', existente.id);
                     atualizados++;
                 } else {
-                    // Criar novo evento
                     console.log(`➕ Criando novo evento: "${titulo}" (${App.usuarioAtual.apelido})`);
                     
+                    // 🔴 REMOVER usuario_familia_id do insert
                     const { error: insertError } = await supabaseClient
                         .from('eventos')
                         .insert({
                             user_id: userId,
-                            usuario_familia_id: App.usuarioAtual.id,
                             titulo: titulo,
                             descricao: descricao,
                             local: local,
@@ -18316,11 +18326,11 @@ async function sincronizarGoogleAutomatico() {
             
             if (!googleToken) return;
             
-            // Buscar configurações atuais do usuário
+            // Buscar configurações atuais (sem filtro de usuario_familia_id)
             const { data: config } = await App.supabase
                 .from('configuracoes_sync')
                 .select('*')
-                .eq('usuario_familia_id', App.usuarioAtual.id)
+                .eq('user_id', App.currentUser.id)
                 .maybeSingle();
             
             const configAtual = config || {
@@ -18337,6 +18347,7 @@ async function sincronizarGoogleAutomatico() {
             if (!session) return;
             
             // Chamar a Edge Function para sincronizar (SILENCIOSO)
+            // 🔴 REMOVER usuario_familia_id do body
             const response = await fetch('https://rirvrrlgjetsgwhqqfvq.supabase.co/functions/v1/sincronizar-google', {
                 method: 'POST',
                 headers: {
@@ -18344,7 +18355,6 @@ async function sincronizarGoogleAutomatico() {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    usuario_familia_id: App.usuarioAtual.id,  // 🔴 NOVO
                     forcar_completo: true,
                     cores_personalizadas: {
                         cor_eventos: configAtual.cor_eventos,
@@ -18805,4 +18815,4 @@ window.sincronizarGoogleParaMyLife = sincronizarGoogleParaMyLife;
 </body>
 </html>
 
-            202
+    204

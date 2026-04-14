@@ -9014,7 +9014,6 @@ function atualizarTipoFimEvento() {
         const { mes, ano } = getMesAnoAtual();
         
         if (frequencia === 'unico') {
-            // Limite de eventos únicos: 5 por mês
             const eventosUnicosMes = App.dataCache.eventos.filter(e => 
                 e.mes === mes && e.ano === ano && !e.regra_id
             ).length;
@@ -9043,7 +9042,6 @@ function atualizarTipoFimEvento() {
                 return;
             }
         } else {
-            // 🔴 Limite de eventos recorrentes: 2 ativos
             const eventosRecorrentesAtivos = App.dataCache.regrasEventos.filter(r => r.ativo === true).length;
             
             if (eventosRecorrentesAtivos >= 2) {
@@ -9090,6 +9088,9 @@ function atualizarTipoFimEvento() {
                 return;
             }
             
+            // 🔴 TRATAMENTO DA HORA: se vazia ou inválida, usar null
+            const horaFinal = (hora && hora !== '') ? hora : null;
+            
             let dataAtual = new Date(dataInicio);
             while (dataAtual <= dataFim) {
                 let ano = dataAtual.getFullYear();
@@ -9103,7 +9104,7 @@ function atualizarTipoFimEvento() {
                     dia: dia,
                     mes: mes,
                     ano: ano,
-                    hora: hora || null,
+                    hora: horaFinal,  // 🔴 CORRIGIDO
                     local: local || null,
                     icone: icone,
                     cor_icone: corIcone,
@@ -9138,12 +9139,15 @@ function atualizarTipoFimEvento() {
             let dataInicio = new Date(dataInicioStr + 'T12:00:00');
             let diaEvento = dataInicio.getDate();
             
+            // 🔴 TRATAMENTO DA HORA: se vazia ou inválida, usar null
+            const horaFinal = (hora && hora !== '') ? hora : null;
+            
             let regraData = {
                 user_id: App.currentUser.id,
                 titulo_base: titulo,
                 descricao: desc || '',
                 dia: diaEvento,
-                hora: hora || null,
+                hora: horaFinal,  // 🔴 CORRIGIDO
                 local: local || null,
                 icone: icone,
                 cor_icone: corIcone,
@@ -11253,7 +11257,7 @@ function garantirNomeUsuario(nome) {
     let desc = document.getElementById('eventoDescricaoEdit')?.value.trim();
     let dataInicioStr = document.getElementById('eventoDataInicioEdit')?.value;
     let dataFimStr = document.getElementById('eventoDataFimEdit')?.value || null;
-    let hora = document.getElementById('eventoHoraEdit')?.value;
+    let hora = document.getElementById('eventoHoraEdit')?.value || '';  // 🔴 PODE SER VAZIO
     let local = document.getElementById('eventoLocalEdit')?.value.trim();
     let icone = document.getElementById('eventoIconeEdit')?.value || 'fa-star';
     let corIcone = document.getElementById('eventoCorIconeEdit')?.value || '#ffd700';
@@ -11266,24 +11270,22 @@ function garantirNomeUsuario(nome) {
     }
 
     try {
-        // Buscar o evento original
         const { data: eventoExistente } = await App.supabase
             .from('eventos')
             .select('*')
             .eq('id', id)
             .single();
         
-        console.log('🔍 Editando evento ID:', id);
-        console.log('Evento original:', eventoExistente);
+        // 🔴 SE HORA ESTIVER VAZIA, USAR NULL (dia inteiro)
+        const horaFinal = (hora && hora !== '') ? hora : null;
         
-        // 🔴 ATUALIZAR o evento existente (NÃO criar novo)
         const { error: updateError } = await App.supabase
             .from('eventos')
             .update({
                 titulo: titulo,
                 descricao: desc || '',
                 local: local,
-                hora: hora,
+                hora: horaFinal,  // 🔴 PODE SER NULL
                 dia: dia,
                 mes: mes,
                 ano: ano,
@@ -11296,10 +11298,8 @@ function garantirNomeUsuario(nome) {
         
         if (updateError) throw updateError;
         
-        console.log('✅ Evento atualizado no App, ID:', id);
         showToast('Evento atualizado!', 'success');
         
-        // Forçar sincronização com Google
         await sincronizarGoogleAutomatico();
         
         fecharModal();
@@ -16435,14 +16435,15 @@ async function obterTokenFCM() {
 
 let intervaloPollingGoogle = null;
 
+// ============================================
+// POLLING SILENCIOSO (sem notificações)
+// ============================================
+
 async function sincronizarGoogleParaMyLife() {
     const supabaseClient = App.supabase;
     const userId = App.currentUser?.id;
     
-    if (!userId) {
-        console.log('⚠️ Usuário não logado');
-        return;
-    }
+    if (!userId) return;
     
     const { data: googleToken } = await supabaseClient
         .from('google_tokens')
@@ -16450,17 +16451,13 @@ async function sincronizarGoogleParaMyLife() {
         .eq('user_id', userId)
         .maybeSingle();
     
-    if (!googleToken) {
-        console.log('⏸️ Google não conectado');
-        return;
-    }
+    if (!googleToken) return;
     
+    // Renovar token se necessário
     let accessToken = googleToken.access_token;
     const expiresAt = new Date(googleToken.expires_at);
     
     if (expiresAt < new Date()) {
-        console.log('🔄 Token expirado, renovando...');
-        
         try {
             const refreshResponse = await fetch('https://oauth2.googleapis.com/token', {
                 method: 'POST',
@@ -16472,137 +16469,115 @@ async function sincronizarGoogleParaMyLife() {
                     grant_type: 'refresh_token'
                 })
             });
-            
             const refreshData = await refreshResponse.json();
-            
             if (refreshResponse.ok) {
                 accessToken = refreshData.access_token;
                 const newExpiresAt = new Date();
                 newExpiresAt.setSeconds(newExpiresAt.getSeconds() + refreshData.expires_in);
-                
                 await supabaseClient
                     .from('google_tokens')
-                    .update({
-                        access_token: accessToken,
-                        expires_at: newExpiresAt.toISOString()
-                    })
+                    .update({ access_token: accessToken, expires_at: newExpiresAt.toISOString() })
                     .eq('user_id', userId);
-                
-                console.log('✅ Token renovado!');
-            } else {
-                console.error('❌ Falha ao renovar token');
-                return;
             }
         } catch (error) {
-            console.error('❌ Erro na renovação:', error);
+            console.error('Erro ao renovar token:', error);
             return;
         }
     }
     
-    let calendarId = null;
-    
-    console.log('🔍 Buscando calendário "My Life"...');
-    
-    try {
-        const listResponse = await fetch('https://www.googleapis.com/calendar/v3/users/me/calendarList', {
-            headers: { 'Authorization': `Bearer ${accessToken}` }
-        });
-        
-        const calendarsList = await listResponse.json();
-        const myLifeCalendar = calendarsList.items?.find(c => c.summary === 'My Life');
-        
-        if (myLifeCalendar) {
-            calendarId = myLifeCalendar.id;
-            console.log('✅ Calendário "My Life" encontrado e será USADO:', calendarId);
-        } else {
-            console.log('📅 Calendário "My Life" não encontrado, criando...');
-            
-            const createResponse = await fetch('https://www.googleapis.com/calendar/v3/calendars', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    summary: 'My Life',
-                    description: 'Eventos sincronizados do My Life',
-                    timeZone: 'America/Sao_Paulo'
-                })
-            });
-            
-            const newCalendar = await createResponse.json();
-            
-            if (createResponse.ok) {
-                calendarId = newCalendar.id;
-                console.log('✅ Calendário "My Life" criado:', calendarId);
-            } else {
-                calendarId = 'primary';
-                console.log('⚠️ Usando calendário primary como fallback');
-            }
-        }
-    } catch (error) {
-        console.error('❌ Erro ao buscar calendários:', error);
-        calendarId = 'primary';
-    }
-    
-    if (!calendarId) {
-        calendarId = 'primary';
-    }
-    
-    console.log(`🔄 Buscando eventos do Google Calendar: ${calendarId}`);
+    const MY_LIFE_CALENDAR_ID = 'e296cbd5b44633cc4294a59ec2b78c5a3613fe24085a5b69ff4dc91632dc70c9@group.calendar.google.com';
     
     const hoje = new Date();
-    const noventaDiasAtras = new Date();
-    noventaDiasAtras.setDate(hoje.getDate() - 90);
+    const trintaDiasAtras = new Date();
+    trintaDiasAtras.setDate(hoje.getDate() - 30);
     const dozeMesesFrente = new Date();
     dozeMesesFrente.setMonth(hoje.getMonth() + 12);
     
-    const timeMin = noventaDiasAtras.toISOString();
+    const timeMin = trintaDiasAtras.toISOString();
     const timeMax = dozeMesesFrente.toISOString();
     
     try {
         const eventsResponse = await fetch(
-            `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?timeMin=${timeMin}&timeMax=${timeMax}&maxResults=500&orderBy=updated&singleEvents=true`,
-            {
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                    'Cache-Control': 'no-cache'
-                }
-            }
+            `https://www.googleapis.com/calendar/v3/calendars/${MY_LIFE_CALENDAR_ID}/events?timeMin=${timeMin}&timeMax=${timeMax}&maxResults=100&orderBy=updated&singleEvents=true`,
+            { headers: { 'Authorization': `Bearer ${accessToken}`, 'Cache-Control': 'no-cache' } }
         );
         
-        if (eventsResponse.status === 404) {
-            console.log('⚠️ Calendário não encontrado, tentando primary...');
-            const primaryResponse = await fetch(
-                `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${timeMin}&timeMax=${timeMax}&maxResults=500&orderBy=updated&singleEvents=true`,
-                {
-                    headers: {
-                        'Authorization': `Bearer ${accessToken}`,
-                        'Cache-Control': 'no-cache'
-                    }
-                }
-            );
-            
-            if (primaryResponse.ok) {
-                console.log('✅ Usando calendário primary com sucesso');
-                const eventsData = await primaryResponse.json();
-                const items = eventsData.items || [];
-                await processarEventos(items, userId, accessToken, 'primary');
-            }
-            return;
-        }
-        
-        if (!eventsResponse.ok) {
-            console.log(`⚠️ Erro ao buscar eventos: ${eventsResponse.status}`);
-            return;
-        }
+        if (!eventsResponse.ok) return;
         
         const eventsData = await eventsResponse.json();
         const items = eventsData.items || [];
-        await processarEventos(items, userId, accessToken, calendarId);
+        
+        let criados = 0;
+        
+        for (const item of items) {
+            const description = item.description || '';
+            const myLifeIdMatch = description.match(/ID My Life: (\d+)/);
+            
+            if (myLifeIdMatch) continue;
+            
+            let titulo = item.summary || 'Sem título';
+            titulo = titulo.replace(/^📅 /, '').replace(/^💰 /, '').replace(/^.*\[TAREFA\] /, '');
+            
+            const descricao = item.description?.split('\n\nID My Life:')[0] || '';
+            const local = item.location || '';
+            
+            let dataInicio;
+            let hora = '';
+            
+            if (item.start?.dateTime) {
+                dataInicio = new Date(item.start.dateTime);
+                hora = dataInicio.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            } else if (item.start?.date) {
+                dataInicio = new Date(item.start.date + 'T12:00:00');
+                hora = '';
+            } else {
+                dataInicio = new Date();
+            }
+            
+            const ano = dataInicio.getFullYear();
+            const mes = dataInicio.getMonth() + 1;
+            const dia = dataInicio.getDate();
+            
+            const { data: existente } = await supabaseClient
+                .from('eventos')
+                .select('id')
+                .eq('user_id', userId)
+                .eq('titulo', titulo)
+                .eq('dia', dia)
+                .eq('mes', mes)
+                .eq('ano', ano)
+                .maybeSingle();
+            
+            if (existente) continue;
+            
+            const { error: insertError } = await supabaseClient
+                .from('eventos')
+                .insert({
+                    user_id: userId,
+                    titulo: titulo,
+                    descricao: descricao,
+                    local: local,
+                    hora: hora || null,
+                    ano: ano,
+                    mes: mes,
+                    dia: dia,
+                    is_recorrente: false,
+                    added_by: 'Google Calendar',
+                    google_event_id: item.id
+                });
+            
+            if (!insertError) criados++;
+        }
+        
+        if (criados > 0) {
+            console.log(`🔄 Polling: ${criados} novos eventos importados`);
+            await carregarDados(true);
+            await atualizarCalendario();
+            await mostrarConteudo();
+        }
         
     } catch (error) {
-        console.error('❌ Erro no polling:', error);
+        console.error('Erro no polling:', error);
     }
 }
 

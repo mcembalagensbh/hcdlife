@@ -12141,8 +12141,16 @@ async function verificarEventosDeletadosNoGoogle() {
             }
         }
         
+        // 🔴 BUSCAR EVENTOS (já funciona)
         const { data: eventosApp } = await supabaseClient
             .from('eventos')
+            .select('id, google_event_id, updated_at')
+            .eq('user_id', userId)
+            .not('google_event_id', 'is', null);
+        
+        // 🔴 BUSCAR CONTAS (ADICIONADO)
+        const { data: contasApp } = await supabaseClient
+            .from('contas')
             .select('id, google_event_id, updated_at')
             .eq('user_id', userId)
             .not('google_event_id', 'is', null);
@@ -12151,11 +12159,11 @@ async function verificarEventosDeletadosNoGoogle() {
         const cincoSegundosAtras = new Date(agora.getTime() - 5000);
         
         let deletados = 0;
+        
+        // 🔴 PROCESSAR EVENTOS (INALTERADO)
         for (const evento of eventosApp || []) {
-            // 🔴 NÃO DELETAR EVENTOS ATUALIZADOS NOS ÚLTIMOS 5 SEGUNDOS
             const eventoAtualizado = new Date(evento.updated_at);
             if (eventoAtualizado > cincoSegundosAtras) {
-                console.log(`⏳ Ignorando evento ${evento.id} (atualizado há menos de 5s)`);
                 continue;
             }
             
@@ -12170,8 +12178,26 @@ async function verificarEventosDeletadosNoGoogle() {
             }
         }
         
+        // 🔴 PROCESSAR CONTAS (ADICIONADO)
+        for (const conta of contasApp || []) {
+            const contaAtualizada = new Date(conta.updated_at);
+            if (contaAtualizada > cincoSegundosAtras) {
+                continue;
+            }
+            
+            if (!googleEventIds.has(conta.id)) {
+                console.log(`🗑️ Conta ${conta.id} não existe mais no Google, deletando do App`);
+                await supabaseClient
+                    .from('contas')
+                    .delete()
+                    .eq('id', conta.id)
+                    .eq('user_id', userId);
+                deletados++;
+            }
+        }
+        
         if (deletados > 0) {
-            console.log(`✅ ${deletados} eventos removidos do App`);
+            console.log(`✅ ${deletados} itens removidos do App`);
             await carregarDados(true);
             await atualizarCalendario();
             await mostrarConteudo();
@@ -18699,4 +18725,4 @@ window.sincronizarGoogleParaMyLife = sincronizarGoogleParaMyLife;
 
 </body>
 </html>
-    213
+    215

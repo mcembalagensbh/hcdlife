@@ -4539,9 +4539,7 @@ function esconderLoading() {
 
 // Modifique a função mostrarConteudo para usar o novo loading
 async function mostrarConteudo() {
-    // mostrarLoading removido - silencioso
-    document.getElementById('contentArea').style.display = 'none';
-    await carregarDados(false);
+    console.log('🔵 mostrarConteudo iniciado, filter:', App.currentFilter);
     
     document.getElementById('contentArea').style.display = 'none';
     await carregarDados(false);
@@ -4550,23 +4548,26 @@ async function mostrarConteudo() {
     let content = document.getElementById('dynamicContent');
     let diaText = App.selectedDay ? ` - Dia ${App.selectedDay}` : '';
 
+    // 🔴 FILTERINFO - sem "Atualizando edições"
     document.getElementById('filterInfo').innerHTML = `<i class="fas fa-calendar-alt"></i> ${getNomeMes(mes)}/${ano}${diaText} | <strong>${Object.entries(App.activeFilters).filter(([k, v]) => v).map(([k]) => k).join(', ') || 'Nenhum'}</strong>`;
 
-                try {
-                    console.log('🔵 currentFilter:', App.currentFilter);  // 🔴 ADICIONAR ESTA LINHA
-                if (App.currentFilter === 'saldos') await renderizarSaldos(content);
-                else if (App.currentFilter === 'lista') await renderizarLista(content);
-                else if (App.currentFilter === 'gastos') await renderizarGastos(content, mes, ano);
-                else if (App.currentFilter === 'giros') await renderizarGiros(content);
-                else if (App.currentFilter === 'notas') await renderizarNotas(content);
-                else if (App.currentFilter === 'tarefas') await renderizarTarefas(content);  // 🔴 ADICIONAR
-                else await renderizarTudo(content, mes, ano);
-            } catch (error) {
+    try {
+        console.log('🔵 currentFilter:', App.currentFilter);
+        if (App.currentFilter === 'saldos') await renderizarSaldos(content);
+        else if (App.currentFilter === 'lista') await renderizarLista(content);
+        else if (App.currentFilter === 'gastos') await renderizarGastos(content, mes, ano);
+        else if (App.currentFilter === 'giros') await renderizarGiros(content);
+        else if (App.currentFilter === 'notas') await renderizarNotas(content);
+        else if (App.currentFilter === 'tarefas') {
+            console.log('🔵 CHAMANDO renderizarTarefas');
+            await renderizarTarefas(content);
+        }
+        else await renderizarTudo(content, mes, ano);
+    } catch (error) {
         console.error(error);
         content.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle" style="color:var(--danger)"></i><p>Erro ao carregar dados</p></div>';
     }
 
-    esconderLoading(); // ← NOVO
     document.getElementById('contentArea').style.display = 'block';
     configurarBotoesBalanco();
 }
@@ -5247,7 +5248,6 @@ function atualizarEmailMenu() {
             atualizarTarefaBadge();
             atualizarSaldoHeader();
             
-            // Atualizar o nome do grupo no cabeçalho do calendário
             if (usuariosFamilia && usuariosFamilia.length > 0 && usuariosFamilia[0].nome_grupo) {
                 atualizarNomeGrupoHeader(usuariosFamilia[0].nome_grupo);
             } else {
@@ -18653,4 +18653,4 @@ window.sincronizarGoogleParaMyLife = sincronizarGoogleParaMyLife;
 
 </body>
 </html>
-    209
+    210

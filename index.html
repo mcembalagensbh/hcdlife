@@ -16152,7 +16152,7 @@ function abrirNovaTarefa() {
     let conteudo = `
         <div class="form-group">
             <label class="form-label"><i class="fas fa-heading"></i> Título da Tarefa</label>
-            <input type="text" id="tarefaTitulo" class="form-input" placeholder="Ex: Comprar leite, Pagar conta..." oninput="limitarTitulo(this, 30)">
+            <input type="text" id="tarefaTitulo" class="form-input" placeholder="Ex: Comprar leite, Pagar conta...">
         </div>
         <div class="form-group">
             <label class="form-label"><i class="fas fa-align-left"></i> Descrição (opcional)</label>
@@ -16164,8 +16164,9 @@ function abrirNovaTarefa() {
             <small style="color: var(--gray); font-size: 11px;">💡 Selecione pelo menos um responsável</small>
         </div>
         <div class="form-group">
-            <label class="form-label"><i class="fas fa-calendar-day"></i> Data limite (opcional)</label>
-            <input type="date" id="tarefaDataLimite" class="form-input">
+            <label class="form-label"><i class="fas fa-calendar-day"></i> Data limite <span style="color: red;">*</span></label>
+            <input type="date" id="tarefaDataLimite" class="form-input" required>
+            <small style="color: var(--gray); font-size: 11px;">A tarefa aparecerá no Google Calendar apenas nesta data (dia inteiro)</small>
         </div>
         <div class="form-group">
             <label class="form-label"><i class="fas fa-flag"></i> Prioridade</label>
@@ -16182,6 +16183,10 @@ function abrirNovaTarefa() {
     `;
     abrirModal('Nova Tarefa', 'fa-tasks', conteudo);
 }
+
+
+
+
 
 async function salvarNovaTarefa() {
     let titulo = document.getElementById('tarefaTitulo')?.value.trim();
@@ -16200,20 +16205,35 @@ async function salvarNovaTarefa() {
         return;
     }
     
+    // 🔴 VALIDAÇÃO: DATA LIMITE É OBRIGATÓRIA
+    if (!dataLimite) {
+        showToast('A data limite é obrigatória para a tarefa', 'warning');
+        return;
+    }
+    
+    // 🔴 VALIDAÇÃO: DATA LIMITE NÃO PODE SER NO PASSADO
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const dataLimiteDate = new Date(dataLimite + 'T12:00:00');
+    
+    if (dataLimiteDate < hoje) {
+        showToast('A data limite não pode ser no passado', 'warning');
+        return;
+    }
+    
     if (responsaveisIds.length === 0) {
         showToast('Selecione pelo menos um responsável', 'warning');
         return;
     }
     
     try {
-        // 🔴 REMOVIDO usuario_familia_id
         const { data, error } = await App.supabase.from('tarefas').insert({
             user_id: App.currentUser.id,
             titulo: titulo,
             descricao: descricao || null,
             responsavel_ids: responsaveisIds,
             responsavel_nome: responsaveisNomes.join(', '),
-            data_limite: dataLimite || null,
+            data_limite: dataLimite,
             prioridade: prioridade || 'normal',
             concluido: false,
             added_by: nomeUsuario
@@ -16224,6 +16244,7 @@ async function salvarNovaTarefa() {
         await registrarHistorico('criacao_tarefa', `Tarefa criada: ${titulo}`, { 
             titulo, 
             responsaveis: responsaveisNomes, 
+            data_limite: dataLimite,
             usuario: nomeUsuario 
         });
         
@@ -18734,4 +18755,4 @@ window.sincronizarGoogleParaMyLife = sincronizarGoogleParaMyLife;
 
 </body>
 </html>
-    216
+    219

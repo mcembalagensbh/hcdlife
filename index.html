@@ -12187,25 +12187,26 @@ async function executarExclusaoEventoSimples(id, isRecorrente, regraId, dia, mes
     try {
         console.log('🔵 Executando exclusão simples de evento ID:', id);
         
-        // 🔴 BUSCAR O GOOGLE EVENT ID ANTES DE DELETAR
+        // Buscar o google_event_id antes de deletar
         const { data: eventoGoogle } = await App.supabase
             .from('eventos')
             .select('google_event_id')
             .eq('id', id)
             .single();
         
-        // 🔴 DELETAR DO GOOGLE CALENDAR
+        // Deletar do Google Calendar
         if (eventoGoogle && eventoGoogle.google_event_id) {
             console.log(`🗑️ Deletando evento do Google Calendar: ${eventoGoogle.google_event_id}`);
             
+            // 🔴 CORREÇÃO: Buscar o token e o calendar_id corretos
             const { data: googleToken } = await App.supabase
                 .from('google_tokens')
-                .select('access_token')
+                .select('access_token, calendar_id')
                 .eq('usuario_familia_id', App.usuarioAtual.id)
                 .single();
             
-            if (googleToken) {
-                const calendarId = 'a57da2995830c0282d6bc5dcd7851ec10fc9410801fb3fddebfb73ea53b1918e@group.calendar.google.com';
+            if (googleToken && googleToken.calendar_id) {
+                const calendarId = googleToken.calendar_id;
                 
                 const deleteRes = await fetch(
                     `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${eventoGoogle.google_event_id}`,
@@ -12217,13 +12218,17 @@ async function executarExclusaoEventoSimples(id, isRecorrente, regraId, dia, mes
                 
                 if (deleteRes.ok) {
                     console.log(`✅ Evento deletado do Google`);
+                } else if (deleteRes.status === 404) {
+                    console.log(`⚠️ Evento já não existia no Google`);
                 } else {
                     console.log(`⚠️ Erro ao deletar do Google: ${deleteRes.status}`);
                 }
+            } else {
+                console.log('⚠️ Token ou calendar_id não encontrado');
             }
         }
         
-        // 🔴 DELETAR DO APP
+        // Deletar do App
         if (isRecorrente && regraId) {
             let dataExcecao = dataParaString(ano, mes, dia);
             await App.supabase.from('excecoes_recorrencia').insert({

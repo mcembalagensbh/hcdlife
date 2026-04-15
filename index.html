@@ -12308,7 +12308,7 @@ async function verificarEventosDeletadosNoGoogle() {
             }
         }
         
-        // 🔴 REMOVER O FILTRO por usuario_familia_id
+        // 🔴 REMOVIDO o filtro por usuario_familia_id
         const { data: eventosApp } = await supabaseClient
             .from('eventos')
             .select('id, google_event_id')
@@ -12318,7 +12318,7 @@ async function verificarEventosDeletadosNoGoogle() {
         let deletados = 0;
         for (const evento of eventosApp || []) {
             if (!googleEventIds.has(evento.id)) {
-                console.log(`🗑️ Evento ${evento.id} (${evento.google_event_id}) não existe mais no Google, deletando do App`);
+                console.log(`🗑️ Evento ${evento.id} não existe mais no Google, deletando do App`);
                 await supabaseClient
                     .from('eventos')
                     .delete()
@@ -12339,7 +12339,6 @@ async function verificarEventosDeletadosNoGoogle() {
         console.error('Erro ao verificar eventos deletados:', error);
     }
 }
-
 
 
 
@@ -18847,4 +18846,4 @@ window.sincronizarGoogleParaMyLife = sincronizarGoogleParaMyLife;
 
 </body>
 </html>
-    204
+    205

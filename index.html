@@ -16872,71 +16872,80 @@ async function sincronizarGoogleParaMyLife() {
                     .eq('user_id', userId);
                 atualizados++;
             } else {
-                // 🔴 REMOVIDO filtro por usuario_familia_id
-                const { data: existente } = await supabaseClient
-                    .from('eventos')
-                    .select('id')
-                    .eq('user_id', userId)
-                    .eq('titulo', titulo)
-                    .eq('dia', dia)
-                    .eq('mes', mes)
-                    .eq('ano', ano)
-                    .maybeSingle();
+                // Verificar se é uma conta (pelo título com 💰)
+                const isConta = titulo.startsWith('💰');
                 
-                if (existente) {
-                    googleEventIds.add(existente.id);
-                    await supabaseClient
-                        .from('eventos')
-                        .update({ google_event_id: item.id })
-                        .eq('id', existente.id);
-                    atualizados++;
+                if (isConta) {
+                    // Remover o ícone 💰 do título
+                    titulo = titulo.replace(/^💰 /, '').replace(/ - R\$ [\d.,]+$/, '');
+                    
+                    // Buscar conta pelo título
+                    const { data: contaExistente } = await supabaseClient
+                        .from('contas')
+                        .select('id')
+                        .eq('user_id', userId)
+                        .eq('descricao', titulo)
+                        .maybeSingle();
+                    
+                    if (contaExistente) {
+                        googleEventIds.add(contaExistente.id);
+                        await supabaseClient
+                            .from('contas')
+                            .update({ google_event_id: item.id })
+                            .eq('id', contaExistente.id);
+                        atualizados++;
+                        console.log(`🔄 Conta atualizada: "${titulo}"`);
+                    }
                 } else {
-                    const { data: newEvent } = await supabaseClient
+                    // Buscar evento existente pelo título e data
+                    const { data: existente } = await supabaseClient
                         .from('eventos')
-                        .insert({
-                            user_id: userId,
-                            titulo: titulo,
-                            descricao: descricao,
-                            local: local,
-                            hora: isDiaInteiro ? null : hora,
-                            ano: ano,
-                            mes: mes,
-                            dia: dia,
-                            is_recorrente: false,
-                            added_by: 'Google Calendar',
-                            google_event_id: item.id
-                        })
-                        .select();
-                    if (newEvent && newEvent[0]) {
-                        googleEventIds.add(newEvent[0].id);
-                        criados++;
+                        .select('id')
+                        .eq('user_id', userId)
+                        .eq('titulo', titulo)
+                        .eq('dia', dia)
+                        .eq('mes', mes)
+                        .eq('ano', ano)
+                        .maybeSingle();
+                    
+                    if (existente) {
+                        googleEventIds.add(existente.id);
+                        await supabaseClient
+                            .from('eventos')
+                            .update({ google_event_id: item.id })
+                            .eq('id', existente.id);
+                        atualizados++;
+                    } else {
+                        const { data: newEvent } = await supabaseClient
+                            .from('eventos')
+                            .insert({
+                                user_id: userId,
+                                titulo: titulo,
+                                descricao: descricao,
+                                local: local,
+                                hora: isDiaInteiro ? null : hora,
+                                ano: ano,
+                                mes: mes,
+                                dia: dia,
+                                is_recorrente: false,
+                                added_by: 'Google Calendar',
+                                google_event_id: item.id
+                            })
+                            .select();
+                        if (newEvent && newEvent[0]) {
+                            googleEventIds.add(newEvent[0].id);
+                            criados++;
+                        }
                     }
                 }
             }
         }
         
-        // 🔴 VERIFICAR EVENTOS DELETADOS (sem filtro por usuario_familia_id)
-        const { data: eventosApp } = await supabaseClient
-            .from('eventos')
-            .select('id, google_event_id')
-            .eq('user_id', userId)
-            .not('google_event_id', 'is', null);
+        // Verificar eventos deletados no Google (já inclui contas)
+        await verificarEventosDeletadosNoGoogle();
         
-        let deletados = 0;
-        for (const evento of eventosApp || []) {
-            if (!googleEventIds.has(evento.id)) {
-                console.log(`🗑️ Evento ${evento.id} não existe mais no Google, deletando do App`);
-                await supabaseClient
-                    .from('eventos')
-                    .delete()
-                    .eq('id', evento.id)
-                    .eq('user_id', userId);
-                deletados++;
-            }
-        }
-        
-        if (criados > 0 || atualizados > 0 || deletados > 0) {
-            console.log(`🔄 Polling (${App.usuarioAtual.apelido}): ${criados} criados, ${atualizados} atualizados, ${deletados} deletados`);
+        if (criados > 0 || atualizados > 0) {
+            console.log(`🔄 Polling (${App.usuarioAtual.apelido}): ${criados} criados, ${atualizados} atualizados`);
             await carregarDados(true);
             await atualizarCalendario();
             await mostrarConteudo();
@@ -18725,4 +18734,4 @@ window.sincronizarGoogleParaMyLife = sincronizarGoogleParaMyLife;
 
 </body>
 </html>
-    215
+    216

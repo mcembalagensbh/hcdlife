@@ -12275,13 +12275,7 @@ async function verificarEventosDeletadosNoGoogle() {
     if (!googleToken) return;
     
     let calendarId = googleToken.calendar_id;
-    
-    if (!calendarId) {
-        console.log('⚠️ Nenhum calendar_id encontrado no banco');
-        return;
-    }
-    
-    console.log('📅 Verificando eventos deletados no calendário:', calendarId);
+    if (!calendarId) return;
     
     try {
         const trintaDiasAtras = new Date();
@@ -12292,10 +12286,7 @@ async function verificarEventosDeletadosNoGoogle() {
             { headers: { 'Authorization': `Bearer ${googleToken.access_token}` } }
         );
         
-        if (!response.ok) {
-            console.log(`⚠️ Erro ao buscar eventos do Google: ${response.status}`);
-            return;
-        }
+        if (!response.ok) return;
         
         const data = await response.json();
         const googleEventIds = new Set();
@@ -12308,15 +12299,24 @@ async function verificarEventosDeletadosNoGoogle() {
             }
         }
         
-        // 🔴 REMOVIDO o filtro por usuario_familia_id
         const { data: eventosApp } = await supabaseClient
             .from('eventos')
-            .select('id, google_event_id')
+            .select('id, google_event_id, updated_at')
             .eq('user_id', userId)
             .not('google_event_id', 'is', null);
         
+        const agora = new Date();
+        const cincoSegundosAtras = new Date(agora.getTime() - 5000);
+        
         let deletados = 0;
         for (const evento of eventosApp || []) {
+            // 🔴 NÃO DELETAR EVENTOS ATUALIZADOS NOS ÚLTIMOS 5 SEGUNDOS
+            const eventoAtualizado = new Date(evento.updated_at);
+            if (eventoAtualizado > cincoSegundosAtras) {
+                console.log(`⏳ Ignorando evento ${evento.id} (atualizado há menos de 5s)`);
+                continue;
+            }
+            
             if (!googleEventIds.has(evento.id)) {
                 console.log(`🗑️ Evento ${evento.id} não existe mais no Google, deletando do App`);
                 await supabaseClient
@@ -18831,4 +18831,4 @@ window.sincronizarGoogleParaMyLife = sincronizarGoogleParaMyLife;
 
 </body>
 </html>
-    206
+    207

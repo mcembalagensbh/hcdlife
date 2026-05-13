@@ -17146,6 +17146,23 @@ function pararPollingGoogle() {
 }
 
 
+async function forcarBuscaGoogle() {
+    console.log('🔄 Forçando busca de eventos do Google Calendar...');
+    
+    if (!App.currentUser) {
+        showToast('Você precisa estar logado', 'warning');
+        return;
+    }
+    
+    if (!App.usuarioAtual) {
+        showToast('Selecione seu nome no topo primeiro', 'warning');
+        return;
+    }
+    
+    showToast('🔄 Buscando eventos do Google Calendar...', 'info');
+    await sincronizarGoogleParaMyLife();
+}
+
 // ============================================
 // INICIAR POLLING DO GOOGLE CALENDAR
 // ============================================

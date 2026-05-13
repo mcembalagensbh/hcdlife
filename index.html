@@ -17427,61 +17427,7 @@ function mostrarModalErroConexao(onTentarNovamente) {
 }
 
 
-// ============================================
-// FUNÇÕES DO POLLING DO GOOGLE CALENDAR (VERSÃO CORRIGIDA - SEM DUPLICAÇÃO)
-// ============================================
 
-let intervaloPollingGoogle = null;
-
-function iniciarPollingGoogle() {
-    console.log('🔄 iniciarPollingGoogle chamada');
-    
-    if (intervaloPollingGoogle) {
-        clearInterval(intervaloPollingGoogle);
-        intervaloPollingGoogle = null;
-        console.log('⏹️ Polling anterior parado');
-    }
-    
-    (async () => {
-        if (!App.currentUser) {
-            console.log('⏸️ Polling aguardando login...');
-            return;
-        }
-        
-        if (!App.usuarioAtual) {
-            console.log('⏸️ Nenhum usuário da família selecionado');
-            return;
-        }
-        
-        const { data: googleToken, error } = await App.supabase
-            .from('google_tokens')
-            .select('*')
-            .eq('usuario_familia_id', App.usuarioAtual.id)
-            .maybeSingle();
-        
-        if (error || !googleToken) {
-            console.log(`⏸️ Polling desativado - ${App.usuarioAtual?.apelido} não conectado`);
-            return;
-        }
-        
-        console.log(`✅ Google conectado para ${App.usuarioAtual.apelido} - iniciando polling (a cada 30 segundos)`);
-        
-        setTimeout(() => {
-            console.log('🔄 [Polling] Primeira verificação...');
-            if (typeof sincronizarGoogleParaMyLife === 'function') {
-                sincronizarGoogleParaMyLife();
-            }
-        }, 2000);
-        
-        intervaloPollingGoogle = setInterval(() => {
-            console.log('🔄 [Polling] Verificando eventos do Google Calendar...');
-            if (typeof sincronizarGoogleParaMyLife === 'function') {
-                sincronizarGoogleParaMyLife();
-            }
-        }, 30000);
-        
-    })();
-}
 
 function pararPollingGoogle() {
     if (intervaloPollingGoogle) {

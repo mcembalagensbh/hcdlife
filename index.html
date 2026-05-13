@@ -17428,28 +17428,7 @@ function mostrarModalErroConexao(onTentarNovamente) {
 
 
 // ============================================
-// FUNÇÕES FALTANTES PARA O POLLING DO GOOGLE
-// ============================================
-
-function pararPollingGoogle() {
-    if (intervaloPollingGoogle) {
-        clearInterval(intervaloPollingGoogle);
-        intervaloPollingGoogle = null;
-        console.log('⏹️ Polling do Google parado');
-    }
-}
-
-function forcarBuscaGoogle() {
-    console.log('🔍 Forçando busca manual no Google Calendar...');
-    if (typeof sincronizarGoogleParaMyLife === 'function') {
-        sincronizarGoogleParaMyLife();
-        showToast('🔄 Buscando eventos do Google Calendar...', 'info');
-    }
-}
-
-
-// ============================================
-// FUNÇÕES DO POLLING DO GOOGLE CALENDAR
+// FUNÇÕES DO POLLING DO GOOGLE CALENDAR (VERSÃO CORRIGIDA - SEM DUPLICAÇÃO)
 // ============================================
 
 let intervaloPollingGoogle = null;
@@ -17519,7 +17498,6 @@ function forcarBuscaGoogle() {
         showToast('🔄 Buscando eventos do Google Calendar...', 'info');
     }
 }
-
 async function init() {
     // Inicializar Firebase
     try {

@@ -17136,6 +17136,16 @@ async function processarEventos(items, userId, accessToken, calendarId) {
     }
 }
 
+
+function pararPollingGoogle() {
+    if (intervaloPollingGoogle) {
+        clearInterval(intervaloPollingGoogle);
+        intervaloPollingGoogle = null;
+        console.log('⏹️ Polling do Google Calendar parado');
+    }
+}
+
+
 // ============================================
 // INICIAR POLLING DO GOOGLE CALENDAR
 // ============================================

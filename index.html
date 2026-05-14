@@ -6132,7 +6132,11 @@ function calcularUltimaDataEvento(regra) {
 
 
 
-    function renderizarItemCard(item, mes, ano) {
+    // ============================================
+// RENDERIZAR ITEM CARD (CONTAS E EVENTOS) - VERSÃO OTIMISTA
+// ============================================
+
+function renderizarItemCard(item, mes, ano) {
     if (!item) return '';
     let hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
@@ -6153,6 +6157,8 @@ function calcularUltimaDataEvento(regra) {
 
     if (item.tipo === 'conta') {
         let venc = criarData(item.ano || ano, item.mes || mes, item.dia || item.dia_vencimento);
+        
+        // 🔥 VERIFICAR SE JÁ ESTÁ PAGA NO CACHE LOCAL (OTIMISTA)
         if (item.valor_pago > 0 || item.status === 'paga') {
             classe = 'paga';
         } else if (venc < hoje) {
@@ -6163,7 +6169,7 @@ function calcularUltimaDataEvento(regra) {
 
         titulo = item.descricao || 'Conta sem descrição';
         
-        // Limitar título a 100 caracteres (em vez de 30)
+        // Limitar título a 100 caracteres
         if (titulo.length > 100) {
             titulo = titulo.substring(0, 100) + '...';
         }
@@ -6181,7 +6187,7 @@ function calcularUltimaDataEvento(regra) {
             }
         }
         
-        // Frequência (sem repetir em texto)
+        // Frequência
         let frequenciaBadge = '';
         if (item.frequencia && item.frequencia !== 'unico') {
             frequenciaBadge = `<span class="item-badge badge-recorrente">${item.frequencia}</span>`;
@@ -6225,12 +6231,19 @@ function calcularUltimaDataEvento(regra) {
         
     } else if (item.tipo === 'evento') {
         let dataEv = criarData(item.ano, item.mes, item.dia);
-        classe = dataEv < hoje ? 'paga' : 'pendente';
+        
+        // Eventos passados ficam com classe "paga" (visualmente diferente)
+        if (dataEv < hoje) {
+            classe = 'paga';
+        } else {
+            classe = 'pendente';
+        }
+        
         let iconeEvento = item.icone || 'fa-star';
         let corIcone = item.cor_icone || '#ffd700';
         titulo = item.titulo || 'Evento sem título';
         
-        // Limitar título a 100 caracteres (em vez de 30)
+        // Limitar título a 100 caracteres
         if (titulo.length > 100) {
             titulo = titulo.substring(0, 100) + '...';
         }
@@ -6284,6 +6297,8 @@ function calcularUltimaDataEvento(regra) {
             </div>
         </div>`;
     }
+    
+    return '';
 }
 
 
@@ -11970,6 +11985,10 @@ function fecharModalInfoEConfirmar() {
 // CONFIRMAR PAGAMENTO - VERSÃO OTIMISTA (UI IMEDIATA)
 // ============================================
 
+// ============================================
+// CONFIRMAR PAGAMENTO - VERSÃO OTIMISTA (UI IMEDIATA)
+// ============================================
+
 async function confirmarPagamento(id, desc, regraId, dia, mes, ano, isRecorrente) {
     if (App.processandoPagamento) {
         showToast('Processando pagamento, aguarde...', 'warning');
@@ -11983,52 +12002,67 @@ async function confirmarPagamento(id, desc, regraId, dia, mes, ano, isRecorrente
         return;
     }
     
-    const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
     const contaDesc = desc;
     
     // 🔥 PASSO 1: ATUALIZAR UI IMEDIATAMENTE (Optimistic UI)
     
-    // Atualizar no cache local
+    // 1.1 Atualizar no cache local
+    let contaAtualizada = null;
+    
     if (isRecorrente && regraId && regraId !== 'undefined') {
-        // Para conta recorrente, encontrar e atualizar no cache
+        // Para conta recorrente
         const dataStr = `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
         const contasRecorrentes = App.dataCache.contas.filter(c => c.regra_id == regraId);
-        const contaEncontrada = contasRecorrentes.find(c => {
+        contaAtualizada = contasRecorrentes.find(c => {
             const dataConta = `${c.ano}-${String(c.mes).padStart(2, '0')}-${String(c.dia).padStart(2, '0')}`;
             return dataConta === dataStr;
         });
         
-        if (contaEncontrada) {
-            contaEncontrada.valor_pago = valorPago;
-            contaEncontrada.status = 'paga';
-            contaEncontrada.data_pagamento = new Date().toISOString();
+        if (contaAtualizada) {
+            contaAtualizada.valor_pago = valorPago;
+            contaAtualizada.status = 'paga';
+            contaAtualizada.data_pagamento = new Date().toISOString();
         }
     } else {
         // Conta única
-        const conta = App.dataCache.contas.find(c => c.id == id);
-        if (conta) {
-            conta.valor_pago = valorPago;
-            conta.status = 'paga';
-            conta.data_pagamento = new Date().toISOString();
+        contaAtualizada = App.dataCache.contas.find(c => c.id == id);
+        if (contaAtualizada) {
+            contaAtualizada.valor_pago = valorPago;
+            contaAtualizada.status = 'paga';
+            contaAtualizada.data_pagamento = new Date().toISOString();
         }
     }
     
-    // Atualizar saldo no cache local
+    // 1.2 Atualizar saldo no cache local
     if (App.saldoCentral.id && valorPago > 0) {
         App.saldoCentral.valor = App.saldoCentral.valor - valorPago;
         atualizarSaldoHeader();
     }
     
-    // Re-renderizar a tela IMEDIATAMENTE
-    await carregarDados(true);
+    // 1.3 FORÇAR ATUALIZAÇÃO VISUAL IMEDIATA
+    // Recarregar o calendário e a lista de contas instantaneamente
     await atualizarCalendario();
-    await mostrarConteudo();
     
-    // Mostrar feedback rápido
+    // Atualizar a área de conteúdo (lista de contas)
+    let { mes: mesAtual, ano: anoAtual } = getMesAnoAtual();
+    let content = document.getElementById('dynamicContent');
+    await renderizarTudo(content, mesAtual, anoAtual);
+    
+    // Forçar re-renderização dos cards para aplicar a classe "paga" (tachado + transparência)
+    document.querySelectorAll('.item-card').forEach(card => {
+        if (card.classList) {
+            // Forçar reflow para atualizar estilos
+            card.style.display = 'none';
+            card.offsetHeight; // força reflow
+            card.style.display = '';
+        }
+    });
+    
+    // Mostrar feedback rápido (toast pequeno, some rápido)
     if (valorPago === 0) {
-        showToast(`✅ Conta "${contaDesc}" marcada como paga!`, 'success', 1500);
+        showToast(`✅ "${contaDesc}" marcada como paga!`, 'success', 1200);
     } else {
-        showToast(`✅ Pagamento de ${formatCurrency(valorPago)} confirmado!`, 'success', 1500);
+        showToast(`✅ Pagamento de ${formatCurrency(valorPago)} confirmado!`, 'success', 1200);
     }
     
     // 🔥 PASSO 2: ADICIONAR À FILA PARA PROCESSAR EM BACKGROUND
@@ -12043,8 +12077,11 @@ async function confirmarPagamento(id, desc, regraId, dia, mes, ano, isRecorrente
         isRecorrente: isRecorrente
     });
     
-    // Fechar o modal de pagamento
+    // 🔥 PASSO 3: FECHAR O MODAL DE PAGAMENTO
     fecharModal();
+    
+    // 🔥 PASSO 4: DISPARAR PROCESSAMENTO DA FILA EM BACKGROUND
+    // (já é feito automaticamente pelo sistema de fila)
 }
 
         function abrirModalDesfazerPagamento(id, desc, valor, regraId, dia, mes, ano, isRecorrente) {

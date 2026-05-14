@@ -2185,6 +2185,38 @@
 .modal-overlay:active {
     /* Não faz nada, apenas evita que o clique passe */
 }
+
+/* Estilo para o campo de senha com olho */
+.password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-wrapper input {
+    flex: 1;
+    padding-right: 40px;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: var(--gray);
+    font-size: 16px;
+    background: transparent;
+    border: none;
+    padding: 5px;
+    z-index: 10;
+}
+
+.password-toggle:hover {
+    color: var(--purple);
+}
+
+
         
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -2206,28 +2238,32 @@
         <div class="auth-box">
             <h2 class="auth-title"><i class="fas fa-home"></i> My Life</h2>
             <div id="loginForm">
-                <div class="form-group">
-                    <label class="form-label"><i class="fas fa-envelope"></i> Email</label>
-                    <input type="email" id="loginEmail" class="form-input" placeholder="seu@email.com" inputmode="email">
-                </div>
-                <div class="form-group">
-                    <label class="form-label"><i class="fas fa-lock"></i> Senha</label>
-<div style="position: relative;">
-    <input type="password" id="loginPassword" class="form-input" placeholder="Sua senha" style="padding-right: 40px;">
-    <span onclick="toggleSenhaLogin()" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer;">
-        <i class="fas fa-eye" id="toggleLoginPassword"></i>
-    </span>
+    <div class="form-group">
+        <label class="form-label"><i class="fas fa-envelope"></i> Email</label>
+        <input type="email" id="loginEmail" class="form-input" placeholder="seu@email.com" inputmode="email">
+    </div>
+    <div class="form-group">
+        <label class="form-label"><i class="fas fa-lock"></i> Senha</label>
+        <div class="password-wrapper">
+            <input type="password" id="loginPassword" class="form-input" placeholder="Sua senha">
+            <button type="button" class="password-toggle" onclick="toggleLoginPasswordVisibility()">
+                <i class="fas fa-eye" id="loginPasswordIcon"></i>
+            </button>
+        </div>
+    </div>
+    <div class="forgot-password-link">
+        <a href="#" onclick="handleForgotPassword()">Esqueci minha senha?</a>
+    </div>
+    <button class="btn btn-primary" id="btnLogin" style="width:100%">
+        <i class="fas fa-sign-in-alt"></i> <span id="loginBtnText">Entrar</span>
+    </button>
+    <div class="auth-toggle">
+        Não tem conta? <a class="auth-link" id="linkRegister" onclick="abrirModalInfo(); return false;" href="#">Registrar</a>
+    </div>
+    <div id="loginOfflineWarning" style="display: none; margin-top: 16px; padding: 10px; background: var(--bg-warning-light); border-radius: 8px; font-size: 12px; text-align: center;">
+        <i class="fas fa-wifi"></i> <span id="offlineWarningText">Você está offline. Conecte-se à internet para fazer login.</span>
+    </div>
 </div>
-                <div class="forgot-password-link">
-                    <a href="#" onclick="handleForgotPassword()">Esqueci minha senha?</a>
-                </div>
-                <button class="btn btn-primary" id="btnLogin" style="width:100%">
-                    <i class="fas fa-sign-in-alt"></i> Entrar
-                </button>
-                <div class="auth-toggle">
-                    Não tem conta? <a class="auth-link" id="linkRegister" onclick="abrirModalInfo(); return false;" href="#">Registrar</a>
-                </div>
-            </div>
             <div id="registerForm" style="display:none">
     <div class="form-group">
         <label class="form-label"><i class="fas fa-user"></i> Nome Completo</label>
@@ -2870,21 +2906,76 @@ function getNomeUsuario() {
 }
 
 
-function toggleSenhaLogin() {
-    const input = document.getElementById('loginPassword');
-    const icon = document.getElementById('toggleLoginPassword');
+// Função para mostrar/esconder senha no LOGIN
+function toggleLoginPasswordVisibility() {
+    const passwordInput = document.getElementById('loginPassword');
+    const icon = document.getElementById('loginPasswordIcon');
     
-    if (input.type === 'password') {
-        input.type = 'text';
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
         icon.classList.remove('fa-eye');
         icon.classList.add('fa-eye-slash');
     } else {
-        input.type = 'password';
+        passwordInput.type = 'password';
         icon.classList.remove('fa-eye-slash');
         icon.classList.add('fa-eye');
     }
 }
 
+
+// Verificar conexão antes de tentar login
+function verificarConexaoAntesLogin() {
+    return new Promise((resolve) => {
+        if (navigator.onLine) {
+            resolve(true);
+            return;
+        }
+        
+        // Tentar fazer uma requisição rápida para confirmar (evita false positivo)
+        fetch('https://www.google.com/favicon.ico', { 
+            mode: 'no-cors',
+            cache: 'no-store',
+            timeout: 5000
+        }).then(() => {
+            resolve(true);
+        }).catch(() => {
+            resolve(false);
+        });
+        
+        // Timeout de 5 segundos
+        setTimeout(() => resolve(false), 5000);
+    });
+}
+
+// Mostrar aviso de offline no formulário de login
+function atualizarAvisoOfflineLogin() {
+    const warningDiv = document.getElementById('loginOfflineWarning');
+    const warningText = document.getElementById('offlineWarningText');
+    
+    if (!warningDiv) return;
+    
+    if (!navigator.onLine) {
+        warningDiv.style.display = 'block';
+        warningText.innerHTML = '📡 Você está offline. Conecte-se à internet para fazer login.';
+    } else {
+        warningDiv.style.display = 'none';
+    }
+}
+
+// Monitorar mudanças de conexão na tela de login
+function monitorarConexaoLogin() {
+    atualizarAvisoOfflineLogin();
+    
+    window.addEventListener('online', () => {
+        atualizarAvisoOfflineLogin();
+        showToast('✅ Conexão restaurada! Agora você pode fazer login.', 'success');
+    });
+    
+    window.addEventListener('offline', () => {
+        atualizarAvisoOfflineLogin();
+        showToast('📡 Você está offline. Conecte-se à internet para fazer login.', 'warning');
+    });
+}
 
 // Função para mostrar/esconder senha
 function toggleSenha(inputId) {
@@ -17136,33 +17227,6 @@ async function processarEventos(items, userId, accessToken, calendarId) {
     }
 }
 
-
-function pararPollingGoogle() {
-    if (intervaloPollingGoogle) {
-        clearInterval(intervaloPollingGoogle);
-        intervaloPollingGoogle = null;
-        console.log('⏹️ Polling do Google Calendar parado');
-    }
-}
-
-
-async function forcarBuscaGoogle() {
-    console.log('🔄 Forçando busca de eventos do Google Calendar...');
-    
-    if (!App.currentUser) {
-        showToast('Você precisa estar logado', 'warning');
-        return;
-    }
-    
-    if (!App.usuarioAtual) {
-        showToast('Selecione seu nome no topo primeiro', 'warning');
-        return;
-    }
-    
-    showToast('🔄 Buscando eventos do Google Calendar...', 'info');
-    await sincronizarGoogleParaMyLife();
-}
-
 // ============================================
 // INICIAR POLLING DO GOOGLE CALENDAR
 // ============================================
@@ -17349,30 +17413,13 @@ async function init() {
     }
 
     try {
-        // Configuração do Supabase COM TIMEOUT AUMENTADO
-        App.supabase = window.supabase.createClient(CONFIG.supabase.url, CONFIG.supabase.anonKey, {
-            auth: {
-                autoRefreshToken: false,
-                persistSession: true,
-                detectSessionInUrl: true
-            },
-            global: {
-                fetch: (url, options) => {
-                    // Timeout de 60 segundos (aumentado)
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 60000);
-                    
-                    return fetch(url, {
-                        ...options,
-                        signal: controller.signal
-                    }).finally(() => clearTimeout(timeoutId));
-                }
-            }
-        });
-        
+        App.supabase = window.supabase.createClient(CONFIG.supabase.url, CONFIG.supabase.anonKey);
         let { data: { session } } = await App.supabase.auth.getSession();
 
         await inicializarNotificacoes();
+
+        // 🔴 INICIAR MONITORAMENTO DE CONEXÃO NA TELA DE LOGIN
+        monitorarConexaoLogin();
 
         if (session) {
             App.currentUser = session.user;
@@ -17425,7 +17472,7 @@ async function init() {
                 iniciarPollingGoogle();
             }
 
-            // VERIFICAR USUÁRIO EM SEGUNDO PLANO
+            // VERIFICAR USUÁRIO EM SEGUNDO PLANO (NÃO BLOQUEIA O CARREGAMENTO)
             setTimeout(async () => {
                 if (!App.usuarioAtual) {
                     const usuarioDefinido = await verificarEObrigarUsuario();
@@ -17435,147 +17482,152 @@ async function init() {
                 }
             }, 1000);
 
+            // ADICIONAR INDICADOR DE CONEXÃO (MODO OFFLINE)
             criarIndicadorConexao();
             atualizarIndicadorConexao();
-            iniciarPollingGoogle();
             
+            // INICIAR VERIFICAÇÃO DE SESSÃO PARA PLANO GRÁTIS
             iniciarVerificacaoSessao();
-            
-            setTimeout(() => {
-                verificarEMostrarAnuncioLogin();
-            }, 1500);
             
         } else {
             document.getElementById('authContainer').style.display = 'flex';
         }
 
-        // ============================================
-        // BOTÃO DE LOGIN COM RETRY AUTOMÁTICO
-        // ============================================
+        // 🔴 BOTÃO DE LOGIN (COMPLETAMENTE CORRIGIDO)
         document.getElementById('btnLogin').addEventListener('click', async () => {
+            const btnLogin = document.getElementById('btnLogin');
+            const btnText = document.getElementById('loginBtnText');
+            const originalText = btnText.innerHTML;
+            
             let email = document.getElementById('loginEmail').value.trim();
             let pass = document.getElementById('loginPassword').value;
             
-            const btnLogin = document.getElementById('btnLogin');
-            const textoOriginal = btnLogin.innerHTML;
-            
+            // Validar campos
             if (!email || !pass) {
                 showToast('Preencha email e senha', 'warning');
                 return;
             }
             
-            let tentativas = 0;
-            const maxTentativas = 3;
+            // Validar formato de email
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showToast('Digite um email válido', 'warning');
+                return;
+            }
             
-            async function tentarLogin() {
-                tentativas++;
+            // Verificar conexão com internet
+            btnText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando conexão...';
+            btnLogin.disabled = true;
+            
+            const isOnline = await verificarConexaoAntesLogin();
+            
+            if (!isOnline) {
+                btnText.innerHTML = originalText;
+                btnLogin.disabled = false;
                 
-                btnLogin.disabled = true;
-                btnLogin.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Tentando...';
+                // Modal de erro de conexão amigável
+                const modalHtml = `
+                    <div style="text-align: center; padding: 20px;">
+                        <div style="background: #ffebee; width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
+                            <i class="fas fa-wifi" style="font-size: 32px; color: #dc3545;"></i>
+                        </div>
+                        <h3 style="margin-bottom: 10px;">📡 Sem conexão com a internet</h3>
+                        <p style="margin-bottom: 20px; color: var(--gray);">
+                            Verifique sua conexão com a internet e tente novamente.
+                        </p>
+                        <button onclick="fecharModal()" class="btn btn-primary" style="padding: 10px 30px;">
+                            Entendi
+                        </button>
+                    </div>
+                `;
+                abrirModal('Sem conexão', 'fa-wifi', modalHtml);
+                return;
+            }
+            
+            // Tentar login
+            btnText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Entrando...';
+            
+            try {
+                // Timeout de 15 segundos para a requisição
+                const loginPromise = App.supabase.auth.signInWithPassword({ email, password: pass });
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('timeout')), 15000)
+                );
                 
-                try {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 45000);
+                const { data, error } = await Promise.race([loginPromise, timeoutPromise]);
+                
+                if (error) {
+                    // Tratamento de erros amigável
+                    let erroMsg = 'Erro ao fazer login';
+                    if (error.message.includes('Invalid login credentials')) {
+                        erroMsg = '❌ Email ou senha incorretos. Verifique e tente novamente.';
+                    } else if (error.message.includes('timeout')) {
+                        erroMsg = '⏰ O servidor demorou para responder. Verifique sua conexão e tente novamente.';
+                    } else {
+                        erroMsg = '❌ ' + error.message;
+                    }
                     
-                    const { data, error } = await App.supabase.auth.signInWithPassword({ 
-                        email, 
-                        password: pass 
-                    });
-                    
-                    clearTimeout(timeoutId);
-                    
-                    if (error) throw error;
-                    
+                    showToast(erroMsg, 'error');
+                    btnText.innerHTML = originalText;
+                    btnLogin.disabled = false;
+                    return;
+                }
+                
+                if (data && data.user) {
                     App.currentUser = data.user;
                     atualizarEmailMenu();
                     document.getElementById('authContainer').style.display = 'none';
                     document.getElementById('mainContainer').style.display = 'block';
                     carregarUsuarioLocal();
                     carregarConfigLocal();
+                    
+                    showToast('✅ Login realizado com sucesso!', 'success');
+                    
                     await carregarDados(true);
                     resetarParaHoje();
-                    showToast('Login realizado!', 'success');
                     
+                    // Salvar conta no localStorage
                     let nomeGrupo = 'Minha Família';
                     if (App.dataCache.usuariosFamilia && App.dataCache.usuariosFamilia.length > 0 && App.dataCache.usuariosFamilia[0].nome_grupo) {
                         nomeGrupo = App.dataCache.usuariosFamilia[0].nome_grupo;
                     }
                     salvarContaNoLocalStorage(email, pass, nomeGrupo, data.user.id);
                     
+                    // Resetar timer de sessão
                     resetarTimerSessao();
-                    window.mostrarAnuncioNoLogin = true;
+                    
+                    // Iniciar verificação de sessão
                     iniciarVerificacaoSessao();
                     
+                    // Verificar usuário em segundo plano
                     setTimeout(async () => {
                         if (!App.usuarioAtual) {
-                            await verificarEObrigarUsuario();
+                            const usuarioDefinido = await verificarEObrigarUsuario();
+                            if (!usuarioDefinido) {
+                                await verificarEObrigarUsuario();
+                            }
+                        }
+                        if (App.dataCache.usuariosFamilia && App.dataCache.usuariosFamilia.length > 0 && App.dataCache.usuariosFamilia[0].nome_grupo) {
+                            atualizarNomeGrupoHeader(App.dataCache.usuariosFamilia[0].nome_grupo);
+                            atualizarNomeGrupoNasContas(email, App.dataCache.usuariosFamilia[0].nome_grupo);
                         }
                     }, 1000);
                     
                     criarIndicadorConexao();
                     atualizarIndicadorConexao();
                     iniciarPollingGoogle();
-                    
-                } catch (error) {
-                    console.error('Erro no login:', error);
-                    
-                    const isTimeout = error.name === 'AbortError';
-                    const isNetworkError = error.message?.includes('fetch') || error.message?.includes('network');
-                    
-                    if (isTimeout) {
-                        showToast('⏰ Demorou muito para responder. Verifique sua conexão.', 'warning');
-                    } else if (isNetworkError) {
-                        showToast('📡 Problema de conexão. Tente trocar de rede (WiFi ou dados móveis).', 'warning');
-                    } else {
-                        showToast(error.message || 'Erro no login', 'error');
-                    }
-                    
-                    if (tentativas < maxTentativas) {
-                        const tentarNovamente = confirm(`Falha ao conectar (tentativa ${tentativas}/${maxTentativas}). Deseja tentar novamente?`);
-                        if (tentarNovamente) {
-                            await tentarLogin();
-                        } else {
-                            btnLogin.disabled = false;
-                            btnLogin.innerHTML = textoOriginal;
-                        }
-                    } else {
-                        btnLogin.disabled = false;
-                        btnLogin.innerHTML = textoOriginal;
-                        
-                        const modalConteudo = `
-                            <div style="text-align: center; padding: 10px;">
-                                <i class="fas fa-wifi" style="font-size: 48px; color: var(--warning); margin-bottom: 15px;"></i>
-                                <h3>Problemas de conexão</h3>
-                                <p style="margin-bottom: 15px; color: var(--gray);">
-                                    Não foi possível conectar após ${maxTentativas} tentativas.
-                                </p>
-                                <div style="background: #e8f4fd; border-radius: 8px; padding: 12px; margin-bottom: 15px; text-align: left;">
-                                    <p style="margin: 0 0 8px 0;"><strong>🔧 O que fazer:</strong></p>
-                                    <ul style="margin: 0; padding-left: 20px;">
-                                        <li>Verifique se você está conectado à internet</li>
-                                        <li>Tente <strong>desligar o WiFi</strong> e usar <strong>dados móveis</strong></li>
-                                        <li>Ou tente <strong>desligar os dados móveis</strong> e usar <strong>WiFi</strong></li>
-                                        <li>Reinicie o app</li>
-                                    </ul>
-                                </div>
-                                <div style="display: flex; gap: 10px;">
-                                    <button onclick="fecharModal(); location.reload()" class="btn btn-primary" style="flex: 1;">
-                                        <i class="fas fa-sync-alt"></i> Recarregar
-                                    </button>
-                                    <button onclick="fecharModal()" class="btn" style="flex: 1; background: var(--gray); color: #fff;">
-                                        Fechar
-                                    </button>
-                                </div>
-                            </div>
-                        `;
-                        abrirModal('Falha na Conexão', 'fa-wifi', modalConteudo);
-                    }
                 }
+                
+            } catch (err) {
+                console.error('Erro no login:', err);
+                showToast('❌ Erro ao conectar com o servidor. Tente novamente mais tarde.', 'error');
+            } finally {
+                btnText.innerHTML = originalText;
+                btnLogin.disabled = false;
             }
-            
-            await tentarLogin();
         });
 
+        // 🔴 BOTÃO DE REGISTRO
         document.getElementById('btnRegister').addEventListener('click', async () => {
             const nome = document.getElementById('registerName').value.trim();
             const phone = document.getElementById('registerPhone').value.trim();

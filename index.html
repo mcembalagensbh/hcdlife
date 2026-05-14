@@ -17352,7 +17352,7 @@ async function init() {
         // Configuração do Supabase COM TIMEOUT AUMENTADO
         App.supabase = window.supabase.createClient(CONFIG.supabase.url, CONFIG.supabase.anonKey, {
             auth: {
-                autoRefreshToken: true,
+                autoRefreshToken: false,
                 persistSession: true,
                 detectSessionInUrl: true
             },

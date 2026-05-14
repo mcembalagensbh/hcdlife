@@ -3150,45 +3150,78 @@ async function executarDeletarItemListaBackend(dados) {
 // ============================================
 
 // Mostrar badge com quantidade de itens na fila
+// ============================================
+// PASSO 5 - INDICADOR DE FILA PENDENTE (DESATIVADO)
+// ============================================
+
+// FUNÇÃO DESATIVADA - NÃO MOSTRA MAIS O BADGE
 function atualizarBadgeFila() {
+    // Função vazia - badge removido
+    return;
+}
+
+// Modal para mostrar status da fila (mantido para debug, mas sem badge)
+function abrirModalStatusFila() {
     const queue = obterFila();
     const pendentes = queue.filter(item => item.status === 'pendente' || item.status === 'processando');
+    const erros = queue.filter(item => item.status === 'erro');
     
-    let badge = document.getElementById('filaBadge');
+    let html = `
+        <div style="padding: 16px;">
+            <h3 style="margin-bottom: 16px;"><i class="fas fa-clock"></i> Status da Sincronização</h3>
+    `;
     
-    if (!badge && pendentes.length > 0) {
-        // Criar badge se não existir
-        badge = document.createElement('div');
-        badge.id = 'filaBadge';
-        badge.style.cssText = `
-            position: fixed;
-            bottom: 80px;
-            right: 10px;
-            background: #f39c12;
-            color: #fff;
-            border-radius: 20px;
-            padding: 4px 10px;
-            font-size: 11px;
-            font-weight: 600;
-            z-index: 999;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-            cursor: pointer;
-        `;
-        badge.innerHTML = `<i class="fas fa-sync-alt fa-spin"></i> ${pendentes.length} sincronizando...`;
-        badge.onclick = () => abrirModalStatusFila();
-        document.body.appendChild(badge);
-    } else if (badge) {
-        if (pendentes.length > 0) {
-            badge.innerHTML = `<i class="fas fa-sync-alt fa-spin"></i> ${pendentes.length} sincronizando...`;
-            badge.style.display = 'flex';
-        } else {
-            badge.style.display = 'none';
-        }
+    if (pendentes.length === 0 && erros.length === 0) {
+        html += `<p style="text-align: center; color: var(--gray);">Nenhuma ação pendente. Tudo sincronizado!</p>`;
     }
+    
+    if (pendentes.length > 0) {
+        html += `<div style="margin-bottom: 16px;">
+            <strong>🔄 Sincronizando (${pendentes.length}):</strong>
+            <ul style="margin-top: 8px;">`;
+        pendentes.forEach(item => {
+            const acaoTexto = {
+                'alternar_comprado': 'Marcar item na lista',
+                'deletar_item_lista': 'Remover item da lista',
+                'adicionar_item_lista': 'Adicionar item na lista',
+                'pagar_conta': 'Pagar conta',
+                'desfazer_pagamento': 'Desfazer pagamento'
+            }[item.acao] || item.acao;
+            html += `<li style="margin-bottom: 4px;">${acaoTexto} - ${new Date(item.timestamp).toLocaleTimeString()}</li>`;
+        });
+        html += `</ul></div>`;
+    }
+    
+    if (erros.length > 0) {
+        html += `<div style="margin-bottom: 16px;">
+            <strong style="color: #dc3545;">❌ Falhas (${erros.length}):</strong>
+            <ul style="margin-top: 8px;">`;
+        erros.forEach(item => {
+            html += `<li style="margin-bottom: 4px;">
+                ${item.acao} - ${item.erro || 'Erro desconhecido'}
+                <button onclick="reprocessarItemFila('${item.id}')" style="margin-left: 8px; padding: 2px 8px; font-size: 10px; background: #f39c12; color: #fff; border: none; border-radius: 4px; cursor: pointer;">Tentar novamente</button>
+            </li>`;
+        });
+        html += `</ul></div>`;
+    }
+    
+    html += `
+            <button class="btn btn-primary" onclick="fecharModal()" style="width: 100%;">Fechar</button>
+        </div>
+    `;
+    
+    abrirModal('Status de Sincronização', 'fa-clock', html);
 }
+
+// Processar fila a cada 10 segundos (mantido)
+setInterval(() => {
+    if (navigator.onLine) {
+        processarFila();
+    }
+}, 10000);
+
+
+
 
 // Modal para mostrar status da fila
 function abrirModalStatusFila() {

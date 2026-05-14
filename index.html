@@ -2749,6 +2749,321 @@
             exibirSaldoHeader: true
         };
 
+// ============================================
+// PASSO 1 - SISTEMA DE FILA PARA AÇÕES OTIMISTAS
+// ============================================
+
+// Nome da chave no localStorage
+const QUEUE_KEY = 'mylife_action_queue';
+
+// Função para adicionar ação à fila
+function adicionarNaFila(acao, dados) {
+    try {
+        const queue = obterFila();
+        const novoItem = {
+            id: Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+            acao: acao,
+            dados: dados,
+            timestamp: Date.now(),
+            tentativas: 0,
+            status: 'pendente'
+        };
+        queue.push(novoItem);
+        salvarFila(queue);
+        console.log(`📋 Item adicionado à fila: ${acao}`, dados);
+        
+        // Tentar processar a fila imediatamente
+        processarFila();
+        
+        return novoItem.id;
+    } catch (error) {
+        console.error('Erro ao adicionar à fila:', error);
+        return null;
+    }
+}
+
+// Função para obter a fila atual
+function obterFila() {
+    try {
+        const queue = localStorage.getItem(QUEUE_KEY);
+        return queue ? JSON.parse(queue) : [];
+    } catch (error) {
+        console.error('Erro ao ler fila:', error);
+        return [];
+    }
+}
+
+// Função para salvar a fila
+function salvarFila(queue) {
+    try {
+        localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+    } catch (error) {
+        console.error('Erro ao salvar fila:', error);
+    }
+}
+
+// Função para remover item da fila
+function removerDaFila(itemId) {
+    const queue = obterFila();
+    const novaFila = queue.filter(item => item.id !== itemId);
+    salvarFila(novaFila);
+    console.log(`🗑️ Item removido da fila: ${itemId}`);
+}
+
+// Função para atualizar status de um item na fila
+function atualizarStatusFila(itemId, status, erro = null) {
+    const queue = obterFila();
+    const item = queue.find(i => i.id === itemId);
+    if (item) {
+        item.status = status;
+        if (erro) item.erro = erro;
+        salvarFila(queue);
+    }
+}
+
+// Função principal para processar a fila
+async function processarFila() {
+    // Verificar se está online
+    if (!navigator.onLine) {
+        console.log('📡 Offline - processamento da fila aguardando conexão');
+        return;
+    }
+    
+    const queue = obterFila();
+    const itensPendentes = queue.filter(item => item.status === 'pendente');
+    
+    if (itensPendentes.length === 0) {
+        return;
+    }
+    
+    console.log(`🔄 Processando ${itensPendentes.length} itens na fila...`);
+    
+    // Processar um item por vez
+    for (const item of itensPendentes) {
+        if (item.status !== 'pendente') continue;
+        
+        // Marcar como processando
+        atualizarStatusFila(item.id, 'processando');
+        
+        try {
+            let sucesso = false;
+            
+            // Executar a ação correspondente
+            switch (item.acao) {
+                case 'alternar_comprado':
+                    sucesso = await executarAlternarCompradoBackend(item.dados);
+                    break;
+                case 'deletar_item_lista':
+                    sucesso = await executarDeletarItemListaBackend(item.dados);
+                    break;
+                default:
+                    console.log(`⚠️ Ação desconhecida: ${item.acao}`);
+                    sucesso = false;
+            }
+            
+            if (sucesso) {
+                atualizarStatusFila(item.id, 'concluido');
+                removerDaFila(item.id);
+                console.log(`✅ Ação concluída: ${item.acao}`);
+            } else {
+                throw new Error('Falha na execução');
+            }
+            
+        } catch (error) {
+            console.error(`❌ Erro ao processar ${item.acao}:`, error);
+            
+            item.tentativas++;
+            if (item.tentativas >= 3) {
+                atualizarStatusFila(item.id, 'erro', error.message);
+            } else {
+                atualizarStatusFila(item.id, 'pendente');
+            }
+        }
+    }
+}
+
+// Configurar listener para quando voltar online
+window.addEventListener('online', () => {
+    console.log('🟢 Conexão restaurada - processando fila...');
+    processarFila();
+});
+
+// Processar fila a cada 10 segundos (fallback)
+setInterval(() => {
+    if (navigator.onLine) {
+        processarFila();
+    }
+}, 10000);
+
+
+// ============================================
+// PASSO 2 - FUNÇÕES BACKEND PARA PROCESSAR A FILA
+// ============================================
+
+// Alternar comprado (backend)
+async function executarAlternarCompradoBackend(dados) {
+    const { id, novoStatus } = dados;
+    
+    try {
+        // Buscar o item atual
+        const { data: item, error: buscaError } = await App.supabase
+            .from('lista_compras')
+            .select('*')
+            .eq('id', id)
+            .single();
+        
+        if (buscaError || !item) {
+            console.error('Item não encontrado:', buscaError);
+            return false;
+        }
+        
+        // Atualizar
+        const { error: updateError } = await App.supabase
+            .from('lista_compras')
+            .update({ 
+                comprado: novoStatus,
+                comprado_em: novoStatus ? new Date().toISOString() : null
+            })
+            .eq('id', id);
+        
+        if (updateError) throw updateError;
+        
+        console.log(`✅ Backend: Item ${id} marcado como ${novoStatus ? 'comprado' : 'não comprado'}`);
+        return true;
+        
+    } catch (error) {
+        console.error('Erro no backend:', error);
+        return false;
+    }
+}
+
+// Deletar item da lista (backend)
+async function executarDeletarItemListaBackend(dados) {
+    const { id } = dados;
+    
+    try {
+        const { error } = await App.supabase
+            .from('lista_compras')
+            .delete()
+            .eq('id', id);
+        
+        if (error) throw error;
+        console.log(`✅ Backend: Item ${id} deletado`);
+        return true;
+        
+    } catch (error) {
+        console.error('Erro no backend:', error);
+        return false;
+    }
+}
+
+
+// ============================================
+// PASSO 5 - INDICADOR DE FILA PENDENTE
+// ============================================
+
+// Mostrar badge com quantidade de itens na fila
+function atualizarBadgeFila() {
+    const queue = obterFila();
+    const pendentes = queue.filter(item => item.status === 'pendente' || item.status === 'processando');
+    
+    let badge = document.getElementById('filaBadge');
+    
+    if (!badge && pendentes.length > 0) {
+        // Criar badge se não existir
+        badge = document.createElement('div');
+        badge.id = 'filaBadge';
+        badge.style.cssText = `
+            position: fixed;
+            bottom: 80px;
+            right: 10px;
+            background: #f39c12;
+            color: #fff;
+            border-radius: 20px;
+            padding: 4px 10px;
+            font-size: 11px;
+            font-weight: 600;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            cursor: pointer;
+        `;
+        badge.innerHTML = `<i class="fas fa-sync-alt fa-spin"></i> ${pendentes.length} sincronizando...`;
+        badge.onclick = () => abrirModalStatusFila();
+        document.body.appendChild(badge);
+    } else if (badge) {
+        if (pendentes.length > 0) {
+            badge.innerHTML = `<i class="fas fa-sync-alt fa-spin"></i> ${pendentes.length} sincronizando...`;
+            badge.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+}
+
+// Modal para mostrar status da fila
+function abrirModalStatusFila() {
+    const queue = obterFila();
+    const pendentes = queue.filter(item => item.status === 'pendente' || item.status === 'processando');
+    const erros = queue.filter(item => item.status === 'erro');
+    
+    let html = `
+        <div style="padding: 16px;">
+            <h3 style="margin-bottom: 16px;"><i class="fas fa-clock"></i> Sincronização Pendente</h3>
+    `;
+    
+    if (pendentes.length === 0 && erros.length === 0) {
+        html += `<p style="text-align: center; color: var(--gray);">Nenhuma ação pendente</p>`;
+    }
+    
+    if (pendentes.length > 0) {
+        html += `<div style="margin-bottom: 16px;">
+            <strong>🔄 Sincronizando (${pendentes.length}):</strong>
+            <ul style="margin-top: 8px;">`;
+        pendentes.forEach(item => {
+            const acaoTexto = {
+                'alternar_comprado': 'Marcar item na lista',
+                'deletar_item_lista': 'Remover item da lista'
+            }[item.acao] || item.acao;
+            html += `<li style="margin-bottom: 4px;">${acaoTexto} - ${new Date(item.timestamp).toLocaleTimeString()}</li>`;
+        });
+        html += `</ul></div>`;
+    }
+    
+    if (erros.length > 0) {
+        html += `<div style="margin-bottom: 16px;">
+            <strong style="color: #dc3545;">❌ Falhas (${erros.length}):</strong>
+            <ul style="margin-top: 8px;">`;
+        erros.forEach(item => {
+            html += `<li style="margin-bottom: 4px;">
+                ${item.acao} - ${item.erro || 'Erro desconhecido'}
+                <button onclick="reprocessarItemFila('${item.id}')" style="margin-left: 8px; padding: 2px 8px; font-size: 10px; background: #f39c12; color: #fff; border: none; border-radius: 4px; cursor: pointer;">Tentar novamente</button>
+            </li>`;
+        });
+        html += `</ul></div>`;
+    }
+    
+    html += `
+            <button class="btn btn-primary" onclick="fecharModal()" style="width: 100%;">Fechar</button>
+        </div>
+    `;
+    
+    abrirModal('Status de Sincronização', 'fa-clock', html);
+}
+
+// Função para reprocessar um item específico
+function reprocessarItemFila(itemId) {
+    atualizarStatusFila(itemId, 'pendente');
+    processarFila();
+    fecharModal();
+    showToast('🔄 Tentando novamente...', 'info');
+}
+
+// Atualizar badge a cada 2 segundos
+setInterval(atualizarBadgeFila, 2000);
+
 
 
 function getNomeUsuario() {
@@ -14019,102 +14334,85 @@ async function salvarNovoItemLista() {
 
 
 // ============================================
-// FUNÇÃO ALTERNAR COMPRADO - VERSÃO SUPER ROBUSTA
+// PASSO 3 - ALTERNAR COMPRADO (VERSÃO OTIMISTA)
 // ============================================
+
 async function alternarComprado(id) {
-    try {
-        console.log('🔄 Alternando item ID:', id);
-        
-        if (!id) {
-            showToast('ID inválido', 'error');
-            return;
-        }
-        
-        // Busca o item no banco
-        const { data: item, error: buscaError } = await App.supabase
-            .from('lista_compras')
-            .select('*')
-            .eq('id', id)
-            .single();
-        
-        if (buscaError || !item) {
-            console.error('Item não encontrado:', buscaError);
-            showToast('Item não encontrado', 'error');
-            return;
-        }
-        
-        let novoStatus = !item.comprado;
-        
-        // PREPARA O OBJETO DE UPDATE
-        let updateData = {
-            comprado: novoStatus
-        };
-        
-        // SÓ ADICIONA comprado_em SE A COLUNA EXISTIR (verificação segura)
-        try {
-            // Tenta incluir a data
-            updateData.comprado_em = novoStatus ? new Date().toISOString() : null;
-            
-            console.log('📝 Tentando update com comprado_em');
-            
-        } catch (e) {
-            console.log('⚠️ comprado_em não disponível, ignorando');
-        }
-        
-        // EXECUTA O UPDATE
-        const { error: updateError } = await App.supabase
-            .from('lista_compras')
-            .update(updateData)
-            .eq('id', id);
-        
-        if (updateError) {
-            // Se o erro for sobre a coluna, tenta sem ela
-            if (updateError.message && updateError.message.includes('comprado_em')) {
-                console.log('⚠️ Erro com comprado_em, tentando sem...');
-                
-                const { error: retryError } = await App.supabase
-                    .from('lista_compras')
-                    .update({ comprado: novoStatus })
-                    .eq('id', id);
-                
-                if (retryError) throw retryError;
-                
-            } else {
-                throw updateError;
-            }
-        }
-        
-        await registrarHistorico('alternar_lista', 
-            `Item ${novoStatus ? 'marcado' : 'desmarcado'}: ${item.descricao}`, 
-            { id });
-        
-        await carregarDados(true);
-        await mostrarConteudo();
-        
-        showToast(`Item ${novoStatus ? 'marcado' : 'desmarcado'}!`, 'success');
-        
-    } catch (error) {
-        console.error('❌ Erro completo:', error);
-        showToast('Erro: ' + error.message, 'error');
+    console.log('🔄 Alternando item ID (UI Otimista):', id);
+    
+    if (!id) {
+        showToast('ID inválido', 'error');
+        return;
     }
+    
+    // Buscar o item no cache local
+    let item = App.dataCache.lista.find(i => i.id == id);
+    
+    if (!item) {
+        showToast('Item não encontrado', 'error');
+        return;
+    }
+    
+    const novoStatus = !item.comprado;
+    const statusTexto = novoStatus ? 'comprado' : 'não comprado';
+    
+    // 🔥 PASSO 1: ATUALIZAR UI IMEDIATAMENTE (Optimistic UI)
+    // Atualizar no cache local
+    item.comprado = novoStatus;
+    if (novoStatus) {
+        item.comprado_em = new Date().toISOString();
+    } else {
+        item.comprado_em = null;
+    }
+    
+    // Re-renderizar a tela IMEDIATAMENTE
+    await mostrarConteudo();
+    
+    // Mostrar feedback rápido
+    showToast(`✅ Item ${statusTexto}!`, 'success', 1500);
+    
+    // 🔥 PASSO 2: ADICIONAR À FILA PARA PROCESSAR EM BACKGROUND
+    adicionarNaFila('alternar_comprado', {
+        id: id,
+        novoStatus: novoStatus
+    });
+    
+    // 🔥 PASSO 3: ATUALIZAR BADGE DA LISTA
+    atualizarListaBadge();
 }
 
-// 4. DELETAR ITEM
+// ============================================
+// DELETAR ITEM - VERSÃO OTIMISTA
+// ============================================
+
 function deletarItemLista(id) {
-    if (!confirm('Remover item da lista?')) return;
+    // Buscar o item no cache
+    let item = App.dataCache.lista.find(i => i.id == id);
     
-    (async () => {
-        try {
-            await App.supabase.from('lista_compras').delete().eq('id', id);
-            await registrarHistorico('exclusao_lista', `Item removido da lista`, { id });
-            showToast('Item removido!', 'success');
-            await carregarDados(true);
-            await mostrarConteudo();
-        } catch (error) {
-            console.error('Erro ao remover:', error);
-            showToast('Erro: ' + error.message, 'error');
-        }
-    })();
+    if (!item) {
+        showToast('Item não encontrado', 'error');
+        return;
+    }
+    
+    const nomeItem = item.descricao;
+    
+    // Confirmar com o usuário
+    if (!confirm(`Remover "${nomeItem}" da lista?`)) return;
+    
+    // 🔥 PASSO 1: ATUALIZAR UI IMEDIATAMENTE
+    const index = App.dataCache.lista.findIndex(i => i.id == id);
+    if (index !== -1) {
+        App.dataCache.lista.splice(index, 1);
+    }
+    
+    // Re-renderizar imediatamente
+    mostrarConteudo();
+    atualizarListaBadge();
+    
+    showToast(`🗑️ "${nomeItem}" removido!`, 'success', 1500);
+    
+    // 🔥 PASSO 2: ADICIONAR À FILA
+    adicionarNaFila('deletar_item_lista', { id: id });
 }
 
 // 5. FUNÇÃO AUXILIAR (se não existir)

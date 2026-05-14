@@ -2862,6 +2862,9 @@ async function processarFila() {
     case 'desfazer_pagamento':
         sucesso = await executarDesfazerPagamentoBackend(item.dados);
         break;
+        case 'adicionar_item_lista':
+    sucesso = await executarAdicionarItemListaBackend(item.dados);
+    break;
     default:
                     console.log(`⚠️ Ação desconhecida: ${item.acao}`);
                     sucesso = false;
@@ -2910,6 +2913,52 @@ setInterval(() => {
 // ============================================
 // FUNÇÕES BACKEND PARA CONTAS
 // ============================================
+
+
+// ============================================
+// ADICIONAR ITEM NA LISTA (BACKEND)
+// ============================================
+
+async function executarAdicionarItemListaBackend(dados) {
+    const { idTemp, quantidade, descricao, added_by } = dados;
+    
+    try {
+        // Inserir no Supabase
+        const { data, error } = await App.supabase
+            .from('lista_compras')
+            .insert({
+                user_id: App.currentUser.id,
+                quantidade: quantidade,
+                descricao: descricao,
+                comprado: false,
+                added_by: added_by
+            })
+            .select();
+        
+        if (error) throw error;
+        
+        if (data && data[0]) {
+            // 🔥 SUBSTITUIR O ID TEMPORÁRIO PELO ID REAL
+            const itemTemp = App.dataCache.lista.find(i => i.id === idTemp);
+            if (itemTemp) {
+                itemTemp.id = data[0].id;
+                itemTemp.is_temp = false;
+                delete itemTemp.is_temp;
+                
+                // Salvar cache atualizado
+                salvarCacheLocal();
+            }
+        }
+        
+        console.log(`✅ Backend: Item "${descricao}" adicionado com ID real ${data[0].id}`);
+        return true;
+        
+    } catch (error) {
+        console.error('Erro no backend ao adicionar item:', error);
+        return false;
+    }
+}
+
 
 // Pagar conta (backend)
 async function executarPagarContaBackend(dados) {
@@ -12084,64 +12133,81 @@ async function confirmarPagamento(id, desc, regraId, dia, mes, ano, isRecorrente
     // (já é feito automaticamente pelo sistema de fila)
 }
 
-        function abrirModalDesfazerPagamento(id, desc, valor, regraId, dia, mes, ano, isRecorrente) {
-            let conteudo = `
-                <div style="padding:16px; text-align:center">
-                    <p>Desfazer pagamento de <strong>${desc}</strong>?</p>
-                    <p style="font-size:1.2em; margin:16px 0">${formatCurrency(valor)} voltará para o saldo</p>
-                    <div class="btn-group">
-                        <button class="btn btn-warning" onclick="desfazerPagamento('${id}', ${valor}, '${regraId}', ${dia}, ${mes}, ${ano}, ${isRecorrente})" style="flex:2"><i class="fas fa-undo-alt"></i> Desfazer</button>
-                        <button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button>
-                    </div>
-                </div>
-            `;
-            abrirModal('Desfazer Pagamento', 'fa-undo-alt', conteudo);
-        }
+        // ============================================
+// ABRIR MODAL DESFAZER PAGAMENTO
+// ============================================
+
+function abrirModalDesfazerPagamento(id, desc, valor, regraId, dia, mes, ano, isRecorrente) {
+    let conteudo = `
+        <div style="padding:16px; text-align:center">
+            <p>Desfazer pagamento de <strong>${desc}</strong>?</p>
+            <p style="font-size:1.2em; margin:16px 0">${formatCurrency(valor)} voltará para o saldo</p>
+            <div class="btn-group">
+                <button class="btn btn-warning" onclick="confirmarDesfazerPagamento('${id}', ${valor}, '${regraId}', ${dia}, ${mes}, ${ano}, ${isRecorrente})" style="flex:2"><i class="fas fa-undo-alt"></i> Desfazer</button>
+                <button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button>
+            </div>
+        </div>
+    `;
+    abrirModal('Desfazer Pagamento', 'fa-undo-alt', conteudo);
+}
 
         // ============================================
 // DESFAZER PAGAMENTO - VERSÃO OTIMISTA (UI IMEDIATA)
 // ============================================
 
-async function desfazerPagamento(id, valor, regraId, dia, mes, ano, isRecorrente) {
-    // 🔥 PASSO 1: ATUALIZAR UI IMEDIATAMENTE
+// ============================================
+// CONFIRMAR DESFAZER PAGAMENTO - VERSÃO OTIMISTA (UI IMEDIATA)
+// ============================================
+
+async function confirmarDesfazerPagamento(id, valor, regraId, dia, mes, ano, isRecorrente) {
     
-    // Atualizar no cache local
+    // 🔥 PASSO 1: ATUALIZAR UI IMEDIATAMENTE (Optimistic UI)
+    
+    // 1.1 Atualizar no cache local
+    let contaAtualizada = null;
+    
     if (isRecorrente && regraId && regraId !== 'undefined') {
+        // Para conta recorrente
         const dataStr = `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
         const contasRecorrentes = App.dataCache.contas.filter(c => c.regra_id == regraId);
-        const contaEncontrada = contasRecorrentes.find(c => {
+        contaAtualizada = contasRecorrentes.find(c => {
             const dataConta = `${c.ano}-${String(c.mes).padStart(2, '0')}-${String(c.dia).padStart(2, '0')}`;
             return dataConta === dataStr;
         });
         
-        if (contaEncontrada) {
-            contaEncontrada.valor_pago = 0;
-            contaEncontrada.status = 'pendente';
-            contaEncontrada.data_pagamento = null;
+        if (contaAtualizada) {
+            contaAtualizada.valor_pago = 0;
+            contaAtualizada.status = 'pendente';
+            contaAtualizada.data_pagamento = null;
         }
     } else {
-        const conta = App.dataCache.contas.find(c => c.id == id);
-        if (conta) {
-            conta.valor_pago = 0;
-            conta.status = 'pendente';
-            conta.data_pagamento = null;
+        // Conta única
+        contaAtualizada = App.dataCache.contas.find(c => c.id == id);
+        if (contaAtualizada) {
+            contaAtualizada.valor_pago = 0;
+            contaAtualizada.status = 'pendente';
+            contaAtualizada.data_pagamento = null;
         }
     }
     
-    // Atualizar saldo no cache local
+    // 1.2 Atualizar saldo no cache local (devolver o valor)
     if (App.saldoCentral.id && valor > 0) {
         App.saldoCentral.valor = App.saldoCentral.valor + valor;
         atualizarSaldoHeader();
     }
     
-    // Re-renderizar a tela IMEDIATAMENTE
-    await carregarDados(true);
+    // 1.3 FORÇAR ATUALIZAÇÃO VISUAL IMEDIATA
     await atualizarCalendario();
-    await mostrarConteudo();
     
-    showToast(`✅ Pagamento desfeito!`, 'success', 1500);
+    // Atualizar a área de conteúdo (lista de contas)
+    let { mes: mesAtual, ano: anoAtual } = getMesAnoAtual();
+    let content = document.getElementById('dynamicContent');
+    await renderizarTudo(content, mesAtual, anoAtual);
     
-    // 🔥 PASSO 2: ADICIONAR À FILA
+    // Mostrar feedback rápido
+    showToast(`✅ Pagamento desfeito! ${formatCurrency(valor)} voltou ao saldo`, 'success', 1500);
+    
+    // 🔥 PASSO 2: ADICIONAR À FILA PARA PROCESSAR EM BACKGROUND
     adicionarNaFila('desfazer_pagamento', {
         id: id,
         valor: valor,
@@ -12152,6 +12218,7 @@ async function desfazerPagamento(id, valor, regraId, dia, mes, ano, isRecorrente
         isRecorrente: isRecorrente
     });
     
+    // 🔥 PASSO 3: FECHAR O MODAL
     fecharModal();
 }
 
@@ -14344,6 +14411,10 @@ function abrirNovoItemLista() {
 }
 
 // 2. SALVAR NOVO ITEM
+// ============================================
+// SALVAR NOVO ITEM NA LISTA - VERSÃO OTIMISTA (UI IMEDIATA)
+// ============================================
+
 async function salvarNovoItemLista() {
     let qtd = parseInt(document.getElementById('itemQuantidade')?.value);
     let desc = document.getElementById('itemDescricao')?.value.trim();
@@ -14355,7 +14426,7 @@ async function salvarNovoItemLista() {
         return;
     }
     
-    // 🔴 VERIFICAR LIMITE DA LISTA DE COMPRAS NO PLANO GRÁTIS
+    // 🔥 VERIFICAR LIMITE DE ITENS (apenas para plano grátis)
     const isPremium = App.plano === 'mensal' || App.plano === 'anual' || App.plano === 'teste';
     
     if (!isPremium) {
@@ -14385,30 +14456,57 @@ async function salvarNovoItemLista() {
             return;
         }
     }
-
-    try {
-        await App.supabase.from('lista_compras').insert({
-            user_id: App.currentUser.id,
-            quantidade: qtd,
-            descricao: desc,
-            comprado: false,
-            added_by: nomeUsuario
-        });
-
-        await registrarHistorico('criacao_lista', `Item adicionado: ${desc}`, { qtd, desc, usuario: nomeUsuario });
-        showToast('Item adicionado!', 'success');
-        fecharModal();
-        await carregarDados(true);
-        await mostrarConteudo();
-    } catch (error) {
-        console.error('Erro:', error);
-        showToast('Erro: ' + error.message, 'error');
+    
+    // 🔥 PASSO 1: CRIAR ID TEMPORÁRIO
+    const idTemp = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+    
+    // 🔥 PASSO 2: CRIAR OBJETO DO ITEM (OTIMISTA)
+    const novoItem = {
+        id: idTemp,
+        user_id: App.currentUser.id,
+        quantidade: qtd,
+        descricao: desc,
+        comprado: false,
+        comprado_em: null,
+        added_by: nomeUsuario,
+        created_at: new Date().toISOString(),
+        is_temp: true  // Marcar como temporário
+    };
+    
+    // 🔥 PASSO 3: ADICIONAR AO CACHE LOCAL IMEDIATAMENTE
+    if (!App.dataCache.lista) {
+        App.dataCache.lista = [];
     }
+    App.dataCache.lista.push(novoItem);
+    
+    // 🔥 PASSO 4: RE-RENDERIZAR A TELA IMEDIATAMENTE
+    await mostrarConteudo();
+    
+    // 🔥 PASSO 5: ATUALIZAR BADGE
+    atualizarListaBadge();
+    
+    // Mostrar feedback rápido
+    showToast(`✅ "${desc}" adicionado à lista!`, 'success', 1200);
+    
+    // 🔥 PASSO 6: FECHAR O MODAL
+    fecharModal();
+    
+    // 🔥 PASSO 7: ADICIONAR À FILA PARA PROCESSAR EM BACKGROUND
+    adicionarNaFila('adicionar_item_lista', {
+        idTemp: idTemp,
+        quantidade: qtd,
+        descricao: desc,
+        added_by: nomeUsuario
+    });
 }
 
 
 // ============================================
 // PASSO 3 - ALTERNAR COMPRADO (VERSÃO OTIMISTA)
+// ============================================
+
+// ============================================
+// ALTERNAR COMPRADO - VERSÃO OTIMISTA
 // ============================================
 
 async function alternarComprado(id) {
@@ -14430,8 +14528,7 @@ async function alternarComprado(id) {
     const novoStatus = !item.comprado;
     const statusTexto = novoStatus ? 'comprado' : 'não comprado';
     
-    // 🔥 PASSO 1: ATUALIZAR UI IMEDIATAMENTE (Optimistic UI)
-    // Atualizar no cache local
+    // 🔥 ATUALIZAR UI IMEDIATAMENTE
     item.comprado = novoStatus;
     if (novoStatus) {
         item.comprado_em = new Date().toISOString();
@@ -14443,15 +14540,15 @@ async function alternarComprado(id) {
     await mostrarConteudo();
     
     // Mostrar feedback rápido
-    showToast(`✅ Item ${statusTexto}!`, 'success', 1500);
+    showToast(`✅ Item ${statusTexto}!`, 'success', 1200);
     
-    // 🔥 PASSO 2: ADICIONAR À FILA PARA PROCESSAR EM BACKGROUND
+    // 🔥 ADICIONAR À FILA
     adicionarNaFila('alternar_comprado', {
         id: id,
         novoStatus: novoStatus
     });
     
-    // 🔥 PASSO 3: ATUALIZAR BADGE DA LISTA
+    // Atualizar badge
     atualizarListaBadge();
 }
 

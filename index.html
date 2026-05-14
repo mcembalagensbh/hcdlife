@@ -2850,13 +2850,19 @@ async function processarFila() {
             
             // Executar a ação correspondente
             switch (item.acao) {
-                case 'alternar_comprado':
-                    sucesso = await executarAlternarCompradoBackend(item.dados);
-                    break;
-                case 'deletar_item_lista':
-                    sucesso = await executarDeletarItemListaBackend(item.dados);
-                    break;
-                default:
+    case 'alternar_comprado':
+        sucesso = await executarAlternarCompradoBackend(item.dados);
+        break;
+    case 'deletar_item_lista':
+        sucesso = await executarDeletarItemListaBackend(item.dados);
+        break;
+    case 'pagar_conta':
+        sucesso = await executarPagarContaBackend(item.dados);
+        break;
+    case 'desfazer_pagamento':
+        sucesso = await executarDesfazerPagamentoBackend(item.dados);
+        break;
+    default:
                     console.log(`⚠️ Ação desconhecida: ${item.acao}`);
                     sucesso = false;
             }
@@ -2899,6 +2905,138 @@ setInterval(() => {
 // ============================================
 // PASSO 2 - FUNÇÕES BACKEND PARA PROCESSAR A FILA
 // ============================================
+
+
+// ============================================
+// FUNÇÕES BACKEND PARA CONTAS
+// ============================================
+
+// Pagar conta (backend)
+async function executarPagarContaBackend(dados) {
+    const { id, valorPago, desc, regraId, dia, mes, ano, isRecorrente, codigoPagamento } = dados;
+    
+    const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
+    
+    try {
+        if (isRecorrente && regraId && regraId !== 'undefined') {
+            // Conta recorrente: criar exceção
+            const dataExcecao = `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+            
+            const { data: existente } = await App.supabase
+                .from('excecoes_recorrencia')
+                .select('id')
+                .eq('regra_id', parseInt(regraId))
+                .eq('data_excecao', dataExcecao)
+                .maybeSingle();
+            
+            if (existente) {
+                await App.supabase
+                    .from('excecoes_recorrencia')
+                    .update({ acao: 'pagar' })
+                    .eq('id', existente.id);
+            } else {
+                await App.supabase
+                    .from('excecoes_recorrencia')
+                    .insert({
+                        user_id: App.currentUser.id,
+                        regra_id: parseInt(regraId),
+                        data_excecao: dataExcecao,
+                        acao: 'pagar',
+                        added_by: nomeUsuario
+                    });
+            }
+        } else {
+            // Conta única
+            await App.supabase
+                .from('contas')
+                .update({
+                    valor_pago: valorPago,
+                    status: 'paga',
+                    data_pagamento: new Date().toISOString()
+                })
+                .eq('id', id);
+        }
+        
+        // Atualizar saldo central (se valor > 0)
+        if (App.saldoCentral.id && valorPago > 0) {
+            const { data: saldoAtual } = await App.supabase
+                .from('saldos')
+                .select('valor')
+                .eq('id', App.saldoCentral.id)
+                .single();
+            
+            if (saldoAtual) {
+                const novoValor = saldoAtual.valor - valorPago;
+                await App.supabase
+                    .from('saldos')
+                    .update({ valor: novoValor })
+                    .eq('id', App.saldoCentral.id);
+                App.saldoCentral.valor = novoValor;
+            }
+        }
+        
+        // Registrar histórico
+        await registrarHistorico('pagamento_conta', 
+            `Conta paga: ${desc} - Valor: ${formatCurrency(valorPago)}`, 
+            { id, valor: valorPago, usuario: nomeUsuario, isRecorrente });
+        
+        console.log(`✅ Backend: Conta ${id} paga com sucesso`);
+        return true;
+        
+    } catch (error) {
+        console.error('Erro no backend ao pagar conta:', error);
+        return false;
+    }
+}
+
+// Desfazer pagamento (backend)
+async function executarDesfazerPagamentoBackend(dados) {
+    const { id, valor, regraId, dia, mes, ano, isRecorrente } = dados;
+    
+    try {
+        if (isRecorrente && regraId && regraId !== 'undefined') {
+            await App.supabase
+                .from('excecoes_recorrencia')
+                .delete()
+                .eq('regra_id', regraId)
+                .eq('data_excecao', dataParaString(ano, mes, dia));
+        } else {
+            await App.supabase
+                .from('contas')
+                .update({
+                    valor_pago: 0,
+                    status: 'pendente',
+                    data_pagamento: null
+                })
+                .eq('id', id);
+        }
+        
+        // Atualizar saldo central
+        if (App.saldoCentral.id) {
+            const { data: saldoAtual } = await App.supabase
+                .from('saldos')
+                .select('valor')
+                .eq('id', App.saldoCentral.id)
+                .single();
+            
+            if (saldoAtual) {
+                const novoValor = saldoAtual.valor + valor;
+                await App.supabase
+                    .from('saldos')
+                    .update({ valor: novoValor })
+                    .eq('id', App.saldoCentral.id);
+                App.saldoCentral.valor = novoValor;
+            }
+        }
+        
+        console.log(`✅ Backend: Pagamento da conta ${id} desfeito`);
+        return true;
+        
+    } catch (error) {
+        console.error('Erro no backend ao desfazer pagamento:', error);
+        return false;
+    }
+}
 
 // Alternar comprado (backend)
 async function executarAlternarCompradoBackend(dados) {
@@ -11828,7 +11966,11 @@ function fecharModalInfoEConfirmar() {
             });
         }
 
-      async function confirmarPagamento(id, desc, regraId, dia, mes, ano, isRecorrente) {
+      // ============================================
+// CONFIRMAR PAGAMENTO - VERSÃO OTIMISTA (UI IMEDIATA)
+// ============================================
+
+async function confirmarPagamento(id, desc, regraId, dia, mes, ano, isRecorrente) {
     if (App.processandoPagamento) {
         showToast('Processando pagamento, aguarde...', 'warning');
         return;
@@ -11842,187 +11984,67 @@ function fecharModalInfoEConfirmar() {
     }
     
     const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
+    const contaDesc = desc;
     
-    // Se for R$ 0,00, apenas marcar como paga sem alterar saldo
+    // 🔥 PASSO 1: ATUALIZAR UI IMEDIATAMENTE (Optimistic UI)
+    
+    // Atualizar no cache local
+    if (isRecorrente && regraId && regraId !== 'undefined') {
+        // Para conta recorrente, encontrar e atualizar no cache
+        const dataStr = `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+        const contasRecorrentes = App.dataCache.contas.filter(c => c.regra_id == regraId);
+        const contaEncontrada = contasRecorrentes.find(c => {
+            const dataConta = `${c.ano}-${String(c.mes).padStart(2, '0')}-${String(c.dia).padStart(2, '0')}`;
+            return dataConta === dataStr;
+        });
+        
+        if (contaEncontrada) {
+            contaEncontrada.valor_pago = valorPago;
+            contaEncontrada.status = 'paga';
+            contaEncontrada.data_pagamento = new Date().toISOString();
+        }
+    } else {
+        // Conta única
+        const conta = App.dataCache.contas.find(c => c.id == id);
+        if (conta) {
+            conta.valor_pago = valorPago;
+            conta.status = 'paga';
+            conta.data_pagamento = new Date().toISOString();
+        }
+    }
+    
+    // Atualizar saldo no cache local
+    if (App.saldoCentral.id && valorPago > 0) {
+        App.saldoCentral.valor = App.saldoCentral.valor - valorPago;
+        atualizarSaldoHeader();
+    }
+    
+    // Re-renderizar a tela IMEDIATAMENTE
+    await carregarDados(true);
+    await atualizarCalendario();
+    await mostrarConteudo();
+    
+    // Mostrar feedback rápido
     if (valorPago === 0) {
-        const confirmar = confirm(
-            '⚠️ ATENÇÃO: Você está pagando R$ 0,00.\n\n' +
-            'Isso apenas dará baixa na conta SEM alterar seu saldo.\n\n' +
-            'Deseja continuar?'
-        );
-        
-        if (!confirmar) {
-            return;
-        }
-        
-        try {
-            App.processandoPagamento = true;
-            
-            if (isRecorrente && regraId && regraId !== 'undefined') {
-                // Para conta recorrente: criar exceção de pagamento
-                const dataExcecao = `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
-                
-                console.log('🔵 Criando exceção de pagamento:', { regraId, dataExcecao, valor: 0 });
-                
-                const { error } = await App.supabase
-                    .from('excecoes_recorrencia')
-                    .insert({
-                        user_id: App.currentUser.id,
-                        regra_id: parseInt(regraId),
-                        data_excecao: dataExcecao,
-                        acao: 'pagar',
-                        added_by: nomeUsuario
-                    });
-                
-                if (error) {
-                    console.error('❌ Erro ao criar exceção:', error);
-                    showToast('Erro: ' + error.message, 'error');
-                    return;
-                }
-                
-                console.log('✅ Exceção criada com sucesso');
-                
-            } else {
-                // Conta única
-                const { error } = await App.supabase
-                    .from('contas')
-                    .update({
-                        valor_pago: 0,
-                        status: 'paga',
-                        data_pagamento: new Date().toISOString()
-                    })
-                    .eq('id', id);
-                
-                if (error) throw error;
-            }
-            
-            await registrarHistorico('pagamento_conta_zero', 
-                `Conta marcada como paga (R$ 0,00): ${desc}`, 
-                { id, usuario: nomeUsuario });
-            
-            showToast('✅ Conta marcada como paga! (Saldo não alterado)', 'success');
-            
-            // Recarregar dados
-            await carregarDados(true);
-            await atualizarCalendario();
-            await mostrarConteudo();
-            
-            fecharModal();
-            
-        } catch (error) {
-            console.error('Erro ao marcar como paga:', error);
-            showToast('Erro: ' + error.message, 'error');
-        } finally {
-            App.processandoPagamento = false;
-        }
-        return;
+        showToast(`✅ Conta "${contaDesc}" marcada como paga!`, 'success', 1500);
+    } else {
+        showToast(`✅ Pagamento de ${formatCurrency(valorPago)} confirmado!`, 'success', 1500);
     }
     
-    // Pagamento normal (valor > 0)
-    App.processandoPagamento = true;
+    // 🔥 PASSO 2: ADICIONAR À FILA PARA PROCESSAR EM BACKGROUND
+    adicionarNaFila('pagar_conta', {
+        id: id,
+        valorPago: valorPago,
+        desc: contaDesc,
+        regraId: regraId,
+        dia: dia,
+        mes: mes,
+        ano: ano,
+        isRecorrente: isRecorrente
+    });
     
-    try {
-        // 1. Registrar o pagamento
-        if (isRecorrente && regraId && regraId !== 'undefined') {
-            // Conta recorrente: criar exceção
-            const dataExcecao = `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
-            
-            console.log('🔵 Criando exceção de pagamento (valor > 0):', { regraId, dataExcecao, valorPago });
-            
-            // Verificar se já existe exceção para esta data
-            const { data: existente } = await App.supabase
-                .from('excecoes_recorrencia')
-                .select('id')
-                .eq('regra_id', parseInt(regraId))
-                .eq('data_excecao', dataExcecao)
-                .maybeSingle();
-            
-            if (existente) {
-                // Atualizar exceção existente
-                const { error } = await App.supabase
-                    .from('excecoes_recorrencia')
-                    .update({ acao: 'pagar' })
-                    .eq('id', existente.id);
-                
-                if (error) throw error;
-            } else {
-                // Criar nova exceção
-                const { error } = await App.supabase
-                    .from('excecoes_recorrencia')
-                    .insert({
-                        user_id: App.currentUser.id,
-                        regra_id: parseInt(regraId),
-                        data_excecao: dataExcecao,
-                        acao: 'pagar',
-                        added_by: nomeUsuario
-                    });
-                
-                if (error) throw error;
-            }
-            
-        } else {
-            // Conta única
-            const { error } = await App.supabase
-                .from('contas')
-                .update({
-                    valor_pago: valorPago,
-                    status: 'paga',
-                    data_pagamento: new Date().toISOString()
-                })
-                .eq('id', id);
-            
-            if (error) throw error;
-        }
-        
-        // 2. Atualizar o saldo central
-        if (App.saldoCentral.id && valorPago > 0) {
-            const { data: saldoAtual, error: saldoError } = await App.supabase
-                .from('saldos')
-                .select('valor')
-                .eq('id', App.saldoCentral.id)
-                .single();
-            
-            if (!saldoError && saldoAtual) {
-                const novoValor = saldoAtual.valor - valorPago;
-                await App.supabase
-                    .from('saldos')
-                    .update({ valor: novoValor })
-                    .eq('id', App.saldoCentral.id);
-                App.saldoCentral.valor = novoValor;
-                atualizarSaldoHeader();
-            }
-        }
-        
-        // 3. Registrar histórico
-        await registrarHistorico('pagamento_conta', 
-            `Conta paga: ${desc} - Valor: ${formatCurrency(valorPago)}`, 
-            { id, valor: valorPago, usuario: nomeUsuario, isRecorrente });
-        
-        // 4. Notificação
-        verificarNotificacoes({ descricao: 'Pagamento confirmado', valor: valorPago }, 'contas');
-        
-        showToast(`✅ Pagamento de ${formatCurrency(valorPago)} confirmado!`, 'success');
-        
-        // 5. Fechar modal e recarregar dados
-        fecharModal();
-        await carregarDados(true);
-        await atualizarCalendario();
-        await mostrarConteudo();
-        
-        // 6. Sincronizar com Google (opcional, tratar erro separadamente)
-        try {
-            await sincronizarGoogleAutomatico();
-        } catch (syncError) {
-            console.warn('Erro na sincronização automática:', syncError);
-            // Não mostrar erro para o usuário, apenas log
-        }
-        
-    } catch (error) {
-        console.error('Erro ao pagar conta:', error);
-        showToast('Erro ao processar pagamento: ' + error.message, 'error');
-    } finally {
-        App.processandoPagamento = false;
-    }
+    // Fechar o modal de pagamento
+    fecharModal();
 }
 
         function abrirModalDesfazerPagamento(id, desc, valor, regraId, dia, mes, ano, isRecorrente) {
@@ -12039,46 +12061,61 @@ function fecharModalInfoEConfirmar() {
             abrirModal('Desfazer Pagamento', 'fa-undo-alt', conteudo);
         }
 
-        async function desfazerPagamento(id, valor, regraId, dia, mes, ano, isRecorrente) {
-    try {
-        if (isRecorrente && regraId) {
-            await App.supabase
-                .from('excecoes_recorrencia')
-                .delete()
-                .eq('regra_id', regraId)
-                .eq('data_excecao', dataParaString(ano, mes, dia));
-        } else {
-            await App.supabase.from('contas').update({
-                valor_pago: 0,
-                status: 'pendente',
-                data_pagamento: null
-            }).eq('id', id);
-        }
+        // ============================================
+// DESFAZER PAGAMENTO - VERSÃO OTIMISTA (UI IMEDIATA)
+// ============================================
 
-        if (App.saldoCentral.id) {
-            let { data: saldoAtual } = await App.supabase.from('saldos').select('valor').eq('id', App.saldoCentral.id).single();
-            if (saldoAtual) {
-                let novoValor = saldoAtual.valor + valor;
-                await App.supabase.from('saldos').update({ valor: novoValor }).eq('id', App.saldoCentral.id);
-                App.saldoCentral.valor = novoValor;
-                atualizarSaldoHeader();
-            }
+async function desfazerPagamento(id, valor, regraId, dia, mes, ano, isRecorrente) {
+    // 🔥 PASSO 1: ATUALIZAR UI IMEDIATAMENTE
+    
+    // Atualizar no cache local
+    if (isRecorrente && regraId && regraId !== 'undefined') {
+        const dataStr = `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+        const contasRecorrentes = App.dataCache.contas.filter(c => c.regra_id == regraId);
+        const contaEncontrada = contasRecorrentes.find(c => {
+            const dataConta = `${c.ano}-${String(c.mes).padStart(2, '0')}-${String(c.dia).padStart(2, '0')}`;
+            return dataConta === dataStr;
+        });
+        
+        if (contaEncontrada) {
+            contaEncontrada.valor_pago = 0;
+            contaEncontrada.status = 'pendente';
+            contaEncontrada.data_pagamento = null;
         }
-
-        await registrarHistorico('desfazer_pagamento', `Pagamento desfeito: ${id}`, { id, valor, usuario: App.usuarioAtual });
-        showToast('Pagamento desfeito!', 'success');
-        
-        // 🔴 SINCRONIZAÇÃO AUTOMÁTICA
-        await sincronizarGoogleAutomatico();
-        
-        fecharModal();
-        await carregarDados(true);
-        await atualizarCalendario();
-        await mostrarConteudo();
-    } catch (error) {
-        console.error('Erro ao desfazer pagamento:', error);
-        showToast('Erro: ' + error.message, 'error');
+    } else {
+        const conta = App.dataCache.contas.find(c => c.id == id);
+        if (conta) {
+            conta.valor_pago = 0;
+            conta.status = 'pendente';
+            conta.data_pagamento = null;
+        }
     }
+    
+    // Atualizar saldo no cache local
+    if (App.saldoCentral.id && valor > 0) {
+        App.saldoCentral.valor = App.saldoCentral.valor + valor;
+        atualizarSaldoHeader();
+    }
+    
+    // Re-renderizar a tela IMEDIATAMENTE
+    await carregarDados(true);
+    await atualizarCalendario();
+    await mostrarConteudo();
+    
+    showToast(`✅ Pagamento desfeito!`, 'success', 1500);
+    
+    // 🔥 PASSO 2: ADICIONAR À FILA
+    adicionarNaFila('desfazer_pagamento', {
+        id: id,
+        valor: valor,
+        regraId: regraId,
+        dia: dia,
+        mes: mes,
+        ano: ano,
+        isRecorrente: isRecorrente
+    });
+    
+    fecharModal();
 }
 
         function editarItem(id, tipo, isRecorrente, regraId, isIndividual, individualId, dia, mes, ano) {
